@@ -117,11 +117,11 @@ final List<DetectionRule> detectionRules = [
       // Triones driver drives them once connected (verified in the APK).
       'RZ-Slave',
     ],
-    // The JieLi service is what RZ-Slave rock lights actually advertise, so
-    // they are claimed even when iOS delivers the advertisement without a
-    // name (seen in the field 2026-08-05: a nameless RZ unit was offered as
-    // a generic strip instead of "Rock lights").
-    serviceUuids: [TrionesUuids.service, Guid('af30')],
+    // NOT af30: the JieLi advertised service is shared by unrelated products —
+    // the LAMP&FRGN ambient light ("Pocket Link CZH2-10") advertises it too
+    // (seen in the field 2026-08-05, and briefly claiming af30 here sent that
+    // unit to this driver). Rock lights are matched by their RZ-Slave name.
+    serviceUuids: [TrionesUuids.service],
     // `RZ-Slave-*` units are TERRAX's rock lights (verified on hardware); the
     // rest of the family is generic strip/bulb hardware.
     productHints: const {
@@ -134,7 +134,17 @@ final List<DetectionRule> detectionRules = [
   DetectionRule(
     driverId: LampFrgnDriver.id,
     label: 'Car ambient lighting (LAMP&FRGN)',
-    namePrefixes: const ['LAMP&FRGN', 'LAMP', 'FRGN', 'RAISE', 'CarLED'],
+    // 'Pocket Link' is what a real unit advertises ("Pocket Link CZH2-10",
+    // field-verified 2026-08-05: its GATT is ae30/ae01/ae02 exactly per
+    // docs/lampfrgn_findings.md, while its *advertised* service is JieLi af30).
+    namePrefixes: const [
+      'LAMP&FRGN',
+      'LAMP',
+      'FRGN',
+      'RAISE',
+      'CarLED',
+      'Pocket Link',
+    ],
     // Some units expose only the Telink fallback service in their
     // advertisement (docs/lampfrgn_findings.md), and often no name at all.
     serviceUuids: [LampFrgnUuids.service, LampFrgnUuids.telinkService],

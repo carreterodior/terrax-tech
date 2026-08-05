@@ -37,9 +37,10 @@ void main() {
       final rule = ruleOf(TrionesDriver.id);
       expect(rule.matches('RZ-Slave-C224THB', []), isTrue);
       expect(rule.matches('rz-slave-c224thb', []), isTrue);
-      // Seen in the field: iOS can deliver the advertisement with no name at
-      // all, so the JieLi service they advertise must also claim them.
-      expect(rule.matches('', [Guid('af30')]), isTrue);
+      // The JieLi service af30 they advertise must NOT claim them: unrelated
+      // products advertise it too (the LAMP&FRGN unit, field-verified
+      // 2026-08-05), so af30 alone cannot pick a driver.
+      expect(rule.matches('', [Guid('af30')]), isFalse);
       // And they must not be claimed by another driver.
       expect(ruleForDriverId(Elk7eDriver.id)!.matches('RZ-Slave-C224THB', []),
           isFalse);
@@ -53,11 +54,17 @@ void main() {
       // fallback service (docs/lampfrgn_findings.md).
       final rule = ruleOf(LampFrgnDriver.id);
       expect(rule.matches('LAMP&FRGN-1234', []), isTrue);
+      // Real advertised name, field-verified 2026-08-05 (GATT is ae30/ae01/
+      // ae02; the advertisement itself carries only the JieLi service af30).
+      expect(rule.matches('Pocket Link CZH2-10', []), isTrue);
       expect(rule.matches('', [Guid('ae30')]), isTrue);
       expect(
           rule.matches('', [Guid('00010203-0405-0607-0809-0A0B0C0D1910')]),
           isTrue);
       expect(rule.matches('unrelated', []), isFalse);
+      // af30 alone must claim nothing — it is ambiguous across families.
+      expect(detectionRules.where((r) => r.matches('', [Guid('af30')])),
+          isEmpty);
     });
 
     test('product hints turn cryptic BLE names into readable types', () {

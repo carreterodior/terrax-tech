@@ -8,6 +8,15 @@ Source: the vendor app **`com.szraise.carled` 1.3.3** (Shenzhen Raise CarLED),
 package `com.szraise.carled.common.ble.*`. Every frame below mirrors one
 `datapack/*Cmd.pack()` method. Decompile with jadx (`C:\dev\tools\jadx`).
 
+## Advertisement (field-verified 2026-08-05, real unit)
+
+- Advertised name: **`Pocket Link CZH2-10`** — none of the vendor-app-derived
+  prefixes; detection matches the `Pocket Link` prefix.
+- Advertised service: **JieLi `0xAF30` only** — the same service the RZ-Slave
+  rock lights advertise, so it cannot be used to pick a driver. The `0xAE30`
+  control service below appears only in GATT after connecting
+  (`ae01` write-without-response, `ae02` notify), manufacturer id 1494.
+
 ## Transport
 
 | | |

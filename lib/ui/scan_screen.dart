@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../ble/ble_service.dart';
 import '../ble/detection.dart';
 import '../models/terrax_device.dart';
 import '../state/core_providers.dart';
@@ -22,15 +23,21 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
   bool _permissionDenied = false;
   String? _scanError;
 
+  /// Grabbed in initState: `ref` may not be used from dispose (throws a
+  /// StateError, which also aborted the rest of unmount — leaving the scan
+  /// running and defunct elements subscribed; seen in the field 2026-08-05).
+  late final BleService _ble;
+
   @override
   void initState() {
     super.initState();
+    _ble = ref.read(bleServiceProvider);
     _startScan();
   }
 
   @override
   void dispose() {
-    ref.read(bleServiceProvider).stopScan();
+    _ble.stopScan();
     super.dispose();
   }
 
