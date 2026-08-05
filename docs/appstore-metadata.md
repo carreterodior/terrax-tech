@@ -54,6 +54,38 @@ https://terraxtech.com (adjust to the live TERRAX site)
 Host docs/privacy-policy.md content on the TERRAX site, e.g.
 https://terraxtech.com/privacy
 
+## Bundle ID
+
+`com.terraxtech.app` (explicit App ID, registered 2026-08-06). The old
+`com.terrax.terrax` was Xcode-managed and App Store Connect refuses those.
+
+## Subscription (TERRAX Pro)
+
+Create in App Store Connect > Subscriptions, in a group named "TERRAX Pro":
+
+| Field | Value |
+|---|---|
+| Reference name | TERRAX Pro Yearly |
+| Product ID | `com.terraxtech.app.pro.yearly` (must match `ProService.yearlyProductId`) |
+| Duration | 1 year |
+| Price | PHP 59 (Apple's floor is about PHP 29; PHP 5 per month is not offerable) |
+| Display name | TERRAX Pro |
+| Description | Unlock every animation effect and the advanced setup for your TERRAX accessories. |
+
+**Prerequisite: the Paid Apps agreement.** Business > Agreements, Tax, and
+Banking must be complete and active or the product stays "Missing Metadata"
+and the app cannot show a price. Only the Account Holder can sign it.
+
+What Pro gates (free tier still controls hardware the customer already owns):
+
+- Free: connect, power, colour, brightness, unlimited saved devices
+- Pro: animation effects and speed, plus the advanced driver sections
+  (Welcome, Climate, LEDs, Setup, Calibration)
+
+Review note: reviewers need a working purchase. Sandbox testing uses a Sandbox
+Apple ID (Users and Access > Sandbox Testers); the subscription must be
+submitted for review **with** the app version, not separately.
+
 ## App Privacy questionnaire (Data Collection)
 
 Answer: **Data not collected** for every category. The app has no backend, no
