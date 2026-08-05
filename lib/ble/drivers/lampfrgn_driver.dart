@@ -346,6 +346,18 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   /// LED counts, reply order: the six named zones then sub-boxes 5–14.
   List<int> _beads = List<int>.filled(16, 0);
 
+  // ---- Scene-mode calibration (Calibration section) ----
+  // On a real unit, modes Sports…Winter sonata all fall back to one blink
+  // with mode1 0 / param 0 or 1, so the true encoding of the scene block is
+  // still unknown. These knobs re-send the current effect with a chosen
+  // mode1/param so the working combination can be found from the car.
+  int _calibMode1 = 0;
+  int _calibParam = 1;
+
+  /// Raw 0x0C reply (per-mode param ranges, packed nibbles) — displayed so
+  /// the real unit's table can be read off the screen.
+  List<int>? _subModesRaw;
+
   LampFrgnDriver(this._ble, this._device, this._prefs);
 
   @override
@@ -432,6 +444,7 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
     await _send(LampFrgnCommands.queryClimate());
     await _send(LampFrgnCommands.queryWelcomeColor());
     await _send(LampFrgnCommands.queryLampBeads());
+    await _send(LampFrgnCommands.querySubModes());
   }
 
   void _onNotify(List<int> chunk) {
@@ -470,6 +483,9 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
         updateState((s) => s);
       case LampFrgnCommands.subLampBead when d.length >= 17:
         _beads = d.sublist(1, 17);
+        updateState((s) => s);
+      case LampFrgnCommands.subSubModes:
+        _subModesRaw = List.of(d);
         updateState((s) => s);
     }
   }
@@ -532,12 +548,12 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   @override
   Future<void> setEffect(int id, int speed) async {
     // mode2 carries the style (the id the device echoes back in its reply);
-    // mode1's low nibble is left zero pending hardware calibration of what
-    // the vendor app's per-zone Static/Automatic/Burst selector puts there.
+    // mode1 and the param come from the Calibration knobs until the scene
+    // block's encoding is confirmed on hardware.
     await _send(LampFrgnCommands.colorMode(
-      mode1: 0,
+      mode1: _calibMode1,
       mode2: id,
-      modeParam: 0,
+      modeParam: _calibParam,
       modeSpeed: speed,
     ));
     updateState((s) => s.copyWith(effectId: id, effectSpeed: speed));
@@ -735,7 +751,53 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
                 LampFrgnCommands.doorConfig(LampFrgnCommands.doorConfigResetAll)),
           ),
         ], icon: DriverSectionIcon.functions),
+        DriverSection('Calibration', [
+          DriverInfoSetting(
+            'Sub-mode ranges',
+            value: _subModesRaw == null
+                ? 'no reply yet'
+                : _subModesRaw!
+                    .map((b) => b.toRadixString(16).padLeft(2, '0'))
+                    .join(' '),
+            description:
+                'Raw per-mode parameter table reported by the device (0x0C).',
+          ),
+          DriverSliderSetting(
+            'Scene group (mode1)',
+            description: 'Re-sends the current effect with this group value. '
+                'Used to find the encoding of the scene animations.',
+            value: _calibMode1,
+            min: 0,
+            max: 3,
+            onChanged: (v) async {
+              _calibMode1 = v;
+              await _resendCurrentEffect();
+            },
+          ),
+          DriverSliderSetting(
+            'Scene variant (param)',
+            description:
+                'Re-sends the current effect with this variant value.',
+            value: _calibParam,
+            min: 0,
+            max: 7,
+            onChanged: (v) async {
+              _calibParam = v;
+              await _resendCurrentEffect();
+            },
+          ),
+        ], icon: DriverSectionIcon.info),
       ];
+
+  /// Replays the currently selected effect with the calibration knob values.
+  Future<void> _resendCurrentEffect() async {
+    final id = currentState.effectId;
+    if (id == null) {
+      updateState((s) => s);
+      return;
+    }
+    await setEffect(id, currentState.effectSpeed ?? 16);
+  }
 }
 
 /// UUID constants exposed for detection rules.
