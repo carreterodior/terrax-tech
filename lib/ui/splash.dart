@@ -20,8 +20,12 @@ class _SplashGateState extends State<SplashGate>
   /// How long the logo holds centre screen before flying to the app bar.
   static const _hold = Duration(milliseconds: 800);
 
-  /// Logo scale while centred (relative to its app-bar size).
+  /// Logo scale while centred (relative to its app-bar size). The centred logo
+  /// is additionally clamped to the screen width, so narrow phones never clip.
   static const _startScale = 2.4;
+
+  /// Wordmark height once landed in the app bar (TerraxAppTitle's default).
+  static const _landedHeight = 18.0;
 
   late final AnimationController _controller = AnimationController(
       vsync: this, duration: const Duration(milliseconds: 900));
@@ -113,11 +117,22 @@ class _SplashGateState extends State<SplashGate>
                         Alignment.lerp(Alignment.center, Alignment.topLeft, t)!,
                     child: Padding(
                       padding: EdgeInsets.lerp(EdgeInsets.zero, landing, t)!,
-                      child: Transform.scale(
-                        scale: lerpDouble(_startScale, 1, t)!,
-                        child: _artReady
-                            ? const TerraxAppTitle()
-                            : const SizedBox.shrink(),
+                      // Scale via layout (not Transform) so the FittedBox can
+                      // clamp the centred logo to the screen width.
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                            maxWidth:
+                                MediaQuery.sizeOf(context).width - 48),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: _artReady
+                              ? TerraxAppTitle(
+                                  height: lerpDouble(
+                                      _landedHeight * _startScale,
+                                      _landedHeight,
+                                      t)!)
+                              : const SizedBox.shrink(),
+                        ),
                       ),
                     ),
                   ),
