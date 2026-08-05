@@ -175,6 +175,9 @@ class TrionesDriver extends DeviceDriver with DriverStateMixin {
 
   @override
   List<EffectPreset> get effects => const [
+        // Not a protocol mode: re-sends the current colour, which is how this
+        // family exits an animation (there is no dedicated "stop" frame).
+        EffectPreset(staticEffectId, 'Static — solid color'),
         EffectPreset(0x25, 'Seven-color cross fade'),
         EffectPreset(0x26, 'Red fade'),
         EffectPreset(0x27, 'Green fade'),
@@ -309,9 +312,18 @@ class TrionesDriver extends DeviceDriver with DriverStateMixin {
 
   @override
   Future<void> setEffect(int id, int speed) async {
+    if (id == staticEffectId) {
+      // Sending a plain colour frame is what exits animation mode.
+      await setColor(_baseColor);
+      updateState((s) => s.copyWith(effectId: staticEffectId, power: true));
+      return;
+    }
     await _send(TrionesCommands.effect(id, speed));
     updateState((s) => s.copyWith(effectId: id, effectSpeed: speed, power: true));
   }
+
+  /// Sentinel outside the protocol's 0x25–0x38 mode range.
+  static const staticEffectId = 0x00;
 }
 
 /// UUID constants exposed for detection rules.

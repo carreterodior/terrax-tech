@@ -364,6 +364,40 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
         hasStateFeedback: true,
       );
 
+  /// The vendor app's mode grid, in its display order (screenshotted from a
+  /// real unit 2026-08-05). Ids are 1-based mode2 values; "Single color" is
+  /// the static/no-animation mode. If selecting one style visibly plays the
+  /// previous/next one on hardware, the base is off by one — flip it here.
+  @override
+  List<EffectPreset> get effects => const [
+        EffectPreset(1, 'Single color (static)'),
+        EffectPreset(2, 'Auto'),
+        EffectPreset(3, 'Breathing'),
+        EffectPreset(4, 'Burst flash'),
+        EffectPreset(5, 'Cheerful Groove'),
+        EffectPreset(6, 'Smooth Groove'),
+        EffectPreset(7, 'Sports'),
+        EffectPreset(8, 'Magic dazzle'),
+        EffectPreset(9, 'Illusive Color'),
+        EffectPreset(10, 'Magic color'),
+        EffectPreset(11, 'Full-color wave'),
+        EffectPreset(12, 'Opening Scroll'),
+        EffectPreset(13, 'Full color scroll'),
+        EffectPreset(14, 'Comet Tail'),
+        EffectPreset(15, 'Neon Lights'),
+        EffectPreset(16, 'Spring flowers'),
+        EffectPreset(17, 'Summer ocean'),
+        EffectPreset(18, 'Autumn fairy tale'),
+        EffectPreset(19, 'Winter sonata'),
+        EffectPreset(20, 'Bouncing Music'),
+        EffectPreset(21, 'Spectrum Groove'),
+        EffectPreset(22, 'Rainbow Groove'),
+        EffectPreset(23, 'Bouncing Disco'),
+        EffectPreset(24, 'Dynamic Light & Shadow'),
+        EffectPreset(25, 'Cloud Flow'),
+        EffectPreset(26, 'Classic Tetris'),
+      ];
+
   @override
   Future<void> connect() async {
     final services = await _ble.discoverServices(_device);
@@ -411,8 +445,10 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
     final d = p.data;
     switch (p.sub) {
       case LampFrgnCommands.subColor when d.length >= 8:
-        updateState((s) => s.copyWith(color: Rgb(d[2], d[3], d[4])));
+        _lastColor = Rgb(d[2], d[3], d[4]);
+        updateState((s) => s.copyWith(color: _lastColor));
       case LampFrgnCommands.subBrightness when d.length >= 4:
+        if (d[2] > 0) _lastBrightness = d[2];
         updateState((s) => s.copyWith(brightness: d[2]));
       case LampFrgnCommands.subColorMode when d.length >= 5:
         updateState((s) => s.copyWith(
@@ -454,8 +490,14 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
         withoutResponse: write.properties.writeWithoutResponse);
   }
 
+  /// Last user-chosen colour/brightness, so power-on can restore them (the
+  /// off state is brightness zero, which alone did not relight a real unit).
+  Rgb _lastColor = const Rgb(255, 255, 255);
+  int _lastBrightness = 100;
+
   @override
   Future<void> setColor(Rgb color) async {
+    _lastColor = color;
     await _send(LampFrgnCommands.color(color, color));
     updateState((s) => s.copyWith(color: color, power: true));
   }
@@ -463,22 +505,34 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   @override
   Future<void> setBrightness(int percent) async {
     final v = percent.clamp(0, 100);
+    if (v > 0) _lastBrightness = v;
     await _send(LampFrgnCommands.brightness(v, v));
     updateState((s) => s.copyWith(brightness: v));
   }
 
-  /// This protocol has no dedicated on/off frame; the app turns the lighting
-  /// off by taking brightness to zero.
+  /// This protocol has no dedicated on/off frame; off is brightness zero.
+  /// On restores the last brightness AND re-sends the last colour — on real
+  /// hardware (2026-08-05) a brightness frame alone did not wake the unit.
   @override
   Future<void> setPower(bool on) async {
-    await setBrightness(on ? 100 : 0);
-    updateState((s) => s.copyWith(power: on));
+    if (!on) {
+      await _send(LampFrgnCommands.brightness(0, 0));
+      updateState((s) => s.copyWith(brightness: 0, power: false));
+      return;
+    }
+    await _send(LampFrgnCommands.brightness(_lastBrightness, _lastBrightness));
+    await _send(LampFrgnCommands.color(_lastColor, _lastColor));
+    updateState((s) =>
+        s.copyWith(brightness: _lastBrightness, color: _lastColor, power: true));
   }
 
   @override
   Future<void> setEffect(int id, int speed) async {
+    // mode2 carries the style (the id the device echoes back in its reply);
+    // mode1's low nibble is left zero pending hardware calibration of what
+    // the vendor app's per-zone Static/Automatic/Burst selector puts there.
     await _send(LampFrgnCommands.colorMode(
-      mode1: id & 0x0F,
+      mode1: 0,
       mode2: id,
       modeParam: 0,
       modeSpeed: speed,
