@@ -1,0 +1,46 @@
+name: terrax
+description: "Terrax — one categorized app to scan, connect to, and control BLE accessories."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_blue_plus: ^1.35.0
+  flutter_riverpod: ^2.6.1
+  permission_handler: ^12.0.0
+  shared_preferences: ^2.5.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  image: ^4.8.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/brand/
+
+# Launcher icons are generated from the TERRAX wordmark by
+# `dart run tool/make_launcher_icon.dart`, then `dart run flutter_launcher_icons`.
+flutter_launcher_icons:
+  image_path: "assets/icon/icon.png"
+  android: true
+  # Adaptive icons: black plate + the wordmark kept inside the safe zone so
+  # launcher masking can't clip the ends off.
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  ios: true
+  # iOS app icons must be opaque.
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/icon/icon.png"
+    background_color: "#000000"
+    theme_color: "#000000"

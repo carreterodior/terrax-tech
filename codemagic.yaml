@@ -1,0 +1,41 @@
+# Cloud-Mac CI for the iOS build — this repo lives on a Windows machine, so
+# every iOS binary is built here. See IOS-RELEASE.md for the one-time setup
+# (Apple Developer enrollment, App Store Connect API key, Codemagic hookup).
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    integrations:
+      # Name of the App Store Connect API key saved in Codemagic
+      # (Teams → Personal Account → Integrations → Developer Portal).
+      app_store_connect: terrax-asc-key
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.terrax.terrax
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Get dependencies
+        script: flutter pub get
+      - name: Analyze
+        script: flutter analyze
+      - name: Test
+        script: flutter test
+      - name: Apply signing profiles
+        script: xcode-project use-profiles
+      - name: Build signed IPA
+        script: |
+          flutter build ipa --release \
+            --build-number=$PROJECT_BUILD_NUMBER \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integrations
+        # Lands in TestFlight automatically; App Store submission stays manual.
+        submit_to_testflight: true

@@ -1,0 +1,899 @@
+# btsnoop datalink=1002 (1002=H4/UART)
+16:14:04.455  LE-CONNECT handle=64 peer=00:00:00:00:00:00
+16:14:05.446  LE-CONNECT handle=65 peer=EA:61:05:04:53:7A
+16:14:07.193 >> conn=65 WriteReq handle=0x000e  01 00
+16:14:07.226 << conn=65 WriteRsp
+16:14:08.261 >> conn=65 WriteCmd handle=0x000d  FE 2B C1 00 EA
+16:14:08.331 << conn=65 Notify   handle=0x000d  FE 3B C1 09 00 04 01 21 00 0F 8E 00 03 55
+16:14:08.521 >> conn=65 WriteCmd handle=0x000d  FE 1B B1 00 AA
+16:14:08.593 << conn=65 Notify   handle=0x000d  FE 3B B1 04 60 47 F7 5E 00
+16:14:08.608 >> conn=65 WriteCmd handle=0x000d  FE 1B B2 04 5D 4A 06 ED 51
+16:14:08.670 << conn=65 Notify   handle=0x000d  FE 3B B2 00 89
+16:14:08.823 >> conn=65 WriteCmd handle=0x000d  FE 2B C2 00 E9
+16:14:08.894 << conn=65 Notify   handle=0x000d  FE 3B C2 0B 01 A1 A2 48 E7 B7 C0 00 22 33 2B 12
+16:14:08.950 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:09.008 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6E 00 00 00 00 49
+16:14:09.026 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:09.100 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:09.353 >> conn=65 WriteCmd handle=0x000d  FE 2B A8 00 83
+16:14:09.419 << conn=65 Notify   handle=0x000d  FE 3B A8 03 10 00 00 80
+16:14:09.428 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:09.475 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6D 30 00 10 00 08 6C 00 00 00 00 48
+16:14:09.491 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:09.569 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:09.578 >> conn=65 WriteCmd handle=0x000d  FE 1B A8 03 10 00 00 A0
+16:14:09.643 << conn=65 Notify   handle=0x000d  FE 3B A8 03 10 00 00 80
+16:14:09.658 >> conn=65 WriteCmd handle=0x000d  FE 2B C1 00 EA
+16:14:09.737 << conn=65 Notify   handle=0x000d  FE 3B C1 09 00 04 01 21 00 0F 8E 00 03 55
+16:14:09.913 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:09.964 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6E 00 00 00 00 49
+16:14:09.979 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:10.058 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:10.155 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:10.207 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6D 30 00 10 00 08 6D 00 00 00 00 49
+16:14:10.433 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:10.489 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6D 00 00 00 00 4A
+16:14:10.517 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:10.580 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:10.919 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:10.976 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6E 00 00 00 00 49
+16:14:10.990 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:11.050 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:11.423 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:11.482 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6D 30 00 10 00 08 6D 00 00 00 00 49
+16:14:11.496 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:11.556 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:11.919 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:11.969 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6E 00 00 00 00 49
+16:14:11.978 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:12.044 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:12.422 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:12.494 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6E 00 00 00 00 49
+16:14:12.505 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:12.569 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:12.924 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:12.982 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6E 00 00 00 00 49
+16:14:13.001 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:13.075 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:13.423 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:13.469 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6D 30 00 10 00 08 6D 00 00 00 00 49
+16:14:13.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:13.544 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:13.917 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:13.976 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6D 00 00 00 00 4A
+16:14:13.995 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:14.070 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:14.424 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:14.482 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6D 00 00 00 00 4A
+16:14:14.493 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:14.556 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:14.924 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:14.969 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6D 30 00 10 00 08 6D 00 00 00 00 49
+16:14:14.983 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:15.044 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:15.426 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:15.475 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6D 30 00 10 00 08 6E 00 00 00 00 4A
+16:14:15.488 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:15.550 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:15.928 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:15.981 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6D 30 00 10 00 08 6E 00 00 00 00 4A
+16:14:15.999 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:16.077 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:16.429 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:16.488 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6D 30 00 10 00 08 6E 00 00 00 00 4A
+16:14:16.500 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:16.562 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:16.929 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:16.976 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6D 30 00 10 00 08 6E 00 00 00 00 4A
+16:14:16.999 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:17.069 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:14:17.091 >> conn=65 WriteCmd handle=0x000d  FE 1B A1 01 C0 7B
+16:14:17.163 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:17.432 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:17.481 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6E 00 00 00 00 49
+16:14:17.495 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:17.557 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:17.923 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:17.969 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6D 00 00 00 00 4A
+16:14:17.981 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:18.045 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:18.438 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:18.495 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6D 30 00 10 00 08 6E 00 00 00 00 4A
+16:14:18.513 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:18.587 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:18.932 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:18.982 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6E 00 00 00 00 49
+16:14:19.001 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:19.075 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:19.433 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:19.488 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6D 30 00 10 00 08 6D 00 00 00 00 49
+16:14:19.510 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:19.581 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:19.936 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:19.994 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6E 00 00 00 00 49
+16:14:20.005 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:20.069 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:20.437 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:20.482 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6E 00 00 00 00 49
+16:14:20.495 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:20.556 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:20.939 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:20.988 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6D 30 00 10 00 08 6E 00 00 00 00 4A
+16:14:21.002 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:21.062 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:21.441 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:21.495 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6D 00 00 00 00 4A
+16:14:21.507 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:21.569 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:21.938 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:22.001 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 42 0A D4 6E 30 00 10 00 08 6D 00 00 00 00 4A
+16:14:22.015 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:22.094 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:22.108 >> conn=65 WriteCmd handle=0x000d  FE 1B A1 01 E0 5B
+16:14:22.187 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:22.438 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:22.491 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 69 30 00 10 00 08 6A 29 00 00 00 62
+16:14:22.519 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:22.582 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:22.940 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:22.994 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6A 30 00 10 00 08 6B 20 00 00 00 69
+16:14:23.008 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:23.069 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:23.444 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:23.500 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6A 30 00 10 00 08 6A 22 00 00 00 6A
+16:14:23.515 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:23.593 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:23.942 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:23.988 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6B 30 00 10 00 08 6B 1F 00 00 00 57
+16:14:24.006 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:24.081 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:24.444 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:24.494 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6B 30 00 10 00 08 6B 1A 00 00 00 52
+16:14:24.507 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:24.569 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:24.941 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:25.001 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6E 30 00 10 00 08 6E 00 00 00 00 48
+16:14:25.017 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:25.095 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:25.446 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:25.507 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6D 30 00 10 00 08 6D 00 00 00 00 48
+16:14:25.521 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:25.581 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:25.947 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:25.994 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6D 30 00 10 00 08 6D 00 00 00 00 48
+16:14:26.008 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:26.069 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:26.447 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:26.500 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6E 30 00 10 00 08 6E 00 00 00 00 48
+16:14:26.513 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:26.576 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:26.946 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:26.988 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6D 30 00 10 00 08 6D 00 00 00 00 48
+16:14:26.999 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:27.063 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:27.450 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:27.495 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6D 30 00 10 00 08 6D 00 00 00 00 48
+16:14:27.508 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:27.569 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:27.952 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:28.000 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6D 30 00 10 00 08 6D 00 00 00 00 48
+16:14:28.018 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:28.094 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:28.451 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:28.507 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6D 30 00 10 00 08 6D 00 00 00 00 48
+16:14:28.519 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:28.581 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:28.951 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:28.994 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6D 30 00 10 00 08 6D 00 00 00 00 48
+16:14:29.006 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:29.069 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:29.452 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:29.501 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6D 30 00 10 00 08 6E 00 00 00 00 4B
+16:14:29.520 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:29.594 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:29.604 >> conn=65 WriteCmd handle=0x000d  FE 1B A1 01 E0 5B
+16:14:29.669 << conn=65 Notify   handle=0x000d  FE 3B A1 01 D0 4B
+16:14:29.952 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:30.007 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6A 30 00 10 00 08 6A 13 00 00 00 5B
+16:14:30.020 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:30.082 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:30.454 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:30.513 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6A 30 00 10 00 08 6A 17 00 00 00 5F
+16:14:30.526 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:30.587 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:30.954 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:31.001 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6A 30 00 10 00 08 6A 1D 00 00 00 55
+16:14:31.012 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:31.114 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:31.455 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:31.507 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6B 30 00 10 00 08 6B 0C 00 00 00 44
+16:14:31.518 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:31.581 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:31.954 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:32.013 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6C 30 00 10 00 08 6C 00 00 00 00 48
+16:14:32.025 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:32.088 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:32.457 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:32.520 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6C 30 00 10 00 08 6D 00 00 00 00 49
+16:14:32.537 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:32.612 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:32.955 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:33.007 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6D 30 00 10 00 08 6D 00 00 00 00 48
+16:14:33.018 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:33.081 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:33.458 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:33.514 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6C 30 00 10 00 08 6C 00 00 00 00 48
+16:14:33.528 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:33.608 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:33.956 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:34.001 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6C 30 00 10 00 08 6D 00 00 00 00 49
+16:14:34.012 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:34.076 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:34.457 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:34.507 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6C 30 00 10 00 08 6D 00 00 00 00 49
+16:14:34.518 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:34.581 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:34.959 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:35.013 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6C 30 00 10 00 08 6C 00 00 00 00 48
+16:14:35.026 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:35.088 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:35.458 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:14:35.501 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6C 30 00 10 00 08 6C 00 00 00 00 48
+16:14:35.512 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:14:35.579 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:14:35.747 >> conn=65 WriteCmd handle=0x000d  FE 2B A5 00 8E
+16:14:35.818 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:14:35.839 >> conn=65 WriteCmd handle=0x000d  FE 2B C3 00 E8
+16:14:35.913 << conn=65 Notify   handle=0x000d  FE 3B C3 07 0F 28 FF 00 00 5F 46 3E
+16:14:35.944 >> conn=65 WriteCmd handle=0x000d  FE 2B CE 00 E5
+16:14:36.006 << conn=65 Notify   handle=0x000d  FE 3B CE 03 12 28 28 E4
+16:14:40.383 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 7F A4 F9 30 BE 08 1C
+16:14:40.450 << conn=65 Notify   handle=0x000d  FE 3B A5 08 7F A4 F9 30 00 00 BE 80 BA
+16:14:42.956 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:14:43.019 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:14:44.626 >> conn=65 WriteCmd handle=0x000d  FE 2B C4 00 EF
+16:14:44.688 << conn=65 Notify   handle=0x000d  FE 3B C4 07 0F 28 FF 00 00 64 46 02
+16:14:44.727 >> conn=65 WriteCmd handle=0x000d  FE 2B CE 00 E5
+16:14:44.800 << conn=65 Notify   handle=0x000d  FE 3B CE 03 12 28 28 E4
+16:14:45.452 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 BF A4 F9 30 BE 08 DC
+16:14:45.531 << conn=65 Notify   handle=0x000d  FE 3B A5 08 BF A4 F9 30 00 00 BE 80 7A
+16:14:46.334 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:14:46.414 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:14:47.125 >> conn=65 WriteCmd handle=0x000d  FE 2B C5 00 EE
+16:14:47.200 << conn=65 Notify   handle=0x000d  FE 3B C5 07 06 28 EB 61 00 64 28 11
+16:14:47.239 >> conn=65 WriteCmd handle=0x000d  FE 2B CE 00 E5
+16:14:47.313 << conn=65 Notify   handle=0x000d  FE 3B CE 03 12 28 28 E4
+16:14:47.846 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 DF A4 F9 30 BE 08 BC
+16:14:47.912 << conn=65 Notify   handle=0x000d  FE 3B A5 08 DF A4 F9 30 00 00 BE 80 1A
+16:14:48.627 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:14:48.700 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:14:49.301 >> conn=65 WriteCmd handle=0x000d  FE 2B C6 00 ED
+16:14:49.375 << conn=65 Notify   handle=0x000d  FE 3B C6 07 06 28 FF 00 00 64 46 09
+16:14:49.399 >> conn=65 WriteCmd handle=0x000d  FE 2B CE 00 E5
+16:14:49.469 << conn=65 Notify   handle=0x000d  FE 3B CE 03 12 28 28 E4
+16:14:50.030 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 EF A4 F9 30 BE 08 8C
+16:14:50.106 << conn=65 Notify   handle=0x000d  FE 3B A5 08 EF A4 F9 30 00 00 BE 80 2A
+16:14:50.992 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:14:51.064 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:14:51.700 >> conn=65 WriteCmd handle=0x000d  FE 2B C7 00 EC
+16:14:51.776 << conn=65 Notify   handle=0x000d  FE 3B C7 07 05 28 EB 61 00 64 5D 65
+16:14:51.807 >> conn=65 WriteCmd handle=0x000d  FE 2B CE 00 E5
+16:14:51.869 << conn=65 Notify   handle=0x000d  FE 3B CE 03 12 28 28 E4
+16:14:52.627 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 F7 A4 F9 30 BE 08 94
+16:14:52.694 << conn=65 Notify   handle=0x000d  FE 3B A5 08 F7 A4 F9 30 00 00 BE 80 32
+16:14:53.424 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:14:53.500 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:14:54.131 >> conn=65 WriteCmd handle=0x000d  FE 2B C8 00 E3
+16:14:54.196 << conn=65 Notify   handle=0x000d  FE 3B C8 07 05 38 EB 61 00 5F 5B 47
+16:14:54.220 >> conn=65 WriteCmd handle=0x000d  FE 2B CE 00 E5
+16:14:54.288 << conn=65 Notify   handle=0x000d  FE 3B CE 03 12 28 28 E4
+16:14:54.886 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FB A4 F9 30 BE 08 98
+16:14:54.963 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FB A4 F9 30 00 00 BE 80 3E
+16:14:56.536 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:14:56.613 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:14:57.186 >> conn=65 WriteCmd handle=0x000d  FE 2B C9 00 E2
+16:14:57.251 << conn=65 Notify   handle=0x000d  FE 3B C9 07 0F 28 FF 00 00 64 5A 13
+16:14:57.281 >> conn=65 WriteCmd handle=0x000d  FE 2B CE 00 E5
+16:14:57.344 << conn=65 Notify   handle=0x000d  FE 3B CE 03 12 28 28 E4
+16:14:57.836 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FD A4 F9 30 BE 08 9E
+16:14:57.906 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FD A4 F9 30 00 00 BE 80 38
+16:14:58.756 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:14:58.827 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:14:59.347 >> conn=65 WriteCmd handle=0x000d  FE 2B CB 00 E0
+16:14:59.425 << conn=65 Notify   handle=0x000d  FE 3B CB 07 00 28 FF 00 00 00 23 03
+16:14:59.452 >> conn=65 WriteCmd handle=0x000d  FE 2B CE 00 E5
+16:14:59.519 << conn=65 Notify   handle=0x000d  FE 3B CE 03 12 28 28 E4
+16:15:00.044 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F8 30 BE 08 9D
+16:15:00.119 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F8 30 00 00 BE 80 3B
+16:15:00.998 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:15:01.076 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:15:08.592 >> conn=65 WriteCmd handle=0x000d  FE 1B CE 03 10 28 28 C6
+16:15:08.671 << conn=65 Notify   handle=0x000d  FE 3B CE 03 10 28 28 E6
+16:15:11.204 >> conn=65 WriteCmd handle=0x000d  FE 1B CE 03 11 28 28 C7
+16:15:11.275 << conn=65 Notify   handle=0x000d  FE 3B CE 03 11 28 28 E7
+16:15:13.498 >> conn=65 WriteCmd handle=0x000d  FE 1B CE 03 12 28 28 C4
+16:15:13.563 << conn=65 Notify   handle=0x000d  FE 3B CE 03 12 28 28 E4
+16:15:18.129 >> conn=65 WriteCmd handle=0x000d  FE 1B CE 03 13 28 28 C5
+16:15:18.195 << conn=65 Notify   handle=0x000d  FE 3B CE 03 13 28 28 E5
+16:15:20.397 >> conn=65 WriteCmd handle=0x000d  FE 1B CE 03 14 28 28 C2
+16:15:20.484 << conn=65 Notify   handle=0x000d  FE 3B CE 03 14 28 28 E2
+16:15:24.116 >> conn=65 WriteCmd handle=0x000d  FE 1B CE 03 15 28 28 C3
+16:15:24.195 << conn=65 Notify   handle=0x000d  FE 3B CE 03 15 28 28 E3
+16:15:31.850 >> conn=65 WriteCmd handle=0x000d  FE 1B CE 03 12 28 28 C4
+16:15:31.919 << conn=65 Notify   handle=0x000d  FE 3B CE 03 12 28 28 E4
+16:15:34.094 >> conn=65 WriteCmd handle=0x000d  FE 2B C3 00 E8
+16:15:34.171 << conn=65 Notify   handle=0x000d  FE 3B C3 07 0F 28 FF 00 00 5F 46 3E
+16:15:34.202 >> conn=65 WriteCmd handle=0x000d  FE 2B CE 00 E5
+16:15:34.263 << conn=65 Notify   handle=0x000d  FE 3B CE 03 12 28 28 E4
+16:15:38.641 >> conn=65 WriteCmd handle=0x000d  FE 1B CE 03 0A 28 28 DC
+16:15:38.707 << conn=65 Notify   handle=0x000d  FE 3B CE 03 0A 28 28 FC
+16:15:41.146 >> conn=65 WriteCmd handle=0x000d  FE 1B CE 03 12 28 28 C4
+16:15:41.220 << conn=65 Notify   handle=0x000d  FE 3B CE 03 12 28 28 E4
+16:15:42.901 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:15:42.947 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6C 30 00 10 00 08 6C 00 00 00 00 48
+16:15:42.958 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:15:43.020 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:15:43.403 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:15:43.452 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6B 30 00 10 00 08 6C 00 00 00 00 4F
+16:15:43.473 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:15:43.553 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:15:43.910 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:15:43.959 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6C 30 00 10 00 08 6C 00 00 00 00 48
+16:15:43.977 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:15:44.052 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:15:44.413 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:15:44.464 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6B 30 00 10 00 08 6B 00 00 00 00 48
+16:15:44.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:15:44.539 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:15:44.917 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:15:44.970 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6C 30 00 10 00 08 6C 00 00 00 00 48
+16:15:44.981 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:15:45.046 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:15:45.410 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:15:45.458 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6C 30 00 10 00 08 6C 00 00 00 00 48
+16:15:45.472 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:15:45.533 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:15:45.920 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:15:45.964 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 43 0A D4 6B 30 00 10 00 08 6B 00 00 00 00 48
+16:15:45.976 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:15:46.039 << conn=65 Notify   handle=0x000d  FE 3B A1 01 F0 6B
+16:15:46.245 >> conn=65 WriteCmd handle=0x000d  FE 2B A5 00 8E
+16:15:46.320 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:15:48.867 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 20 BE 08 8C
+16:15:48.946 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 20 00 00 BE 80 2A
+16:15:49.634 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:15:49.696 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:15:50.347 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 10 BE 08 BC
+16:15:50.426 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 10 00 00 BE 80 1A
+16:15:51.031 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:15:51.104 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:15:52.804 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 79 30 BE 08 1C
+16:15:52.864 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 79 30 00 00 BE 80 BA
+16:15:53.494 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:15:53.558 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:15:54.402 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 B9 30 BE 08 DC
+16:15:54.478 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 B9 30 00 00 BE 80 7A
+16:15:55.025 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:15:55.095 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:15:56.354 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 D9 30 BE 08 BC
+16:15:56.427 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 D9 30 00 00 BE 80 1A
+16:15:56.948 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:15:57.027 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:15:58.158 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 E9 30 BE 08 8C
+16:15:58.227 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 E9 30 00 00 BE 80 2A
+16:15:58.967 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:15:59.033 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:15:59.707 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F1 30 BE 08 94
+16:15:59.783 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F1 30 00 00 BE 80 32
+16:16:00.396 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:16:00.458 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:16:07.333 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 FD 30 BE 08 98
+16:16:07.415 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 FD 30 00 00 BE 80 3E
+16:16:07.993 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:16:08.071 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:16:09.441 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 FB 30 BE 08 9E
+16:16:09.514 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 FB 30 00 00 BE 80 38
+16:16:10.153 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:16:10.227 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:16:12.568 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 32 BE 08 9E
+16:16:12.647 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 32 00 00 BE 80 38
+16:16:13.499 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:16:13.564 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:16:14.551 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 32 BE 08 9E
+16:16:14.616 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 32 00 00 BE 80 38
+16:16:14.926 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 34 BE 08 98
+16:16:14.991 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 34 00 00 BE 80 3E
+16:16:16.164 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 32 BE 08 9E
+16:16:16.227 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 32 00 00 BE 80 38
+16:16:16.719 >> conn=65 WriteCmd handle=0x000d  FE 1B A5 06 FF A4 F9 30 BE 08 9C
+16:16:16.790 << conn=65 Notify   handle=0x000d  FE 3B A5 08 FF A4 F9 30 00 00 BE 80 3A
+16:16:52.432  LE-CONNECT handle=66 peer=00:00:00:00:00:00
+16:17:22.442  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:17:52.745  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:18:22.751  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:18:25.822  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:18:55.832  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:19:10.131  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:19:40.132  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:19:55.142  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:20:25.151  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:21:10.666  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:21:44.399  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:21:44.620  LE-CONNECT handle=65 peer=EA:61:05:04:53:7A
+16:21:46.390 >> conn=65 WriteReq handle=0x000e  01 00
+16:21:46.421 << conn=65 WriteRsp
+16:21:47.454 >> conn=65 WriteCmd handle=0x000d  FE 2B C1 00 EA
+16:21:47.527 << conn=65 Notify   handle=0x000d  FE 3B C1 09 00 04 01 21 00 0F 8E 00 03 55
+16:21:47.680 >> conn=65 WriteCmd handle=0x000d  FE 1B B1 00 AA
+16:21:47.751 << conn=65 Notify   handle=0x000d  FE 3B B1 04 60 47 F7 5E 00
+16:21:47.761 >> conn=65 WriteCmd handle=0x000d  FE 1B B2 04 5D 4A 06 ED 51
+16:21:47.826 << conn=65 Notify   handle=0x000d  FE 3B B2 00 89
+16:21:47.986 >> conn=65 WriteCmd handle=0x000d  FE 2B C2 00 E9
+16:21:48.051 << conn=65 Notify   handle=0x000d  FE 3B C2 0B 01 A1 A2 48 E7 B7 C0 00 22 33 2B 12
+16:21:48.098 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:48.164 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 30 00 10 00 08 71 00 00 00 00 4E
+16:21:48.176 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:48.239 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:21:48.375 >> conn=65 WriteCmd handle=0x000d  FE 2B A8 00 83
+16:21:48.484 << conn=65 Notify   handle=0x000d  FE 3B A8 03 10 00 00 80
+16:21:48.508 >> conn=65 WriteCmd handle=0x000d  FE 1B A8 03 10 00 00 A0
+16:21:48.576 << conn=65 Notify   handle=0x000d  FE 3B A8 03 10 00 00 80
+16:21:48.584 >> conn=65 WriteCmd handle=0x000d  FE 2B C1 00 EA
+16:21:48.651 << conn=65 Notify   handle=0x000d  FE 3B C1 09 00 04 01 21 00 0F 8E 00 03 55
+16:21:48.687 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:48.746 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 30 00 10 00 08 70 00 00 00 00 4F
+16:21:48.758 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:48.860 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:21:49.079 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:49.140 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 30 00 10 00 08 71 00 00 00 00 4E
+16:21:49.167 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:49.215 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 30 00 10 00 08 71 00 00 00 00 4E
+16:21:49.260 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:49.328 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:21:49.599 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:49.646 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 30 00 10 00 08 71 00 00 00 00 4E
+16:21:49.659 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:49.720 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:21:50.101 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:50.152 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 30 00 10 00 08 71 00 00 00 00 4E
+16:21:50.165 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:50.227 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:21:50.602 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:50.658 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 32 00 10 00 08 71 00 00 00 00 4C
+16:21:50.672 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:50.733 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:21:51.104 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:51.166 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 32 00 10 00 08 71 00 00 00 00 4C
+16:21:51.182 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:51.258 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:21:51.602 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:51.652 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 32 00 10 00 08 71 00 00 00 00 4C
+16:21:51.664 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:51.726 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:21:52.105 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:52.158 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 32 00 10 00 08 70 00 00 00 00 4D
+16:21:52.173 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:52.234 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:21:52.604 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:52.647 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 70 32 00 10 00 08 71 00 00 00 00 4D
+16:21:52.660 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:52.721 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:21:53.106 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:53.153 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 32 00 10 00 08 71 00 00 00 00 4C
+16:21:53.171 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:53.248 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:21:53.609 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:53.661 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 32 00 10 00 08 70 00 00 00 00 4D
+16:21:53.681 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:53.752 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:21:54.101 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:54.146 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 32 00 10 00 08 71 00 00 00 00 4C
+16:21:54.159 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:54.220 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:21:54.598 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:54.652 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 32 00 10 00 08 71 00 00 00 00 4C
+16:21:54.656 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:54.726 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:21:55.099 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:21:55.158 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 44 0A D5 71 32 00 10 00 08 70 00 00 00 00 4D
+16:21:55.162 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:21:55.232 << conn=65 Notify   handle=0x000d  FE 3B A1 01 B0 2B
+16:28:03.784  LE-CONNECT handle=66 peer=00:00:00:00:00:00
+16:28:04.166  LE-CONNECT handle=65 peer=EA:61:05:04:53:7A
+16:28:04.946 >> conn=65 WriteReq handle=0x000e  01 00
+16:28:04.970 << conn=65 WriteRsp
+16:28:04.993 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:28:06.128 >> conn=65 WriteReq handle=0x000e  01 00
+16:28:06.171 << conn=65 WriteRsp
+16:28:06.182 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:28:56.332  LE-CONNECT handle=66 peer=00:00:00:00:00:00
+16:28:56.590  LE-CONNECT handle=65 peer=EA:61:05:04:53:7A
+16:28:57.382 >> conn=65 WriteReq handle=0x000e  01 00
+16:28:57.415 << conn=65 WriteRsp
+16:28:57.433 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:29:00.944 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 20 00 93
+16:29:03.727 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 04 00 B7
+16:29:07.319 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 04 00 B7
+16:29:08.087 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 08 00 BB
+16:29:08.772 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 08 00 BB
+16:30:02.223  LE-CONNECT handle=66 peer=00:00:00:00:00:00
+16:30:02.256  LE-CONNECT handle=65 peer=EA:61:05:04:53:7A
+16:30:04.205  LE-CONNECT handle=66 peer=00:00:00:00:00:00
+16:30:04.290  LE-CONNECT handle=65 peer=EA:61:05:04:53:7A
+16:30:05.451 >> conn=65 WriteReq handle=0x000e  01 00
+16:30:05.520 << conn=65 WriteRsp
+16:30:05.565 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:30:05.576 >> conn=65 WriteReq handle=0x000e  01 00
+16:30:05.667 << conn=65 WriteRsp
+16:30:05.681 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:30:19.883 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 20 00 93
+16:30:21.414 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 04 00 B7
+16:30:22.279 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 08 00 BB
+16:30:25.850 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 20 00 93
+16:30:27.318 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 04 00 B7
+16:30:28.130 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 08 00 BB
+16:30:28.794 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 08 00 BB
+16:30:29.211 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 04 00 B7
+16:30:31.075 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 02 00 B1
+16:30:31.509 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 02 00 B1
+16:30:32.007 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 01 00 B2
+16:30:32.487 >> conn=65 WriteCmd handle=0x000d  FE 10 A1 02 01 00 B2
+16:30:39.002 >> conn=65 WriteCmd handle=0x000d  FE 10 A0 02 20 00 92
+16:30:40.042 >> conn=65 WriteCmd handle=0x000d  FE 10 A0 02 04 00 B6
+16:30:40.546 >> conn=65 WriteCmd handle=0x000d  FE 10 A0 02 04 00 B6
+16:30:41.133 >> conn=65 WriteCmd handle=0x000d  FE 10 A0 02 08 00 BA
+16:32:31.574  LE-CONNECT handle=66 peer=00:00:00:00:00:00
+16:32:31.655  LE-CONNECT handle=65 peer=EA:61:05:04:53:7A
+16:32:32.437 >> conn=65 WriteReq handle=0x000e  01 00
+16:32:32.461 << conn=65 WriteRsp
+16:32:32.473 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:32:39.756 >> conn=65 WriteCmd handle=0x000d  FE 10 A0 02 20 00 92
+16:32:43.273 >> conn=65 WriteCmd handle=0x000d  FE 10 A0 02 08 00 BA
+16:32:45.173 >> conn=65 WriteCmd handle=0x000d  FE 10 A0 02 04 00 B6
+16:32:48.185 >> conn=65 WriteCmd handle=0x000d  FE 10 A0 02 08 00 BA
+16:32:49.184 >> conn=65 WriteCmd handle=0x000d  FE 10 A0 02 08 00 BA
+16:32:50.487 >> conn=65 WriteCmd handle=0x000d  FE 10 A0 02 04 00 B6
+16:36:02.776  LE-CONNECT handle=66 peer=00:00:00:00:00:00
+16:36:22.794  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:36:24.819  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:36:44.824  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:36:46.863  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:37:06.868  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:38:57.698  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:38:58.459  LE-CONNECT handle=65 peer=EA:61:05:04:53:7A
+16:38:59.299 >> conn=65 WriteReq handle=0x000e  01 00
+16:38:59.334 << conn=65 WriteRsp
+16:38:59.353 >> conn=65 WriteCmd handle=0x000d  FE 1B B1 00 AA
+16:38:59.436 << conn=65 Notify   handle=0x000d  FE 3B B1 04 60 47 F7 5E 00
+16:39:00.025 >> conn=65 WriteCmd handle=0x000d  FE 1B B2 04 5D 4A 06 ED 51
+16:39:00.044 >> conn=65 WriteCmd handle=0x000d  FE 2B C1 00 EA
+16:39:00.048 >> conn=65 WriteReq handle=0x000e  01 00
+16:39:00.084 << conn=65 WriteRsp
+16:39:00.096 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:39:00.103 >> conn=65 WriteCmd handle=0x000d  FE 1B B1 00 AA
+16:39:00.110 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:00.122 << conn=65 Notify   handle=0x000d  FE 3B B2 00 89 FE 3B C1 09 00 04 01 21 00 0F 8E 00 03 55
+16:39:00.141 << conn=65 Notify   handle=0x000d  FE 3B C0 0F 09 45 0A D6 73 32 00 10 00 08 72 00 00 00 00 4F
+16:39:00.178 << conn=65 Notify   handle=0x000d  FE 3B B1 04 60 47 F7 5E 00
+16:39:00.421 >> conn=65 WriteCmd handle=0x000d  FE 1B B2 04 5D 4A 06 ED 51
+16:39:00.431 >> conn=65 WriteCmd handle=0x000d  FE 2B C1 00 EA
+16:39:00.440 >> conn=65 WriteCmd handle=0x000d  FE 2B C0 00 EB
+16:39:00.448 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:00.497 << conn=65 Notify   handle=0x000d  FE 3B B2 00 89 FE 3B C1 09 00 04 01 21 00 0F 8E 00 03 55 FE
+16:39:00.516 << conn=65 Notify   handle=0x000d  3B C0 0F 09 45 0A D6 73 32 00 10 00 08 72 00 00 00 00 4F FE
+16:39:00.553 << conn=65 Notify   handle=0x000d  3B A1 01 80 1B
+16:39:01.123 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:01.361 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:02.124 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:02.204 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:03.483 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:03.593 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:04.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:04.547 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:05.480 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:05.579 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:06.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:06.836 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:07.472 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:07.680 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:08.483 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:08.560 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:09.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:09.554 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:10.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:10.547 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:11.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:11.541 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:12.484 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:12.554 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:13.480 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:13.548 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:14.480 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:14.579 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:15.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:15.592 << conn=65 Notify   handle=0x000d  FE 3B A1 01 80 1B
+16:39:15.926 >> conn=65 WriteCmd handle=0x000d  FE 1B A1 01 C0 7B
+16:39:16.061 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:16.472 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:16.567 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:17.475 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:17.694 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:18.469 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:18.535 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:19.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:19.548 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:20.486 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:20.560 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:21.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:21.555 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:22.473 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:22.548 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:23.475 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:23.599 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:24.476 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:24.554 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:25.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:26.469 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:26.480 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:26.561 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:27.476 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:27.620 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:28.480 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:28.548 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:29.481 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:29.560 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:30.476 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:30.555 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:31.471 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:31.548 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:32.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:32.617 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:33.475 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:33.668 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:34.472 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:34.586 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:35.475 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:35.655 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:36.483 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:36.554 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:37.485 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:37.567 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:38.475 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:38.752 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:39.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:39.555 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:40.474 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:40.549 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:41.479 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:41.561 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:42.470 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:42.535 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:43.154 >> conn=65 WriteCmd handle=0x000d  FE 1B A1 01 C0 7B
+16:39:43.229 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:43.471 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:43.548 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:44.475 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:44.542 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:45.472 >> conn=65 WriteCmd handle=0x000d  FE 1B A1 01 E0 5B
+16:39:45.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:45.556 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B FE 3B A1 01 C0 5B
+16:39:46.481 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:46.567 << conn=65 Notify   handle=0x000d  FE 3B A1 01 E0 7B
+16:39:47.471 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:47.579 << conn=65 Notify   handle=0x000d  FE 3B A1 01 E0 7B
+16:39:48.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:48.556 << conn=65 Notify   handle=0x000d  FE 3B A1 01 E0 7B
+16:39:49.479 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:49.548 << conn=65 Notify   handle=0x000d  FE 3B A1 01 E0 7B
+16:39:50.235 >> conn=65 WriteCmd handle=0x000d  FE 1B A1 01 E0 5B
+16:39:50.298 << conn=65 Notify   handle=0x000d  FE 3B A1 01 E0 7B
+16:39:50.471 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:50.542 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:51.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:51.554 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:52.471 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:52.548 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:53.473 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:53.542 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:54.196 >> conn=65 WriteCmd handle=0x000d  FE 1B A1 01 E0 5B
+16:39:54.273 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:54.471 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:54.536 << conn=65 Notify   handle=0x000d  FE 3B A1 01 E0 7B
+16:39:55.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:55.549 << conn=65 Notify   handle=0x000d  FE 3B A1 01 E0 7B
+16:39:56.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:56.542 << conn=65 Notify   handle=0x000d  FE 3B A1 01 E0 7B
+16:39:57.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:57.556 << conn=65 Notify   handle=0x000d  FE 3B A1 01 E0 7B
+16:39:57.666 >> conn=65 WriteCmd handle=0x000d  FE 1B A1 01 E0 5B
+16:39:57.742 << conn=65 Notify   handle=0x000d  FE 3B A1 01 E0 7B
+16:39:58.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:58.548 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:39:59.479 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:39:59.543 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:00.481 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:00.555 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:01.479 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:01.549 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:02.468 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:02.562 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:03.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:03.576 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:04.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:04.548 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:05.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:05.544 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:06.479 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:06.555 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:07.474 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:07.548 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:08.474 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:08.580 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:09.476 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:09.555 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:10.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:10.549 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:11.481 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:11.562 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:11.669 >> conn=65 WriteCmd handle=0x000d  FE 10 A0 02 08 00 BA
+16:40:12.480 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:12.576 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:12.664 >> conn=65 WriteCmd handle=0x000d  FE 10 A0 02 04 00 B6
+16:40:13.481 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:13.549 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:13.617 >> conn=65 WriteCmd handle=0x000d  FE 10 A0 02 20 00 92
+16:40:14.518 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:14.579 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:15.474 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:15.537 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:16.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:16.551 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:17.472 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:17.542 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:18.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:18.556 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:19.479 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:19.568 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:20.483 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:20.562 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:21.475 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:21.556 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:22.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:22.550 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:23.479 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:23.542 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:24.474 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:24.555 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:24.741 >> conn=65 WriteCmd handle=0x000d  FE 1B A1 01 C0 7B
+16:40:24.817 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:25.474 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:25.550 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:26.257 >> conn=65 WriteCmd handle=0x000d  FE 1B A1 01 E0 5B
+16:40:26.412 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:26.471 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:26.581 << conn=65 Notify   handle=0x000d  FE 3B A1 01 E0 7B
+16:40:26.866 >> conn=65 WriteCmd handle=0x000d  FE 1B A1 01 E0 5B
+16:40:26.993 << conn=65 Notify   handle=0x000d  FE 3B A1 01 E0 7B
+16:40:27.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:27.573 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:28.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:28.549 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:29.476 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:29.543 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:30.475 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:30.574 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:31.484 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:31.568 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:32.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:32.542 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:33.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:33.557 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:34.483 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:34.549 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:35.472 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:35.544 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:36.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:36.555 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:37.481 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:37.550 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:38.483 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:38.562 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:39.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:39.555 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:40.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:40.549 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:41.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:41.544 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:42.480 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:42.557 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:43.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:43.549 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:44.484 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:44.581 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:45.479 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:45.574 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:46.483 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:46.549 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:47.483 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:47.563 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:48.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:48.557 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:49.479 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:49.549 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:50.479 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:50.600 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:51.485 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:51.555 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:52.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:52.550 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:53.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:53.543 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:54.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:54.574 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:55.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:55.569 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:56.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:56.543 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:57.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:57.575 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:58.476 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:58.549 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:40:59.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:40:59.543 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:00.481 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:00.556 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:01.479 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:01.568 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:02.483 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:02.562 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:03.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:03.556 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:04.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:04.626 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:05.476 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:05.581 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:06.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:06.651 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:07.483 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:07.625 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:08.476 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:08.637 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:09.480 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:09.556 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:10.472 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:10.574 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:11.472 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:11.599 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:12.474 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:12.575 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:13.480 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:13.606 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:14.474 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:14.562 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:15.475 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:15.594 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:16.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:16.569 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:17.481 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:17.639 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:18.481 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:18.555 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:19.482 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:19.549 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:20.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:20.619 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:21.477 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:21.575 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:22.478 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:22.550 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:41:23.476 >> conn=65 WriteCmd handle=0x000d  FE 2B A1 00 8A
+16:41:23.543 << conn=65 Notify   handle=0x000d  FE 3B A1 01 C0 5B
+16:47:04.794  LE-CONNECT handle=66 peer=00:00:00:00:00:00
+16:47:19.205  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:47:34.796  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:48:04.889  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:48:34.893  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:48:37.953  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:49:07.958  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+16:49:22.206  LE-CONNECT handle=65 peer=00:00:00:00:00:00
+# 4469 records
