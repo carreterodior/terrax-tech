@@ -144,6 +144,12 @@ Policy decisions already made, do not undo without asking:
   `codemagic.yaml` builds/signs/uploads to TestFlight, `ITSAppUsesNonExemptEncryption`
   declared. Remaining steps are the user's (Apple Developer enrollment, GitHub push,
   API key, Codemagic hookup) — **follow `IOS-RELEASE.md`**.
+- **Web version is live at <https://terrax-tech.vercel.app>** (Vercel project
+  `terrax/terrax-tech`, same team as TOS; redeploy with `tool\deploy_web.ps1`). It is the
+  "add to home screen" preview, like TOS. Reality check per platform: iPhone home-screen
+  web apps have **no Bluetooth at all** (UI preview only — TestFlight is the real path);
+  Android Chrome has Web Bluetooth and can genuinely drive the light families; the
+  running board refuses GATT without bonding on desktop Chrome (§ above).
 - **Windows/Chrome Web Bluetooth cannot drive the running board** — it connects but the OS
   will not expose GATT services for a device that refuses bonding. Documented in
   `docs/intelligo_findings.md`; do not retry.
