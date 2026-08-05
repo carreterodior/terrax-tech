@@ -140,8 +140,10 @@ Policy decisions already made, do not undo without asking:
   them from the vehicle over CAN; the app only configures what each event looks like.
   TERRAX's board reports fault `0x32` = left Hall + right Hall + **CAN bus data error**, so
   those events never arrive. That is wiring or vehicle profile, not software.
-- **iOS builds need a Mac.** For the user's iPhone the path is an Apple Developer account
-  ($99/yr) + cloud-Mac CI + TestFlight.
+- **iOS builds need a Mac.** The pipeline is set up (2026-08-05): git repo initialized,
+  `codemagic.yaml` builds/signs/uploads to TestFlight, `ITSAppUsesNonExemptEncryption`
+  declared. Remaining steps are the user's (Apple Developer enrollment, GitHub push,
+  API key, Codemagic hookup) — **follow `IOS-RELEASE.md`**.
 - **Windows/Chrome Web Bluetooth cannot drive the running board** — it connects but the OS
   will not expose GATT services for a device that refuses bonding. Documented in
   `docs/intelligo_findings.md`; do not retry.
