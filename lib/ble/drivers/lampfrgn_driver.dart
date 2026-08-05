@@ -358,6 +358,11 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   /// the real unit's table can be read off the screen.
   List<int>? _subModesRaw;
 
+  /// Raw 0x02 (colour mode) reply. This is the ground truth for the scene
+  /// encoding: set a scene in the vendor app, reconnect ours, and this shows
+  /// the exact mode1/mode2/param bytes the vendor app programmed.
+  List<int>? _colorModeRaw;
+
   LampFrgnDriver(this._ble, this._device, this._prefs);
 
   @override
@@ -464,6 +469,7 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
         if (d[2] > 0) _lastBrightness = d[2];
         updateState((s) => s.copyWith(brightness: d[2]));
       case LampFrgnCommands.subColorMode when d.length >= 5:
+        _colorModeRaw = List.of(d);
         updateState((s) => s.copyWith(
               effectId: d[2],
               effectSpeed: d[4],
@@ -752,6 +758,25 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
           ),
         ], icon: DriverSectionIcon.functions),
         DriverSection('Calibration', [
+          DriverInfoSetting(
+            'Current mode (raw)',
+            value: _colorModeRaw == null
+                ? 'no reply yet'
+                : _colorModeRaw!
+                    .map((b) => b.toRadixString(16).padLeft(2, '0'))
+                    .join(' '),
+            description: 'What the device says it is playing right now. Set a '
+                'scene in the vendor app, close that app, reconnect here, and '
+                'this line reveals the scene\'s real bytes.',
+          ),
+          DriverButtonSetting(
+            'Refresh from device',
+            description: 'Re-reads the current mode and parameter table.',
+            run: () async {
+              await _send(LampFrgnCommands.queryColorMode());
+              await _send(LampFrgnCommands.querySubModes());
+            },
+          ),
           DriverInfoSetting(
             'Sub-mode ranges',
             value: _subModesRaw == null
