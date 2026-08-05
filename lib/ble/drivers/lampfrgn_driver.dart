@@ -370,32 +370,32 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   /// previous/next one on hardware, the base is off by one — flip it here.
   @override
   List<EffectPreset> get effects => const [
-        EffectPreset(1, 'Single color (static)'),
-        EffectPreset(2, 'Auto'),
-        EffectPreset(3, 'Breathing'),
-        EffectPreset(4, 'Burst flash'),
-        EffectPreset(5, 'Cheerful Groove'),
-        EffectPreset(6, 'Smooth Groove'),
-        EffectPreset(7, 'Sports'),
-        EffectPreset(8, 'Magic dazzle'),
-        EffectPreset(9, 'Illusive Color'),
-        EffectPreset(10, 'Magic color'),
-        EffectPreset(11, 'Full-color wave'),
-        EffectPreset(12, 'Opening Scroll'),
-        EffectPreset(13, 'Full color scroll'),
-        EffectPreset(14, 'Comet Tail'),
-        EffectPreset(15, 'Neon Lights'),
-        EffectPreset(16, 'Spring flowers'),
-        EffectPreset(17, 'Summer ocean'),
-        EffectPreset(18, 'Autumn fairy tale'),
-        EffectPreset(19, 'Winter sonata'),
-        EffectPreset(20, 'Bouncing Music'),
-        EffectPreset(21, 'Spectrum Groove'),
-        EffectPreset(22, 'Rainbow Groove'),
-        EffectPreset(23, 'Bouncing Disco'),
-        EffectPreset(24, 'Dynamic Light & Shadow'),
-        EffectPreset(25, 'Cloud Flow'),
-        EffectPreset(26, 'Classic Tetris'),
+        EffectPreset(0, 'Single color (static)'),
+        EffectPreset(1, 'Auto'),
+        EffectPreset(2, 'Breathing'),
+        EffectPreset(3, 'Burst flash'),
+        EffectPreset(4, 'Cheerful Groove'),
+        EffectPreset(5, 'Smooth Groove'),
+        EffectPreset(6, 'Sports'),
+        EffectPreset(7, 'Magic dazzle'),
+        EffectPreset(8, 'Illusive Color'),
+        EffectPreset(9, 'Magic color'),
+        EffectPreset(10, 'Full-color wave'),
+        EffectPreset(11, 'Opening Scroll'),
+        EffectPreset(12, 'Full color scroll'),
+        EffectPreset(13, 'Comet Tail'),
+        EffectPreset(14, 'Neon Lights'),
+        EffectPreset(15, 'Spring flowers'),
+        EffectPreset(16, 'Summer ocean'),
+        EffectPreset(17, 'Autumn fairy tale'),
+        EffectPreset(18, 'Winter sonata'),
+        EffectPreset(19, 'Bouncing Music'),
+        EffectPreset(20, 'Spectrum Groove'),
+        EffectPreset(21, 'Rainbow Groove'),
+        EffectPreset(22, 'Bouncing Disco'),
+        EffectPreset(23, 'Dynamic Light & Shadow'),
+        EffectPreset(24, 'Cloud Flow'),
+        EffectPreset(25, 'Classic Tetris'),
       ];
 
   @override
@@ -520,8 +520,11 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
       updateState((s) => s.copyWith(brightness: 0, power: false));
       return;
     }
-    await _send(LampFrgnCommands.brightness(_lastBrightness, _lastBrightness));
+    // Colour first, then brightness: on hardware the relight after
+    // brightness-first took ~20 s, suggesting the unit wants a visible
+    // frame before (or regardless of) the brightness restore.
     await _send(LampFrgnCommands.color(_lastColor, _lastColor));
+    await _send(LampFrgnCommands.brightness(_lastBrightness, _lastBrightness));
     updateState((s) =>
         s.copyWith(brightness: _lastBrightness, color: _lastColor, power: true));
   }
