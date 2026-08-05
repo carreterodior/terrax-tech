@@ -13,12 +13,20 @@ class LightControls extends StatefulWidget {
   final DeviceCapabilities caps;
   final List<EffectPreset> effects;
 
+  /// Effects are a Pro feature; when false the picker is replaced by an
+  /// upgrade prompt. Power, colour and brightness are never gated: they are
+  /// the basic control of hardware the customer already bought.
+  final bool isPro;
+  final VoidCallback onUpgrade;
+
   const LightControls({
     super.key,
     required this.controller,
     required this.controllerState,
     required this.caps,
     required this.effects,
+    required this.isPro,
+    required this.onUpgrade,
   });
 
   @override
@@ -172,7 +180,24 @@ class _LightControlsState extends State<LightControls> {
             },
           ),
         ],
-        if (caps.hasEffects && widget.effects.isNotEmpty) ...[
+        if (caps.hasEffects && widget.effects.isNotEmpty && !widget.isPro) ...[
+          const SizedBox(height: 16),
+          Text('Effects', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.auto_awesome),
+              title: const Text('Animations are a Pro feature'),
+              subtitle: Text('${widget.effects.length} effects and scenes, '
+                  'with speed control.'),
+              trailing: FilledButton(
+                onPressed: widget.onUpgrade,
+                child: const Text('Unlock'),
+              ),
+            ),
+          ),
+        ],
+        if (caps.hasEffects && widget.effects.isNotEmpty && widget.isPro) ...[
           const SizedBox(height: 16),
           Text('Effects', style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),

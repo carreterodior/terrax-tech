@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../ble/device_driver.dart';
 import '../../state/device_controller.dart';
+import '../../state/pro_providers.dart';
+import '../paywall.dart';
 import 'color_wheel.dart';
 import 'driver_sections_view.dart';
 import '../../state/saved_devices.dart';
@@ -25,6 +27,7 @@ class DeviceControlScreen extends ConsumerWidget {
         .firstOrNull;
     final controllerState = ref.watch(deviceControllerProvider(deviceId));
     final controller = ref.read(deviceControllerProvider(deviceId).notifier);
+    final isPro = ref.watch(isProProvider).value ?? false;
 
     // Surface command failures without tearing the screen down.
     ref.listen(deviceControllerProvider(deviceId), (previous, next) {
@@ -128,10 +131,27 @@ class DeviceControlScreen extends ConsumerWidget {
                       controllerState: controllerState,
                       caps: driver.caps,
                       effects: driver.effects,
+                      isPro: isPro,
+                      onUpgrade: () => _openPaywall(context),
                     ),
                   // Rich devices (e.g. running boards) group their controls
                   // into tabs; simpler ones fall back to a single card.
-                  if (driver.sections.isNotEmpty)
+                  if (driver.sections.isNotEmpty && !isPro)
+                    Card(
+                      margin: const EdgeInsets.only(top: 16),
+                      child: ListTile(
+                        leading: const Icon(Icons.tune),
+                        title: const Text('Advanced setup is a Pro feature'),
+                        subtitle: Text(driver.sections
+                            .map((s) => s.title)
+                            .join(', ')),
+                        trailing: FilledButton(
+                          onPressed: () => _openPaywall(context),
+                          child: const Text('Unlock'),
+                        ),
+                      ),
+                    )
+                  else if (driver.sections.isNotEmpty)
                     Card(
                       margin: const EdgeInsets.only(top: 16),
                       child: Padding(
@@ -159,6 +179,9 @@ class DeviceControlScreen extends ConsumerWidget {
       },
     );
   }
+
+  void _openPaywall(BuildContext context) => Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const PaywallScreen()));
 }
 
 /// Renders a driver's built-in light controls from generic descriptors — the

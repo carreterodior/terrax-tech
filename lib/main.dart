@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'state/core_providers.dart';
+import 'state/pro_providers.dart';
 import 'ui/home_screen.dart';
 import 'ui/splash.dart';
 import 'ui/theme.dart';
@@ -16,8 +18,14 @@ Future<void> main() async {
     await FlutterBluePlus.setLogLevel(LogLevel.verbose);
   }
   final prefs = await SharedPreferences.getInstance();
-  runApp(ProviderScope(
+  final container = ProviderContainer(
     overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+  );
+  // Ask StoreKit for products and any existing entitlement before first paint;
+  // failures here must never block the app, which works offline by design.
+  unawaited(container.read(proServiceProvider).init().catchError((_) {}));
+  runApp(UncontrolledProviderScope(
+    container: container,
     child: const TerraxApp(),
   ));
 }

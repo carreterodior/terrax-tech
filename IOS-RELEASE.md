@@ -6,7 +6,7 @@ pipeline is: this repo → GitHub → **Codemagic** (cloud Mac, free tier is ple
 
 Everything in the repo is already prepared:
 
-- Bundle ID `com.terrax.terrax`, display name **TERRAX TECH**, deployment target iOS 13
+- Bundle ID `com.terraxtech.app`, display name **TERRAX TECH**, deployment target iOS 13
 - Both Bluetooth usage descriptions (App Review rejects without them)
 - App icons with alpha removed (App Store requirement)
 - `ITSAppUsesNonExemptEncryption = false` (skips the export-compliance question per build)
@@ -53,7 +53,7 @@ git push -u origin master
 ## Step 5 — Create the app record (you, ~5 min)
 
 1. <https://developer.apple.com/account> → **Identifiers** → **+** → App ID →
-   Bundle ID **explicit**: `com.terrax.terrax`. (Codemagic can also auto-create this
+   Bundle ID **explicit**: `com.terraxtech.app`. (Codemagic can also auto-create this
    on the first build; doing it manually avoids surprises.)
 2. App Store Connect → **My Apps** → **+** → New App: platform iOS, name
    **TERRAX TECH** (if taken, e.g. "TERRAX TECH BLE"), language, bundle ID from

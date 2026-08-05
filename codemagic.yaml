@@ -13,7 +13,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.terrax.terrax
+        bundle_identifier: com.terraxtech.app
       flutter: stable
       xcode: latest
       cocoapods: default

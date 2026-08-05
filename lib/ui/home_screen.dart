@@ -8,6 +8,8 @@ import '../state/saved_devices.dart';
 import 'category_icons.dart';
 import 'control/device_control_screen.dart';
 import 'scan_screen.dart';
+import '../state/pro_providers.dart';
+import 'paywall.dart';
 import 'theme.dart';
 
 /// Home: saved devices grouped by category (rule 6).
@@ -23,6 +25,17 @@ class HomeScreen extends ConsumerWidget {
         // The wordmark is the brand; "TECH" sits beside it as the product
         // name. Shared with the splash, which lands on this exact layout.
         title: const TerraxAppTitle(),
+        actions: [
+          IconButton(
+            icon: Icon(ref.watch(isProProvider).value ?? false
+                ? Icons.workspace_premium
+                : Icons.workspace_premium_outlined),
+            tooltip: 'TERRAX Pro',
+            onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                    builder: (_) => const PaywallScreen())),
+          ),
+        ],
       ),
       body: TerraxWatermark(
         child: grouped.isEmpty
