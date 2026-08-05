@@ -393,7 +393,7 @@ class _UnsupportedTile extends StatelessWidget {
     final services = result.advertisementData.serviceUuids;
     return ListTile(
       leading: const CircleAvatar(child: Icon(Icons.bluetooth)),
-      title: Text(name),
+      title: Text(name.isEmpty ? 'Unnamed device' : name),
       subtitle: Text(
         '${result.rssi} dBm'
         '${services.isNotEmpty ? ' · svc ${services.map((s) => s.str).join(', ')}' : ''}',

@@ -40,15 +40,20 @@ final detectedDevicesProvider = Provider<List<DetectedDevice>>((ref) {
   return detected;
 });
 
-/// Named scan results with no matching driver — shown so the user can see
-/// what's actually broadcasting (and report names we should support).
+/// Scan results with no matching driver — shown so the user can see what's
+/// actually broadcasting (and report names we should support). Unnamed
+/// devices are included when they advertise a service UUID: accessories like
+/// the LAMP&FRGN ambient light often broadcast no name at all, and hiding
+/// them made such a device impossible to find or add. Nameless results with
+/// no services (phones, earbuds, beacons) stay hidden as noise.
 final unsupportedDevicesProvider = Provider<List<ScanResult>>((ref) {
   final results = ref.watch(scanResultsProvider).value ?? const [];
   return [
     for (final r in results)
       if (detect(r) == null &&
           (r.advertisementData.advName.isNotEmpty ||
-              r.device.platformName.isNotEmpty))
+              r.device.platformName.isNotEmpty ||
+              r.advertisementData.serviceUuids.isNotEmpty))
         r,
   ]..sort((a, b) => b.rssi.compareTo(a.rssi));
 });

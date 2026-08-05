@@ -31,8 +31,10 @@ class DetectionRule {
 
   final List<String> namePrefixes;
 
-  /// Advertised service UUID, when the family reliably advertises one.
-  final Guid? serviceUuid;
+  /// Advertised service UUIDs, when the family reliably advertises any.
+  /// Several families ship under more than one (e.g. Telink fallback), so a
+  /// match on any one of them claims the device.
+  final List<Guid> serviceUuids;
   final DriverFactory createDriver;
 
   const DetectionRule({
@@ -42,7 +44,7 @@ class DetectionRule {
     required this.createDriver,
     required this.defaultProductHint,
     this.productHints = const {},
-    this.serviceUuid,
+    this.serviceUuids = const [],
   });
 
   /// Best guess at what this advertised name is, for the scan list.
@@ -57,11 +59,11 @@ class DetectionRule {
   /// A suggested friendly name to prefill when the user adds the device.
   String suggestedName(String advName) => productHint(advName);
 
-  bool matches(String advName, List<Guid> serviceUuids) {
+  bool matches(String advName, List<Guid> advertisedServiceUuids) {
     final name = advName.toLowerCase();
     final nameMatch = namePrefixes.any((p) => name.startsWith(p.toLowerCase()));
     final serviceMatch =
-        serviceUuid != null && serviceUuids.contains(serviceUuid);
+        serviceUuids.any(advertisedServiceUuids.contains);
     return nameMatch || serviceMatch;
   }
 }
@@ -77,7 +79,7 @@ final List<Guid> driverServiceUuids = [
   Guid('ffe0'), // IntelliGo BLE-UART (not advertised as a primary service)
   Guid('af30'), // JieLi service the rock lights advertise
   LampFrgnUuids.service, // LAMP&FRGN ambient lighting (0xAE30)
-  Guid('00010203-0405-0607-0809-0A0B0C0D1910'), // its Telink fallback
+  LampFrgnUuids.telinkService, // its Telink fallback
 ];
 
 final List<DetectionRule> detectionRules = [
@@ -95,7 +97,7 @@ final List<DetectionRule> detectionRules = [
       // a completely different protocol (service 0xAE30, 0x2E-framed) and has
       // its own driver.
     ],
-    serviceUuid: Elk7eUuids.service,
+    serviceUuids: [Elk7eUuids.service],
     defaultProductHint: 'RGB light strip',
     createDriver: (ble, device, prefs) => Elk7eDriver(ble, device, prefs),
   ),
@@ -115,7 +117,11 @@ final List<DetectionRule> detectionRules = [
       // Triones driver drives them once connected (verified in the APK).
       'RZ-Slave',
     ],
-    serviceUuid: TrionesUuids.service,
+    // The JieLi service is what RZ-Slave rock lights actually advertise, so
+    // they are claimed even when iOS delivers the advertisement without a
+    // name (seen in the field 2026-08-05: a nameless RZ unit was offered as
+    // a generic strip instead of "Rock lights").
+    serviceUuids: [TrionesUuids.service, Guid('af30')],
     // `RZ-Slave-*` units are TERRAX's rock lights (verified on hardware); the
     // rest of the family is generic strip/bulb hardware.
     productHints: const {
@@ -129,7 +135,9 @@ final List<DetectionRule> detectionRules = [
     driverId: LampFrgnDriver.id,
     label: 'Car ambient lighting (LAMP&FRGN)',
     namePrefixes: const ['LAMP&FRGN', 'LAMP', 'FRGN', 'RAISE', 'CarLED'],
-    serviceUuid: LampFrgnUuids.service,
+    // Some units expose only the Telink fallback service in their
+    // advertisement (docs/lampfrgn_findings.md), and often no name at all.
+    serviceUuids: [LampFrgnUuids.service, LampFrgnUuids.telinkService],
     defaultProductHint: 'Car ambient lighting',
     createDriver: (ble, device, prefs) => LampFrgnDriver(ble, device, prefs),
   ),

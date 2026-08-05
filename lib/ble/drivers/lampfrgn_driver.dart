@@ -684,4 +684,7 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
 /// UUID constants exposed for detection rules.
 class LampFrgnUuids {
   static final service = Guid('ae30');
+
+  /// Telink fallback — some units advertise (and serve) only this.
+  static final telinkService = Guid('00010203-0405-0607-0809-0A0B0C0D1910');
 }
