@@ -8,6 +8,7 @@ import '../state/saved_devices.dart';
 import 'category_icons.dart';
 import 'control/device_control_screen.dart';
 import 'scan_screen.dart';
+import '../billing/billing_config.dart';
 import '../state/pro_providers.dart';
 import 'paywall.dart';
 import 'theme.dart';
@@ -26,15 +27,18 @@ class HomeScreen extends ConsumerWidget {
         // name. Shared with the splash, which lands on this exact layout.
         title: const TerraxAppTitle(),
         actions: [
-          IconButton(
-            icon: Icon(ref.watch(isProProvider).value ?? false
-                ? Icons.workspace_premium
-                : Icons.workspace_premium_outlined),
-            tooltip: 'TERRAX Pro',
-            onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                    builder: (_) => const PaywallScreen())),
-          ),
+          // Hidden while the app is free; the paywall has no product to sell
+          // and a dead Subscribe button is a review rejection.
+          if (kSubscriptionsEnabled)
+            IconButton(
+              icon: Icon(ref.watch(isProProvider).value ?? false
+                  ? Icons.workspace_premium
+                  : Icons.workspace_premium_outlined),
+              tooltip: 'TERRAX Pro',
+              onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                      builder: (_) => const PaywallScreen())),
+            ),
         ],
       ),
       body: TerraxWatermark(

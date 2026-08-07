@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:terrax/billing/billing_config.dart';
 import 'package:terrax/billing/pro_service.dart';
 
 void main() {
@@ -39,6 +40,14 @@ void main() {
     test('product id matches the App Store Connect subscription', () {
       // Changing this string silently breaks every existing subscriber.
       expect(ProService.yearlyProductId, 'com.terraxtech.app.pro.yearly');
+    });
+  });
+
+  group('billing flag', () {
+    test('1.0 ships free: every gate is open and no store call is made', () {
+      // If this ever fails unexpectedly, the app started selling something.
+      // Turning it on requires the Paid Apps agreement to be signed first.
+      expect(kSubscriptionsEnabled, isFalse);
     });
   });
 }

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'state/core_providers.dart';
+import 'billing/billing_config.dart';
 import 'state/pro_providers.dart';
 import 'ui/home_screen.dart';
 import 'ui/splash.dart';
@@ -23,7 +24,11 @@ Future<void> main() async {
   );
   // Ask StoreKit for products and any existing entitlement before first paint;
   // failures here must never block the app, which works offline by design.
-  unawaited(container.read(proServiceProvider).init().catchError((_) {}));
+  // Skipped entirely while the app is free, so no billing connection is ever
+  // opened and nothing is queried from the store.
+  if (kSubscriptionsEnabled) {
+    unawaited(container.read(proServiceProvider).init().catchError((_) {}));
+  }
   runApp(UncontrolledProviderScope(
     container: container,
     child: const TerraxApp(),

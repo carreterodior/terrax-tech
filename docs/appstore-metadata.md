@@ -59,7 +59,14 @@ https://terraxtech.com/privacy
 `com.terraxtech.app` (explicit App ID, registered 2026-08-06). The old
 `com.terrax.terrax` was Xcode-managed and App Store Connect refuses those.
 
-## Subscription (TERRAX Pro)
+## Subscription (TERRAX Pro) - DEFERRED, NOT IN 1.0
+
+**1.0 ships free.** `kSubscriptionsEnabled` in `lib/billing/billing_config.dart`
+is false, so every feature is unlocked, the paywall entry point is hidden and
+no StoreKit call is made. Set Pricing and Availability to **Free**.
+
+When the subscription is turned on later: sign the Paid Apps agreement, create
+the product below, flip the flag, and ship an update.
 
 Create in App Store Connect > Subscriptions, in a group named "TERRAX Pro":
 
