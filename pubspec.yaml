@@ -2,7 +2,7 @@ name: terrax
 description: "Terrax — one categorized app to scan, connect to, and control BLE accessories."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.12.2
