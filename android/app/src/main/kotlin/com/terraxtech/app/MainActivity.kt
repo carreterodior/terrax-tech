@@ -1,4 +1,4 @@
-package com.terrax.terrax
+package com.terraxtech.app
 
 import io.flutter.embedding.android.FlutterActivity
 

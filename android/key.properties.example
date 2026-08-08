@@ -1,0 +1,10 @@
+# Copy this file to android/key.properties (gitignored) and fill it in after
+# generating the upload keystore — the exact keytool command is in
+# HANDOVER-2026-08-08.md §3 / docs/play-store-metadata.md.
+#
+# storeFile is resolved relative to android/app/, so an absolute path is
+# simplest on Windows. Use forward slashes.
+storePassword=FILL_ME
+keyPassword=FILL_ME
+keyAlias=upload
+storeFile=C:/Users/ACER NITRO 5/terrax-upload-key.jks
