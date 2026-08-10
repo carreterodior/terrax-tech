@@ -20,12 +20,14 @@ Write-Host "This creates the Google Play upload key. The password you invent now
 Write-Host "must be BACKED UP - Google verifies every future app update with it." -ForegroundColor Cyan
 Write-Host ""
 
-$p1 = Read-Host -Prompt 'Invent your keystore password (typing is hidden)' -AsSecureString
-$p2 = Read-Host -Prompt 'Type it again' -AsSecureString
-$plain1 = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
-    [Runtime.InteropServices.Marshal]::SecureStringToBSTR($p1))
-$plain2 = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
-    [Runtime.InteropServices.Marshal]::SecureStringToBSTR($p2))
+# Password entry happens in Windows pop-up dialogs (the embedded terminal has
+# no keyboard input). The username field is ignored - only type the password.
+$c1 = Get-Credential -UserName 'upload' -Message 'INVENT your keystore password (ignore the username field)'
+if ($null -eq $c1) { Write-Host 'Cancelled.' -ForegroundColor Red; exit 1 }
+$c2 = Get-Credential -UserName 'upload' -Message 'Type the SAME password again to confirm'
+if ($null -eq $c2) { Write-Host 'Cancelled.' -ForegroundColor Red; exit 1 }
+$plain1 = $c1.GetNetworkCredential().Password
+$plain2 = $c2.GetNetworkCredential().Password
 if ($plain1 -ne $plain2) { Write-Host 'Passwords do not match - run this again.' -ForegroundColor Red; exit 1 }
 if ($plain1.Length -lt 6) { Write-Host 'Password must be at least 6 characters - run this again.' -ForegroundColor Red; exit 1 }
 
