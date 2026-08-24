@@ -104,6 +104,13 @@ class DeviceControlScreen extends ConsumerWidget {
             message: controllerState.error ?? 'Connection failed',
             buttonLabel: 'Retry',
             onPressed: controller.connect,
+            // "characteristic not found" means the device connected but is not
+            // the protocol family this entry was saved as. Retrying will never
+            // fix that; re-detecting will.
+            secondaryLabel: _looksLikeWrongDriver(controllerState.error)
+                ? 'Re-detect device'
+                : null,
+            onSecondary: controller.redetect,
           ),
         ConnectionStatus.connected => driver == null
             ? const Center(child: Text('Driver unavailable'))
@@ -382,17 +389,34 @@ class _DriverActionButton extends StatelessWidget {
   }
 }
 
+/// True when a connect/write failure reads like the saved entry is bound to
+/// the wrong protocol family, rather than the device being absent or busy.
+///
+/// The drivers all fail the same way in that case: they connect, discover
+/// services, and then cannot find the characteristic they write to.
+bool _looksLikeWrongDriver(String? error) {
+  if (error == null) return false;
+  final e = error.toLowerCase();
+  return e.contains('characteristic') && e.contains('not found');
+}
+
 class _CenteredAction extends StatelessWidget {
   final IconData icon;
   final String message;
   final String buttonLabel;
   final VoidCallback onPressed;
 
+  /// Optional second action, shown beneath the primary button.
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
+
   const _CenteredAction({
     required this.icon,
     required this.message,
     required this.buttonLabel,
     required this.onPressed,
+    this.secondaryLabel,
+    this.onSecondary,
   });
 
   @override
@@ -411,6 +435,20 @@ class _CenteredAction extends StatelessWidget {
                 style: theme.textTheme.bodyLarge),
             const SizedBox(height: 24),
             FilledButton(onPressed: onPressed, child: Text(buttonLabel)),
+            if (secondaryLabel != null) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: onSecondary,
+                child: Text(secondaryLabel!),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Re-detecting scans for this accessory and repoints it at the '
+                'right protocol, keeping its name.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
           ],
         ),
       ),

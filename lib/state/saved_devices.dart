@@ -58,6 +58,17 @@ class SavedDevicesNotifier extends Notifier<List<TerraxDevice>> {
     _persist();
   }
 
+  /// Repoints a saved device at a different protocol family, for when it was
+  /// first added under the wrong one (a scan that arrived without a name, or a
+  /// manual "Add as..." pick). Keeps the user's chosen name and category.
+  void setDriver(String id, String driverId) {
+    state = [
+      for (final d in state)
+        if (d.id == id) d.copyWith(driverId: driverId) else d,
+    ];
+    _persist();
+  }
+
   void recategorize(String id, DeviceCategory category) {
     state = [
       for (final d in state)

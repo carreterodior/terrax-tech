@@ -28,12 +28,16 @@ class TerraxDevice {
     required this.category,
   });
 
-  TerraxDevice copyWith({String? name, DeviceCategory? category}) =>
+  TerraxDevice copyWith({
+    String? name,
+    DeviceCategory? category,
+    String? driverId,
+  }) =>
       TerraxDevice(
         id: id,
         advertisedName: advertisedName,
         name: name ?? this.name,
-        driverId: driverId,
+        driverId: driverId ?? this.driverId,
         category: category ?? this.category,
       );
 

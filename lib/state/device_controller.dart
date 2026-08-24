@@ -192,6 +192,61 @@ class DeviceController extends FamilyNotifier<DeviceControllerState, String> {
     }
   }
 
+  /// Re-runs detection against a live advertisement and repoints the saved
+  /// device at whatever family it actually belongs to.
+  ///
+  /// A device added from a nameless advertisement, or picked by hand under
+  /// "Add as...", ends up bound to the wrong driver. It then connects fine and
+  /// fails on the first write, because the characteristic that driver expects
+  /// is not there. Re-detecting fixes the entry in place instead of making the
+  /// user work out that they have to delete and re-add it.
+  Future<void> redetect() async {
+    final saved = ref.read(savedDevicesProvider.notifier).byId(arg);
+    if (saved == null) return;
+
+    await disconnect();
+    state = state.copyWith(status: ConnectionStatus.connecting, error: null);
+
+    final ble = ref.read(bleServiceProvider);
+    DetectionRule? found;
+    StreamSubscription<List<ScanResult>>? sub;
+    try {
+      final done = Completer<void>();
+      sub = ble.scanResults.listen((results) {
+        for (final r in results) {
+          if (r.device.remoteId.str != arg) continue;
+          found = detect(r);
+          if (!done.isCompleted) done.complete();
+        }
+      });
+      await ble.startScan(timeout: const Duration(seconds: 8));
+      await done.future.timeout(const Duration(seconds: 9),
+          onTimeout: () => null);
+    } catch (_) {
+      // Fall through to the not-found message below.
+    } finally {
+      await sub?.cancel();
+      await ble.stopScan();
+    }
+
+    final rule = found;
+    if (rule == null) {
+      state = state.copyWith(
+        status: ConnectionStatus.error,
+        error: 'Could not find this device while scanning. Make sure it is '
+            'powered on, in range, and not connected to another app.',
+      );
+      return;
+    }
+    if (rule.driverId != saved.driverId) {
+      ref.read(savedDevicesProvider.notifier).setDriver(arg, rule.driverId);
+      // The old driver is bound to the previous protocol family.
+      _driver = null;
+      _rule = null;
+    }
+    await connect();
+  }
+
   void _onConnectionState(BluetoothConnectionState connectionState) {
     if (connectionState != BluetoothConnectionState.disconnected) return;
     if (!_wantConnected) return;
