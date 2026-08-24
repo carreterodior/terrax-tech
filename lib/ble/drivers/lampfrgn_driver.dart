@@ -460,6 +460,14 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   }
 
   void _handlePacket(LampFrgnPacket p) {
+    // A frame the unit rejects as busy is simply dropped by the protocol, so
+    // re-send it rather than leaving the user's command unapplied. Waking from
+    // brightness-zero is the case that needs this: the controller NACKs for a
+    // while after power returns, which is why a relight could take ~20 s.
+    if (p.type == LampFrgnCommands.nackBusy) {
+      _retryLastFrame();
+      return;
+    }
     final d = p.data;
     switch (p.sub) {
       case LampFrgnCommands.subColor when d.length >= 8:
@@ -503,13 +511,40 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
     _write = null;
   }
 
+  /// The frame most recently asked for, kept so a busy NACK can replay it.
+  Uint8List? _lastFrame;
+  int _busyRetries = 0;
+
   Future<void> _send(Uint8List bytes) {
+    // A fresh command supersedes whatever was being retried.
+    _lastFrame = bytes;
+    _busyRetries = 0;
+    return _writeFrame(bytes);
+  }
+
+  Future<void> _writeFrame(Uint8List bytes) {
     final write = _write;
     if (write == null) {
       throw StateError('lampfrgn: not connected');
     }
     return _ble.write(write, bytes,
         withoutResponse: write.properties.writeWithoutResponse);
+  }
+
+  /// Replays the last frame after a busy NACK, backing off a little further
+  /// each time. Retries go through [_writeFrame] rather than [_send] so the
+  /// attempt counter survives and this cannot loop forever.
+  void _retryLastFrame() {
+    final frame = _lastFrame;
+    if (frame == null || _busyRetries >= LampFrgnBusyRetry.maxAttempts) return;
+    _busyRetries++;
+    final delay = LampFrgnBusyRetry.delayFor(_busyRetries);
+    Future<void>.delayed(delay, () {
+      // The user may have disconnected, or moved on to another command, while
+      // the backoff was running.
+      if (_write == null || !identical(_lastFrame, frame)) return;
+      _writeFrame(frame).catchError((_) {});
+    });
   }
 
   /// Last user-chosen colour/brightness, so power-on can restore them (the
@@ -822,6 +857,28 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
       return;
     }
     await setEffect(id, currentState.effectSpeed ?? 16);
+  }
+}
+
+/// Backoff schedule for frames the unit rejects with `0xFC` (busy).
+///
+/// Kept separate from the driver so the policy is unit-testable without a
+/// Bluetooth stack. The first retry is quick because most busy replies clear
+/// almost immediately; later ones spread out so a controller that is genuinely
+/// still booting is not hammered.
+class LampFrgnBusyRetry {
+  LampFrgnBusyRetry._();
+
+  /// Beyond this the frame is abandoned rather than retried forever.
+  static const int maxAttempts = 6;
+
+  static const Duration _base = Duration(milliseconds: 150);
+
+  /// Delay before retry [attempt] (1-based). Grows linearly, so the six
+  /// attempts span roughly three seconds in total.
+  static Duration delayFor(int attempt) {
+    final n = attempt.clamp(1, maxAttempts);
+    return _base * n;
   }
 }
 

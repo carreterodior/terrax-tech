@@ -6,6 +6,7 @@ import 'package:terrax/models/rgb.dart';
 /// (`com.szraise.carled` 1.3.3). If one fails, the driver has drifted from the
 /// vendor protocol — fix the driver, not the test.
 void main() {
+  _busyRetryTests();
   /// Checksum the vendor way: sum of type+len+data, XOR 0xFF.
   int expectedChecksum(int type, List<int> data) {
     var sum = type + data.length;
@@ -226,6 +227,48 @@ void main() {
       expect(frames.length, 1);
       expect(LampFrgnCommands.parse(frames.single)!.type,
           LampFrgnCommands.typeStart);
+    });
+  });
+}
+
+void _busyRetryTests() {
+  group('busy NACK handling', () {
+    test('a 0xFC reply is parsed as a busy NACK, not as a setting', () {
+      // Real shape of a rejection: head, the NACK code as the type, then the
+      // sub-command it refused. Nothing else in the driver may claim it.
+      final frame = lampFrgnFrame(LampFrgnCommands.nackBusy,
+          const [LampFrgnCommands.subBrightness]);
+      final packet = LampFrgnCommands.parse(frame)!;
+      expect(packet.type, LampFrgnCommands.nackBusy);
+      expect(packet.type, isNot(LampFrgnCommands.ack));
+    });
+
+    test('an ACK is not mistaken for a busy NACK', () {
+      final frame = lampFrgnFrame(
+          LampFrgnCommands.ack, const [LampFrgnCommands.subBrightness]);
+      expect(LampFrgnCommands.parse(frame)!.type, LampFrgnCommands.ack);
+    });
+
+    test('backoff grows with each attempt and is bounded', () {
+      final delays = [
+        for (var i = 1; i <= LampFrgnBusyRetry.maxAttempts; i++)
+          LampFrgnBusyRetry.delayFor(i),
+      ];
+      // Strictly increasing, so a controller that is still booting gets more
+      // room each time instead of being hammered at a fixed rate.
+      for (var i = 1; i < delays.length; i++) {
+        expect(delays[i], greaterThan(delays[i - 1]));
+      }
+      // The whole sequence has to stay short enough to beat the ~20s relight
+      // it exists to fix.
+      final total = delays.fold(Duration.zero, (a, b) => a + b);
+      expect(total, lessThan(const Duration(seconds: 10)));
+    });
+
+    test('attempt numbers outside the schedule are clamped, never negative', () {
+      expect(LampFrgnBusyRetry.delayFor(0), LampFrgnBusyRetry.delayFor(1));
+      expect(LampFrgnBusyRetry.delayFor(99),
+          LampFrgnBusyRetry.delayFor(LampFrgnBusyRetry.maxAttempts));
     });
   });
 }
