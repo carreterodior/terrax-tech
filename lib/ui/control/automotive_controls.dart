@@ -59,14 +59,18 @@ class AutomotiveControls extends StatelessWidget {
                         onPressed: controller.extend,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _BigButton(
-                        icon: Icons.pause,
-                        label: 'Pause',
-                        onPressed: controller.stop,
+                    // Hidden where the firmware has no pause frame; a button
+                    // that silently does nothing reads as a broken app.
+                    if (caps.canPause) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _BigButton(
+                          icon: Icons.pause,
+                          label: 'Pause',
+                          onPressed: controller.stop,
+                        ),
                       ),
-                    ),
+                    ],
                     const SizedBox(width: 12),
                     Expanded(
                       child: _BigButton(
@@ -77,12 +81,14 @@ class AutomotiveControls extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.light_mode_outlined),
-                  label: const Text('Toggle light'),
-                  onPressed: () => controller.setDeviceLight(true),
-                ),
+                if (caps.hasDeviceLight) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.light_mode_outlined),
+                    label: const Text('Toggle light'),
+                    onPressed: () => controller.setDeviceLight(true),
+                  ),
+                ],
               ],
             ),
           ),

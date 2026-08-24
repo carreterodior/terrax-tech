@@ -975,8 +975,14 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
   DeviceCategory get defaultCategory => DeviceCategory.automotive;
 
   @override
-  DeviceCapabilities get caps => const DeviceCapabilities(
+  DeviceCapabilities get caps => DeviceCapabilities(
         isMotorized: true,
+        // Module B has no observed pause frame and no verified light frame, so
+        // stop()/setDeviceLight() are no-ops there. Declare that instead of
+        // rendering buttons that do nothing. Both are resolved after connect,
+        // when the module nibble is known.
+        canPause: !isModuleB,
+        hasDeviceLight: !isModuleB,
         // Module-B boards report real state; polling keeps it fresh.
         hasStateFeedback: true,
       );

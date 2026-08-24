@@ -17,6 +17,15 @@ class DeviceCapabilities {
   /// Motorized accessory (extend/retract/stop + device light).
   final bool isMotorized;
 
+  /// Whether [DeviceDriver.stop] actually halts the motor. Some firmware has
+  /// no pause frame at all, and showing a button that silently does nothing is
+  /// worse than not showing it. Only meaningful when [isMotorized].
+  final bool canPause;
+
+  /// Whether [DeviceDriver.setDeviceLight] drives a light on the accessory.
+  /// Only meaningful when [isMotorized].
+  final bool hasDeviceLight;
+
   /// True when the device reports real state over notify; false means the
   /// driver keeps optimistic state only.
   final bool hasStateFeedback;
@@ -28,6 +37,8 @@ class DeviceCapabilities {
     this.hasEffects = false,
     this.hasPower = false,
     this.isMotorized = false,
+    this.canPause = true,
+    this.hasDeviceLight = true,
     this.hasStateFeedback = false,
   });
 }
