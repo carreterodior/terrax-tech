@@ -338,3 +338,17 @@ class DeviceController extends FamilyNotifier<DeviceControllerState, String> {
 
 final deviceControllerProvider = NotifierProvider.family<DeviceController,
     DeviceControllerState, String>(DeviceController.new);
+
+/// Removes a saved device AND tears down its live controller.
+///
+/// Removing must release the BLE link: the controller otherwise keeps the
+/// accessory connected (auto-reconnecting after drops), and these devices
+/// stop advertising while connected - so a removed-but-still-connected
+/// device never shows up on the Add screen again and cannot be re-added
+/// until the app is killed. Always remove through here, never through
+/// [SavedDevicesNotifier.remove] directly.
+Future<void> removeSavedDevice(ProviderContainer container, String id) async {
+  await container.read(deviceControllerProvider(id).notifier).disconnect();
+  container.read(savedDevicesProvider.notifier).remove(id);
+  container.invalidate(deviceControllerProvider(id));
+}

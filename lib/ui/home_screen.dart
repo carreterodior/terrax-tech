@@ -205,7 +205,13 @@ class _DeviceTile extends ConsumerWidget {
               title: const Text('Remove device'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
-                ref.read(savedDevicesProvider.notifier).remove(device.id);
+                // Capture the container synchronously: the removal unmounts
+                // this tile, after which its ref/context must not be used.
+                final container = ProviderScope.containerOf(context);
+                // Disconnects before forgetting (see removeSavedDevice) -
+                // otherwise the accessory stays connected to the phone, stops
+                // advertising, and can never be re-added from the scan screen.
+                removeSavedDevice(container, device.id);
               },
             ),
           ],

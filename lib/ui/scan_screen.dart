@@ -7,6 +7,7 @@ import '../ble/detection.dart';
 import '../models/terrax_device.dart';
 import '../state/core_providers.dart';
 import '../state/saved_devices.dart';
+import '../state/device_controller.dart';
 import '../state/scan_state.dart';
 import 'category_icons.dart';
 import 'theme.dart';
@@ -363,7 +364,7 @@ class _DetectedTile extends ConsumerWidget {
       ),
       isThreeLine: true,
       trailing: alreadySaved
-          ? const Chip(label: Text('Added'))
+          ? _AddedChip(deviceId: detected.id)
           : FilledButton(onPressed: onAdd, child: const Text('Add')),
     );
   }
@@ -408,7 +409,7 @@ class _UnsupportedTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       trailing: alreadySaved
-          ? const Chip(label: Text('Added'))
+          ? _AddedChip(deviceId: result.device.remoteId.str)
           : OutlinedButton(
               onPressed: () => _pickDriver(context),
               child: const Text('Add as…'),
@@ -441,5 +442,53 @@ class _UnsupportedTile extends StatelessWidget {
       ),
     );
     if (rule != null) onAdd(rule);
+  }
+}
+
+/// "Added" indicator that is not a dead end.
+///
+/// A saved entry can go stale - the accessory's BLE address rotated, or the
+/// entry lingers after a botched remove - and then the scan screen would show
+/// "Added" forever while the device is unreachable, with no way out short of
+/// reinstalling. Tapping the chip offers to remove the stale entry so the
+/// device can be added afresh.
+class _AddedChip extends ConsumerWidget {
+  final String deviceId;
+  const _AddedChip({required this.deviceId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ActionChip(
+      label: const Text('Added'),
+      onPressed: () async {
+        final saved = ref.read(savedDevicesProvider.notifier).byId(deviceId);
+        final container = ProviderScope.containerOf(context);
+        final remove = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Already added'),
+            content: Text(
+              'This accessory is already saved'
+              '${saved != null ? ' as "${saved.name}"' : ''}. '
+              'If it is missing from the home screen or will not connect, '
+              'remove it here and then add it again.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Keep'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Remove'),
+              ),
+            ],
+          ),
+        );
+        if (remove == true) {
+          await removeSavedDevice(container, deviceId);
+        }
+      },
+    );
   }
 }
