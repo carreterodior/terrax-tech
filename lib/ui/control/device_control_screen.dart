@@ -15,12 +15,57 @@ import 'pin_setup_dialog.dart';
 
 /// Renders controls purely from the driver's [DeviceCapabilities] — no
 /// protocol knowledge lives here (rules 1 & 2).
-class DeviceControlScreen extends ConsumerWidget {
+class DeviceControlScreen extends ConsumerStatefulWidget {
   final String deviceId;
   const DeviceControlScreen({super.key, required this.deviceId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DeviceControlScreen> createState() =>
+      _DeviceControlScreenState();
+}
+
+class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
+    with WidgetsBindingObserver {
+  String get deviceId => widget.deviceId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Opening this screen IS the intent to use the device - connect without
+    // making the user hunt for a button first.
+    Future.microtask(() {
+      if (!mounted) return;
+      final status = ref.read(deviceControllerProvider(deviceId)).status;
+      if (status == ConnectionStatus.disconnected ||
+          status == ConnectionStatus.error) {
+        ref.read(deviceControllerProvider(deviceId).notifier).connect();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// iOS tears BLE links down while the app is backgrounded long enough; the
+  /// controller's short reconnect window has usually expired by the time the
+  /// user returns. Re-open the link on resume so the screen just works
+  /// instead of sitting on a "Connection lost" error. A manual disconnect
+  /// (status: disconnected) is respected.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !mounted) return;
+    if (ref.read(deviceControllerProvider(deviceId)).status ==
+        ConnectionStatus.error) {
+      ref.read(deviceControllerProvider(deviceId).notifier).connect();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final device = ref
         .watch(savedDevicesProvider)
         .where((d) => d.id == deviceId)

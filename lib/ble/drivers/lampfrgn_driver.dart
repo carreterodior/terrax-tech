@@ -472,12 +472,19 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
     switch (p.sub) {
       case LampFrgnCommands.subColor when d.length >= 8:
         _lastColor = Rgb(d[2], d[3], d[4]);
+        _zone1Color = _lastColor;
+        _zone2Color = Rgb(d[5], d[6], d[7]);
         updateState((s) => s.copyWith(color: _lastColor));
       case LampFrgnCommands.subBrightness when d.length >= 4:
         if (d[2] > 0) _lastBrightness = d[2];
+        _zone1Brightness = d[2].clamp(0, 100);
+        _zone2Brightness = d[3].clamp(0, 100);
         updateState((s) => s.copyWith(brightness: d[2]));
       case LampFrgnCommands.subColorMode when d.length >= 5:
         _colorModeRaw = List.of(d);
+        _zone1Mode = d[1] & 0x0F;
+        _zone2Mode = d[2];
+        _modeSpeed = d[4];
         updateState((s) => s.copyWith(
               effectId: d[2],
               effectSpeed: d[4],
@@ -552,9 +559,34 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   Rgb _lastColor = const Rgb(255, 255, 255);
   int _lastBrightness = 100;
 
+  // ---- Per-zone state ----
+  // The colour frame always carries both zones' RGB and the brightness frame
+  // both levels; the zone byte picks uniform (0x08) or split (0x00) delivery.
+  // Zone numbering is the controller's own (on the reporting user's install,
+  // zone 1 = door/dash strips, zone 2 = underdash/underseat glow).
+  Rgb _zone1Color = const Rgb(255, 255, 255);
+  Rgb _zone2Color = const Rgb(255, 255, 255);
+  int _zone1Brightness = 100;
+  int _zone2Brightness = 100;
+
+  /// Per-zone colour modes, tracked from the 0x02 reply. Leading hypothesis
+  /// (matches the vendor UI, which shows a Static/Automatic/Burst-flash radio
+  /// per zone, and the frame layout, where mode1 is a nibble and mode2 a full
+  /// byte): mode1 = zone 1's mode, mode2 = zone 2's mode. To confirm from the
+  /// car: set different zone modes in the vendor app, reconnect ours, and
+  /// read Calibration > "Current mode (raw)".
+  int _zone1Mode = 0;
+  int _zone2Mode = 0;
+
+  /// Last mode speed seen (reply or setEffect), reused when a zone mode is
+  /// changed so speed does not jump.
+  int _modeSpeed = 5;
+
   @override
   Future<void> setColor(Rgb color) async {
     _lastColor = color;
+    _zone1Color = color;
+    _zone2Color = color;
     await _send(LampFrgnCommands.color(color, color));
     updateState((s) => s.copyWith(color: color, power: true));
   }
@@ -563,6 +595,8 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   Future<void> setBrightness(int percent) async {
     final v = percent.clamp(0, 100);
     if (v > 0) _lastBrightness = v;
+    _zone1Brightness = v;
+    _zone2Brightness = v;
     await _send(LampFrgnCommands.brightness(v, v));
     updateState((s) => s.copyWith(brightness: v));
   }
@@ -597,6 +631,8 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
       modeParam: _calibParam,
       modeSpeed: speed,
     ));
+    _zone2Mode = id;
+    _modeSpeed = speed;
     updateState((s) => s.copyWith(effectId: id, effectSpeed: speed));
   }
 
@@ -617,6 +653,59 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
     _climateDirections2 = d2;
     updateState((s) => s);
   }
+
+  // ---- Per-zone controls (vendor app parity: Uniform / Zone 1 / Zone 2) ----
+
+  Future<void> _setZoneColor({required bool zone1, required Rgb color}) async {
+    if (zone1) {
+      _zone1Color = color;
+    } else {
+      _zone2Color = color;
+    }
+    await _send(LampFrgnCommands.color(_zone1Color, _zone2Color,
+        zone: LampFrgnCommands.zoneSplit));
+    updateState((s) => s.copyWith(power: true));
+  }
+
+  Future<void> _setZoneBrightness(
+      {required bool zone1, required int percent}) async {
+    final v = percent.clamp(0, 100);
+    if (zone1) {
+      _zone1Brightness = v;
+    } else {
+      _zone2Brightness = v;
+    }
+    await _send(LampFrgnCommands.brightness(
+        _zone1Brightness, _zone2Brightness,
+        flags: LampFrgnCommands.zoneSplit));
+    updateState((s) => s);
+  }
+
+  /// Sets one zone's colour mode, re-sending the other zone's current mode so
+  /// it stays put. See the field comment on [_zone1Mode] for the encoding
+  /// hypothesis this rides on.
+  Future<void> _setZoneMode({required bool zone1, required int mode}) async {
+    if (zone1) {
+      _zone1Mode = mode & 0x0F;
+    } else {
+      _zone2Mode = mode;
+    }
+    await _send(LampFrgnCommands.colorMode(
+      mode1: _zone1Mode,
+      mode2: _zone2Mode,
+      modeParam: _calibParam,
+      modeSpeed: _modeSpeed,
+    ));
+    updateState((s) => s);
+  }
+
+  /// The three per-zone modes the vendor app offers, using the mode-grid ids
+  /// (0 = Single colour, 1 = Auto, 3 = Burst flash).
+  static const List<({int value, String label})> _zoneModeOptions = [
+    (value: 0, label: 'Static'),
+    (value: 1, label: 'Automatic'),
+    (value: 3, label: 'Burst flash'),
+  ];
 
   Future<void> _setWelcome({int? positiveIndex, int? reverseIndex}) async {
     // Belt and braces: never index the palette with an out-of-range value.
@@ -662,6 +751,54 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
 
   @override
   List<DriverSection> get sections => [
+        DriverSection('Zones', [
+          DriverInfoSetting(
+            'Two output groups',
+            value: 'The main colour wheel drives both zones together. Here '
+                'each zone (e.g. door/dash strips vs footwell glow) gets its '
+                'own colour, brightness and mode.',
+          ),
+          DriverColorSetting(
+            'Zone 1 colour',
+            value: _zone1Color,
+            onChanged: (c) => _setZoneColor(zone1: true, color: c),
+          ),
+          DriverSliderSetting(
+            'Zone 1 brightness',
+            value: _zone1Brightness,
+            min: 0,
+            max: 100,
+            onChanged: (v) => _setZoneBrightness(zone1: true, percent: v),
+          ),
+          DriverOptionSetting<int>(
+            'Zone 1 mode',
+            value: _zoneModeOptions.any((o) => o.value == _zone1Mode)
+                ? _zone1Mode
+                : null,
+            options: _zoneModeOptions,
+            onChanged: (m) => _setZoneMode(zone1: true, mode: m),
+          ),
+          DriverColorSetting(
+            'Zone 2 colour',
+            value: _zone2Color,
+            onChanged: (c) => _setZoneColor(zone1: false, color: c),
+          ),
+          DriverSliderSetting(
+            'Zone 2 brightness',
+            value: _zone2Brightness,
+            min: 0,
+            max: 100,
+            onChanged: (v) => _setZoneBrightness(zone1: false, percent: v),
+          ),
+          DriverOptionSetting<int>(
+            'Zone 2 mode',
+            value: _zoneModeOptions.any((o) => o.value == _zone2Mode)
+                ? _zone2Mode
+                : null,
+            options: _zoneModeOptions,
+            onChanged: (m) => _setZoneMode(zone1: false, mode: m),
+          ),
+        ], icon: DriverSectionIcon.lights),
         DriverSection('Welcome', [
           DriverOptionSetting<int>(
             'Forward colour',

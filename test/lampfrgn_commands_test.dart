@@ -61,6 +61,22 @@ void main() {
       expect(LampFrgnCommands.zoneUniform, 0x08);
     });
 
+    test('split-zone colour keeps both triples and flips the zone byte', () {
+      // The vendor app's per-zone page (Uniform / Zone 1 / Zone 2): split
+      // delivery is zone byte 0x00 with zone 1's RGB first, zone 2's second.
+      final f = LampFrgnCommands.color(
+          const Rgb(0xFF, 0x00, 0x00), const Rgb(0x00, 0x00, 0xFF),
+          zone: LampFrgnCommands.zoneSplit);
+      expect(f.sublist(3, 11),
+          [0x01, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0xFF]);
+    });
+
+    test('split-zone brightness carries independent levels', () {
+      final f = LampFrgnCommands.brightness(100, 25,
+          flags: LampFrgnCommands.zoneSplit);
+      expect(f.sublist(1, 7), [0x8D, 0x04, 0x00, 0x00, 100, 25]);
+    });
+
     test('brightness is 8D 00 <flags> B1 B2 (BrightnessCmd)', () {
       final f = LampFrgnCommands.brightness(80, 60);
       expect(f.sublist(1, 7), [0x8D, 0x04, 0x00, 0x08, 80, 60]);
