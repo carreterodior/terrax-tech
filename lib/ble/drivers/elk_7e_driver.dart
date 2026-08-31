@@ -96,14 +96,53 @@ class Elk7eCommands {
   static Uint8List dim(int level) =>
       _frame([0x05, 0x05, 0x01, level, 0xFF, 0xFF, 0x08]);
 
-  /// `7E 07 06 <mode> 00 00 00 00 EF` — LED BLE's `setMusic`.
-  static Uint8List musicMode(int mode) =>
+  /// `7E 07 06 <mode> 00 00 00 00 EF` — LED BLE 2.1.1's `setMusic`.
+  ///
+  /// **Superseded for current firmware by [micMusic]/[appAudioMusic].** The
+  /// LED+LAMP app 4.3.5 (`com.home.net.NetConnectBle`) builds the plain-7E
+  /// music frames as `7E <src> 14 <mode> …` instead; the two app versions
+  /// genuinely disagree here (see docs/elk7e_ledlamp_4.3.5.md). Kept for
+  /// reference / older strips; the driver wires the 4.3.5 frames.
+  static Uint8List musicModeLegacy(int mode) =>
       _frame([0x07, 0x06, mode, 0x00, 0x00, 0x00, 0x00]);
 
-  /// `7E 04 07 <level> FF FF FF 00 EF` — LED BLE's `setensitivity`
-  /// (microphone sensitivity for music mode).
-  static Uint8List micSensitivity(int level) =>
+  /// `7E 04 07 <level> FF FF FF 00 EF` — LED BLE 2.1.1's `setensitivity`.
+  /// Superseded by [musicSensitivity] for 4.3.5 firmware; see [musicModeLegacy].
+  static Uint8List micSensitivityLegacy(int level) =>
       _frame([0x04, 0x07, level, 0xFF, 0xFF, 0xFF, 0x00]);
+
+  // ---- Sound-reactive "Music" mode (LED+LAMP app 4.3.5) ----
+  //
+  // Source: com.home.net.NetConnectBle in LED+LAMP 4.3.5 (APKPure), the
+  // plain-LEDBLE branch of setMusicMicroMode / setVoiceCtlMode / setSensitivity.
+  // Byte 1 selects the audio source; byte 2 is the music opcode 0x14; byte 3 is
+  // the reactive pattern / colour-scheme index. Do not "improve" these bytes.
+
+  /// Music opcode (byte 2) shared by the sound-reactive frames.
+  static const int _musicOpcode = 0x14;
+
+  /// `7E 02 14 <mode> FF FF FF FF EF` — `setMusicMicroMode`: the strip reacts
+  /// to its **own built-in microphone**. [mode] is the rhythm pattern 0–3 (the
+  /// app's 4-way `changeButton_micro`).
+  static Uint8List micMusic(int mode) =>
+      _frame([0x02, _musicOpcode, mode, 0xFF, 0xFF, 0xFF, 0xFF]);
+
+  /// `7E 00 14 <mode> FF FF FF FF EF` — `setVoiceCtlMode`: the strip reacts to
+  /// audio the **app** feeds it. [mode] is a colour-scheme index, or [musicCycle]
+  /// to auto-cycle schemes.
+  static Uint8List appAudioMusic(int mode) =>
+      _frame([0x00, _musicOpcode, mode, 0xFF, 0xFF, 0xFF, 0xFF]);
+
+  /// `7E FF 07 <level> FF FF FF FF EF` — `setSensitivity` (plain-LEDBLE branch):
+  /// microphone/audio sensitivity for the sound-reactive modes, 0–100.
+  static Uint8List musicSensitivity(int level) =>
+      _frame([0xFF, 0x07, level.clamp(0, 100), 0xFF, 0xFF, 0xFF, 0xFF]);
+
+  /// Auto-cycle sentinel for [appAudioMusic] (the app's "cycle" button).
+  static const int musicCycle = 0xFF;
+
+  /// Number of built-in-mic rhythm patterns the app offers (indices 0–3).
+  static const int micMusicModeCount = 4;
 
   /// `7E 06 81 <r> <g> <b> FF 00 EF` — duoCo's `changePinSequence`: the strip's
   /// R/G/B **channel order**, for strips wired in a different sequence.
@@ -213,11 +252,66 @@ class Elk7eDriver extends DeviceDriver with DriverStateMixin {
         ),
       ];
 
+  /// Sound-reactive "Music" mode, offered as its own section. The strip listens
+  /// on its built-in microphone and pulses to the beat; a sensitivity slider
+  /// tunes how hard it reacts. Selecting a colour exits music mode, so no
+  /// dedicated off frame is needed.
+  ///
+  /// Frames are LED+LAMP 4.3.5 vendor code (see [Elk7eCommands.micMusic]);
+  /// code-verified, not yet confirmed on TERRAX hardware — like the rest of
+  /// this family (TERRAX owns no 7E strips).
+  @override
+  List<DriverSection> get sections => [
+        DriverSection(
+          'Music',
+          [
+            DriverOptionSetting<int>(
+              'Beat pattern',
+              description: 'Reacts to sound on the strip\'s own microphone.',
+              value: _musicMode,
+              options: [
+                for (var i = 0; i < Elk7eCommands.micMusicModeCount; i++)
+                  (value: i, label: 'Pattern ${i + 1}'),
+              ],
+              onChanged: setMusicMode,
+            ),
+            DriverSliderSetting(
+              'Sensitivity',
+              description: 'How strongly the strip reacts to sound.',
+              value: _sensitivity,
+              min: 0,
+              max: 100,
+              onChanged: setMusicSensitivity,
+            ),
+          ],
+          icon: DriverSectionIcon.functions,
+        ),
+      ];
+
   int _warm = 0;
   int _cold = 0;
+  int? _musicMode;
+  int _sensitivity = 50;
 
   String get _warmKey => 'elk7e.warm.${_device.remoteId.str}';
   String get _coldKey => 'elk7e.cold.${_device.remoteId.str}';
+  String get _sensitivityKey => 'elk7e.sens.${_device.remoteId.str}';
+
+  /// Puts the strip into sound-reactive mode with rhythm [mode] (0–3). This
+  /// family reports no state, so the selection is held locally.
+  Future<void> setMusicMode(int mode) async {
+    _musicMode = mode;
+    await _send(Elk7eCommands.micMusic(mode));
+    updateState((s) => s.copyWith(power: true));
+  }
+
+  /// Sets the microphone sensitivity (0–100) for music mode, cached per device
+  /// because the strip does not report it back.
+  Future<void> setMusicSensitivity(int level) async {
+    _sensitivity = level.clamp(0, 100);
+    await _send(Elk7eCommands.musicSensitivity(_sensitivity));
+    await _prefs.setInt(_sensitivityKey, _sensitivity);
+  }
 
   /// Colour temperature, using the app's verified two-channel frame. The two
   /// channels are cached per device because this protocol reports no state, so
@@ -234,6 +328,7 @@ class Elk7eDriver extends DeviceDriver with DriverStateMixin {
   Future<void> connect() async {
     _warm = _prefs.getInt(_warmKey) ?? 0;
     _cold = _prefs.getInt(_coldKey) ?? 0;
+    _sensitivity = _prefs.getInt(_sensitivityKey) ?? 50;
 
     final services = await _ble.discoverServices(_device);
     BluetoothCharacteristic? write;
@@ -284,6 +379,9 @@ class Elk7eDriver extends DeviceDriver with DriverStateMixin {
   @override
   Future<void> setColor(Rgb color) async {
     await _send(Elk7eCommands.color(color.r, color.g, color.b));
+    // A solid colour exits music mode on the strip; drop the local selection so
+    // the Music section doesn't imply it's still running.
+    _musicMode = null;
     updateState((s) => s.copyWith(color: color, power: true));
   }
 

@@ -62,13 +62,49 @@ void main() {
           0x04);
     });
 
-    test('LED BLE-only commands: dim, music mode, mic sensitivity', () {
+    test('LED BLE-only commands: dim, legacy (2.1.1) music mode + sensitivity',
+        () {
       expect(Elk7eCommands.dim(0x40),
           [0x7E, 0x05, 0x05, 0x01, 0x40, 0xFF, 0xFF, 0x08, 0xEF]);
-      expect(Elk7eCommands.musicMode(0x02),
+      // The 2.1.1-era frames, kept for reference; superseded on current
+      // firmware by the 0x14 frames below.
+      expect(Elk7eCommands.musicModeLegacy(0x02),
           [0x7E, 0x07, 0x06, 0x02, 0x00, 0x00, 0x00, 0x00, 0xEF]);
-      expect(Elk7eCommands.micSensitivity(0x50),
+      expect(Elk7eCommands.micSensitivityLegacy(0x50),
           [0x7E, 0x04, 0x07, 0x50, 0xFF, 0xFF, 0xFF, 0x00, 0xEF]);
+    });
+
+    // Source: LED+LAMP app 4.3.5 (APKPure), com.home.net.NetConnectBle, the
+    // plain-LEDBLE branch of setMusicMicroMode / setVoiceCtlMode / setSensitivity.
+    // These differ from the 2.1.1 frames above; the two app versions disagree,
+    // so the driver bets on the current app's bytes. Byte 2 is the music opcode
+    // 0x14; byte 1 is the audio source (0x02 built-in mic, 0x00 app audio).
+    test('4.3.5 sound-reactive music: built-in mic is 7E 02 14 <mode> FF*4 EF',
+        () {
+      expect(Elk7eCommands.micMusic(0),
+          [0x7E, 0x02, 0x14, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xEF]);
+      expect(Elk7eCommands.micMusic(3),
+          [0x7E, 0x02, 0x14, 0x03, 0xFF, 0xFF, 0xFF, 0xFF, 0xEF]);
+      // Byte 1 distinguishes the source: 0x02 = built-in mic.
+      expect(Elk7eCommands.micMusic(0)[1], 0x02);
+      expect(Elk7eCommands.micMusicModeCount, 4);
+    });
+
+    test('4.3.5 app-audio music is 7E 00 14 <mode> FF*4 EF, cycle=0xFF', () {
+      expect(Elk7eCommands.appAudioMusic(0x05),
+          [0x7E, 0x00, 0x14, 0x05, 0xFF, 0xFF, 0xFF, 0xFF, 0xEF]);
+      // Same opcode, source byte 0x00 = app-fed audio.
+      expect(Elk7eCommands.appAudioMusic(0)[1], 0x00);
+      expect(Elk7eCommands.appAudioMusic(0)[2], 0x14);
+      expect(Elk7eCommands.appAudioMusic(Elk7eCommands.musicCycle)[3], 0xFF);
+    });
+
+    test('4.3.5 music sensitivity is 7E FF 07 <level> FF*4 EF, clamped 0-100',
+        () {
+      expect(Elk7eCommands.musicSensitivity(0x32),
+          [0x7E, 0xFF, 0x07, 0x32, 0xFF, 0xFF, 0xFF, 0xFF, 0xEF]);
+      expect(Elk7eCommands.musicSensitivity(200)[3], 100);
+      expect(Elk7eCommands.musicSensitivity(-1)[3], 0);
     });
 
     test('addressable (SPI) strips reframe with 7B…BF, same grammar', () {
@@ -109,8 +145,11 @@ void main() {
         Elk7eCommands.effectSpeed(8),
         Elk7eCommands.colorTemperature(10, 20),
         Elk7eCommands.dim(0x20),
-        Elk7eCommands.musicMode(1),
-        Elk7eCommands.micSensitivity(0x30),
+        Elk7eCommands.musicModeLegacy(1),
+        Elk7eCommands.micSensitivityLegacy(0x30),
+        Elk7eCommands.micMusic(1),
+        Elk7eCommands.appAudioMusic(2),
+        Elk7eCommands.musicSensitivity(0x30),
       ];
       for (final f in frames) {
         expect(f.length, 9, reason: '$f');
