@@ -150,6 +150,7 @@ void main() {
         'elk_7e': true,
         'triones': true,
         'lampfrgn': true,
+        'ledcar02': true,
         'intelligo': false,
       });
     });

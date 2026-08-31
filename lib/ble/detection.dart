@@ -6,6 +6,7 @@ import 'device_driver.dart';
 import 'drivers/elk_7e_driver.dart';
 import 'drivers/intelligo_driver.dart';
 import 'drivers/lampfrgn_driver.dart';
+import 'drivers/ledcar02_driver.dart';
 import 'drivers/triones_driver.dart';
 
 typedef DriverFactory = DeviceDriver Function(
@@ -82,7 +83,7 @@ class DetectionRule {
 final List<Guid> driverServiceUuids = [
   Elk7eUuids.service,
   TrionesUuids.service,
-  Guid('ffe0'), // IntelliGo BLE-UART (not advertised as a primary service)
+  Guid('ffe0'), // IntelliGo BLE-UART + LEDCAR-02 write service (both 0xFFE0)
   Guid('af30'), // JieLi service the rock lights advertise
   LampFrgnUuids.service, // LAMP&FRGN ambient lighting (0xAE30)
   LampFrgnUuids.telinkService, // its Telink fallback
@@ -159,6 +160,22 @@ final List<DetectionRule> detectionRules = [
     defaultProductHint: 'Car ambient lighting',
     isLighting: true,
     createDriver: (ble, device, prefs) => LampFrgnDriver(ble, device, prefs),
+  ),
+  DetectionRule(
+    driverId: LedCar02Driver.id,
+    label: 'RGB car lighting (LEDCAR-02)',
+    // The LED+LAMP app keys purely off the advertised name prefix; a real unit
+    // advertises e.g. "LEDCAR-02-9930" (verified on hardware 2026-08-31). Only
+    // the -02 variant speaks this command set; -00/-01 differ and are not
+    // implemented.
+    // Name only: this family advertises service 0xFFE0, which IntelliGo running
+    // boards also advertise — matching on it would steal those. The unit always
+    // advertises its "LEDCAR-02-*" name (the vendor app itself filters on it),
+    // so the name is the reliable, unambiguous signal.
+    namePrefixes: const ['LEDCAR-02'],
+    defaultProductHint: 'RGB car lighting',
+    isLighting: true,
+    createDriver: (ble, device, prefs) => LedCar02Driver(ble, device, prefs),
   ),
   DetectionRule(
     driverId: IntelligoDriver.id,
