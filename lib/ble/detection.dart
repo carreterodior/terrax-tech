@@ -37,6 +37,11 @@ class DetectionRule {
   final List<Guid> serviceUuids;
   final DriverFactory createDriver;
 
+  /// True for families whose devices are lights (they honour the lighting half
+  /// of the driver contract), so saved devices can join group control before a
+  /// driver instance exists to ask.
+  final bool isLighting;
+
   const DetectionRule({
     required this.driverId,
     required this.label,
@@ -45,6 +50,7 @@ class DetectionRule {
     required this.defaultProductHint,
     this.productHints = const {},
     this.serviceUuids = const [],
+    this.isLighting = false,
   });
 
   /// Best guess at what this advertised name is, for the scan list.
@@ -99,6 +105,7 @@ final List<DetectionRule> detectionRules = [
     ],
     serviceUuids: [Elk7eUuids.service],
     defaultProductHint: 'RGB light strip',
+    isLighting: true,
     createDriver: (ble, device, prefs) => Elk7eDriver(ble, device, prefs),
   ),
   DetectionRule(
@@ -129,6 +136,7 @@ final List<DetectionRule> detectionRules = [
       'RZ': 'Rock lights',
     },
     defaultProductHint: 'RGB light strip or bulb',
+    isLighting: true,
     createDriver: (ble, device, prefs) => TrionesDriver(ble, device, prefs),
   ),
   DetectionRule(
@@ -149,6 +157,7 @@ final List<DetectionRule> detectionRules = [
     // advertisement (docs/lampfrgn_findings.md), and often no name at all.
     serviceUuids: [LampFrgnUuids.service, LampFrgnUuids.telinkService],
     defaultProductHint: 'Car ambient lighting',
+    isLighting: true,
     createDriver: (ble, device, prefs) => LampFrgnDriver(ble, device, prefs),
   ),
   DetectionRule(

@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../../ble/device_driver.dart';
 import '../../models/rgb.dart';
-import '../../state/device_controller.dart';
+import '../../state/light_group.dart';
 import 'color_wheel.dart';
 
 /// Lighting controls rendered from [DeviceCapabilities]: power, color
 /// (swatches + hue slider), brightness, white channel and effects.
+///
+/// Talks only to [LightCommands], so the same widget drives one device (a
+/// `DeviceController`) or a whole group (`LightGroup`).
 class LightControls extends StatefulWidget {
-  final DeviceController controller;
-  final DeviceControllerState controllerState;
+  final LightCommands controller;
+  final DeviceState deviceState;
   final DeviceCapabilities caps;
   final List<EffectPreset> effects;
 
@@ -22,7 +25,7 @@ class LightControls extends StatefulWidget {
   const LightControls({
     super.key,
     required this.controller,
-    required this.controllerState,
+    required this.deviceState,
     required this.caps,
     required this.effects,
     required this.isPro,
@@ -58,7 +61,7 @@ class _LightControlsState extends State<LightControls> {
   double _effectSpeed = 16;
   bool _initializedFromState = false;
 
-  DeviceState get _deviceState => widget.controllerState.deviceState;
+  DeviceState get _deviceState => widget.deviceState;
 
   @override
   void didUpdateWidget(covariant LightControls oldWidget) {

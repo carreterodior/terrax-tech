@@ -7,6 +7,7 @@ import '../ble/detection.dart';
 import '../ble/device_driver.dart';
 import '../models/rgb.dart';
 import 'core_providers.dart';
+import 'light_group.dart';
 import 'saved_devices.dart';
 
 enum ConnectionStatus { disconnected, connecting, connected, error }
@@ -76,7 +77,8 @@ class _Throttler {
 /// One controller per saved device (family keyed by BLE remote id). Owns the
 /// driver instance, connection lifecycle (incl. auto-reconnect on drop) and
 /// throttles high-frequency commands.
-class DeviceController extends FamilyNotifier<DeviceControllerState, String> {
+class DeviceController extends FamilyNotifier<DeviceControllerState, String>
+    implements LightCommands {
   DeviceDriver? _driver;
   BluetoothDevice? _device;
   DetectionRule? _rule;
@@ -310,17 +312,22 @@ class DeviceController extends FamilyNotifier<DeviceControllerState, String> {
 
   // ---- Lighting ----
 
+  @override
   void setColor(Rgb color) =>
       _colorThrottle.run(() => _guard(() => _driver!.setColor(color)));
 
+  @override
   void setBrightness(int percent) => _brightnessThrottle
       .run(() => _guard(() => _driver!.setBrightness(percent)));
 
+  @override
   void setWhite(int value) =>
       _whiteThrottle.run(() => _guard(() => _driver!.setWhite(value)));
 
+  @override
   Future<void> setPower(bool on) => _guard(() => _driver!.setPower(on));
 
+  @override
   Future<void> setEffect(int id, int speed) =>
       _guard(() => _driver!.setEffect(id, speed));
 

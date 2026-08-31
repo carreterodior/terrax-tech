@@ -180,7 +180,7 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
                       driver.caps.hasEffects)
                     LightControls(
                       controller: controller,
-                      controllerState: controllerState,
+                      deviceState: controllerState.deviceState,
                       caps: driver.caps,
                       effects: driver.effects,
                       isPro: isPro,

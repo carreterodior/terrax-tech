@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/device_category.dart';
 import '../models/terrax_device.dart';
 import '../state/device_controller.dart';
+import '../state/light_group.dart';
 import '../state/saved_devices.dart';
 import 'category_icons.dart';
 import 'control/device_control_screen.dart';
+import 'control/group_control_screen.dart';
 import 'scan_screen.dart';
 import '../billing/billing_config.dart';
 import '../state/pro_providers.dart';
@@ -20,6 +22,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final grouped = ref.watch(devicesByCategoryProvider);
+    final lights = ref.watch(lightingDevicesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -47,6 +50,9 @@ class HomeScreen extends ConsumerWidget {
             : ListView(
                 padding: const EdgeInsets.only(bottom: 96),
                 children: [
+                  // Group control only earns a row once there is a group: a
+                  // single light is better served by its own screen.
+                  if (lights.length >= 2) const _AllLightsTile(),
                   for (final entry in grouped.entries) ...[
                     _CategoryHeader(
                         category: entry.key, count: entry.value.length),
@@ -106,6 +112,28 @@ class _EmptyState extends StatelessWidget {
               style: theme.textTheme.bodyMedium,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Entry to group control: one screen that drives every saved light at once.
+class _AllLightsTile extends ConsumerWidget {
+  const _AllLightsTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(lightingDevicesProvider).length;
+    return Card(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: ListTile(
+        leading: const CircleAvatar(child: Icon(Icons.workspaces_outlined)),
+        title: const Text('All Lights'),
+        subtitle: Text('Control $count lights together'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const GroupControlScreen()),
         ),
       ),
     );
