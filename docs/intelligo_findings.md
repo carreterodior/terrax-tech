@@ -110,14 +110,30 @@ cause of "nothing happens".
 
 ### Authentication
 
-The vendor app prompts for a **password and phone number**; those produce the 4-byte
-token in `B2`. The challenge `60 47 F7 5E` was **identical across sessions hours apart**,
-so it is static (no rolling code), and **replaying the captured token authenticates
-successfully** — the board answers `FE 3B B2 00 89` and starts reporting state. The
-derivation from password+phone is unknown and was not needed.
+**SOLVED 2026-08-31 — the token is computed, not captured.** Decompiling the
+IntelliGo app 0.1.8 (uni-app JS: `keeloqEncrypt` / `readSecretKey` / `writeKeeloq`)
+showed the `B2` token is a plain **KeeLoq encryption of the `B1` challenge** with an
+embedded 64-bit key `0x2024120618442001` and the standard NLF `0x3A5C742E` (528
+rounds). No password, phone or server is involved — the earlier "password + phone"
+reading was wrong. The challenge bytes are reversed to form the KeeLoq input, and the
+32-bit result is emitted little-endian.
 
-`defaultAuthTokenHex = '5D4A06ED'` in the driver; overridable per device in the UI.
-A different physical board will have a different token → capture it the same way.
+Verified byte-exact: challenge `60 47 F7 5E` → token `5D 4A 06 ED` (the one capture we
+have). Ported to `IntelligoCommands.authTokenFor` and pinned by
+`test/intelligo_commands_test.dart`.
+
+**Because the key is baked into the app and identical for every unit, the driver now
+computes the token from each board's live challenge — so it authenticates to _any_
+IntelliGo board, not just the one a token was captured from.** The old
+`defaultAuthTokenHex` replay is gone; the UI keeps an optional manual override for the
+rare board that might diverge.
+
+> Corollary for access control: this KeeLoq layer is **not** a per-owner lock — any
+> IntelliGo app can now drive any board. A genuine owner lock would be the board's `A8`
+> **binding** (`isBind` / `maxCount` / `remainCount`, `read/writeBindSet`), but whether
+> the firmware _refuses_ an unbound controller is unverified, and the vendor app manages
+> binding through its server (`admin/auth/GetPassWordEncryptKey`). Needs a hardware
+> session on two boards before building a client-password/binding flow.
 
 ### `A1` state byte
 
