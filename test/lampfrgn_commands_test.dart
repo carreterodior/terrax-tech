@@ -97,6 +97,29 @@ void main() {
           0x03);
     });
 
+    test('rhythm modes are 4 and 5, and modeParam is the pulse colour', () {
+      // The customer fix: rhythm modes take a colour in modeParam — 0 is the
+      // rainbow (multicolour) they disliked, 1-7 are single colours. Verified
+      // against the vendor app's createModeParamRhythm list.
+      expect(LampFrgnDriver.isRhythmMode(4), isTrue); // Cheerful rhythm
+      expect(LampFrgnDriver.isRhythmMode(5), isTrue); // Soothing rhythm
+      expect(LampFrgnDriver.isRhythmMode(6), isFalse); // Sports — not rhythm
+      expect(LampFrgnDriver.isRhythmMode(20), isFalse); // Spectrum — multicolour
+      // 0 = rainbow, then the seven single colours in the app's order.
+      final labels =
+          LampFrgnDriver.rhythmColorOptions.map((o) => o.label).toList();
+      expect(labels.first, contains('Multicolour'));
+      expect(LampFrgnDriver.rhythmColorOptions.map((o) => o.value).toList(),
+          [0, 1, 2, 3, 4, 5, 6, 7]);
+      expect(labels.sublist(1),
+          ['Red', 'Yellow', 'Green', 'Cyan', 'Blue', 'Purple', 'White']);
+      // A single colour lands verbatim in the modeParam byte of the frame.
+      final redRhythm = LampFrgnCommands.colorMode(
+          mode1: 0, mode2: 4, modeParam: 1, modeSpeed: 5);
+      expect(redRhythm[5], 4); // mode2 = cheerful rhythm
+      expect(redRhythm[6], 1); // modeParam = red, not rainbow
+    });
+
     test('queries are 2E 90 02 7C <sub> <ck>', () {
       for (final (builder, sub) in [
         (LampFrgnCommands.queryBrightness(), 0x00),

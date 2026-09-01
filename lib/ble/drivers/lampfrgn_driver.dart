@@ -354,6 +354,41 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   int _calibMode1 = 0;
   int _calibParam = 1;
 
+  /// The two sound-reactive modes whose colour is user-selectable: "Cheerful
+  /// rhythm" (4) and "Soothing rhythm" (5). For these, `modeParam` chooses the
+  /// colour the lights pulse in — the app's `createModeParamRhythm`. Other
+  /// music modes (Spectrum 20, Rainbow 21) are multicolour by design.
+  static const int rhythmCheerful = 4;
+  static const int rhythmSoothing = 5;
+  static bool isRhythmMode(int mode2) =>
+      mode2 == rhythmCheerful || mode2 == rhythmSoothing;
+
+  /// `modeParam` colour options for the rhythm modes (the app's
+  /// `modeParamRhythm` list). 0 makes the lights cycle every colour to the
+  /// beat — the "rainbow" the customer did not want; 1–7 pin one colour.
+  static const List<({int value, String label})> rhythmColorOptions = [
+    (value: 0, label: 'Multicolour (rainbow)'),
+    (value: 1, label: 'Red'),
+    (value: 2, label: 'Yellow'),
+    (value: 3, label: 'Green'),
+    (value: 4, label: 'Cyan'),
+    (value: 5, label: 'Blue'),
+    (value: 6, label: 'Purple'),
+    (value: 7, label: 'White'),
+  ];
+
+  /// Chosen rhythm colour (`modeParam`), cached per device. Defaults to a
+  /// single colour (Red) rather than multicolour, matching the customer's
+  /// preference; they can pick Multicolour to get the old rainbow back.
+  int _rhythmColor = 1;
+
+  /// Rhythm sensitivity (0–7), the high nibble of the mode1 byte. Higher reacts
+  /// to quieter sound.
+  int _rhythmSensitivity = 4;
+
+  String get _rhythmColorKey => 'lampfrgn.rhythmColor.${_device.remoteId.str}';
+  String get _rhythmSensKey => 'lampfrgn.rhythmSens.${_device.remoteId.str}';
+
   /// Raw 0x0C reply (per-mode param ranges, packed nibbles) — displayed so
   /// the real unit's table can be read off the screen.
   List<int>? _subModesRaw;
@@ -391,8 +426,8 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
         EffectPreset(1, 'Auto'),
         EffectPreset(2, 'Breathing'),
         EffectPreset(3, 'Burst flash'),
-        EffectPreset(4, 'Cheerful Groove'),
-        EffectPreset(5, 'Smooth Groove'),
+        EffectPreset(4, 'Cheerful rhythm (music — pick colour)'),
+        EffectPreset(5, 'Soothing rhythm (music — pick colour)'),
         EffectPreset(6, 'Sports'),
         EffectPreset(7, 'Magic dazzle'),
         EffectPreset(8, 'Illusive Color'),
@@ -417,6 +452,9 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
 
   @override
   Future<void> connect() async {
+    _rhythmColor = _prefs.getInt(_rhythmColorKey) ?? 1;
+    _rhythmSensitivity = _prefs.getInt(_rhythmSensKey) ?? 4;
+
     final services = await _ble.discoverServices(_device);
     BluetoothCharacteristic? write;
     BluetoothCharacteristic? notify;
@@ -622,18 +660,36 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
 
   @override
   Future<void> setEffect(int id, int speed) async {
-    // mode2 carries the style (the id the device echoes back in its reply);
-    // mode1 and the param come from the Calibration knobs until the scene
-    // block's encoding is confirmed on hardware.
+    // mode2 carries the style (the id the device echoes back in its reply).
+    // For the two colour-selectable rhythm modes, modeParam is the pulse colour
+    // and the mode1 byte's high nibble is the sensitivity (verified against the
+    // vendor app's ColorModelCmd / createModeParamRhythm). Everything else keeps
+    // the Calibration-knob behaviour.
+    final rhythm = LampFrgnDriver.isRhythmMode(id);
     await _send(LampFrgnCommands.colorMode(
       mode1: _calibMode1,
       mode2: id,
-      modeParam: _calibParam,
+      modeParam: rhythm ? _rhythmColor : _calibParam,
       modeSpeed: speed,
+      rhythmSensitivity: rhythm ? _rhythmSensitivity : 0,
     ));
     _zone2Mode = id;
     _modeSpeed = speed;
     updateState((s) => s.copyWith(effectId: id, effectSpeed: speed));
+  }
+
+  /// Sets the colour the rhythm modes pulse in and re-applies it if a rhythm
+  /// mode is active, so the change is visible immediately.
+  Future<void> setRhythmColor(int param) async {
+    _rhythmColor = param;
+    await _prefs.setInt(_rhythmColorKey, param);
+    if (isRhythmMode(_zone2Mode)) await setEffect(_zone2Mode, _modeSpeed);
+  }
+
+  Future<void> setRhythmSensitivity(int value) async {
+    _rhythmSensitivity = value.clamp(0, 7);
+    await _prefs.setInt(_rhythmSensKey, _rhythmSensitivity);
+    if (isRhythmMode(_zone2Mode)) await setEffect(_zone2Mode, _modeSpeed);
   }
 
   // ---- Extras (decoded from the vendor app; see docs/lampfrgn_findings.md) --
@@ -751,6 +807,28 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
 
   @override
   List<DriverSection> get sections => [
+        DriverSection('Music', [
+          DriverInfoSetting(
+            'Sound-reactive colour',
+            value: 'Pick the "Cheerful rhythm" or "Soothing rhythm" effect, '
+                'then choose a colour here. Multicolour is the rainbow look; '
+                'any single colour makes the lights pulse in just that colour.',
+          ),
+          DriverOptionSetting<int>(
+            'Rhythm colour',
+            value: _rhythmColor,
+            options: rhythmColorOptions,
+            onChanged: setRhythmColor,
+          ),
+          DriverSliderSetting(
+            'Sensitivity',
+            description: 'How strongly the lights react to sound (0–7).',
+            value: _rhythmSensitivity,
+            min: 0,
+            max: 7,
+            onChanged: setRhythmSensitivity,
+          ),
+        ], icon: DriverSectionIcon.functions),
         DriverSection('Zones', [
           DriverInfoSetting(
             'Two output groups',
