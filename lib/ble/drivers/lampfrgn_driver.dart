@@ -152,10 +152,24 @@ class LampFrgnCommands {
         second.r, second.g, second.b,
       ]);
 
-  /// `BrightnessCmd` set. [flags] carries the app's switch/zone bits.
+  /// The on/off ("switch") bit in a `BrightnessCmd`'s flags byte. This — NOT a
+  /// brightness of zero — is what turns the light on and off: the vendor app
+  /// sends every brightness frame with this bit set while the light is on, and
+  /// clears it (keeping the brightness values) to turn off. Verified against
+  /// `BrightnessCmd.pack` (`switch ? 64 : 0`) in `com.szraise.carled` 1.3.3.
+  static const int switchOnBit = 0x40;
+
+  /// `BrightnessCmd` set. [switchOn] drives the light's on/off bit; [zone] is
+  /// the partition type (`zoneUniform` for both together). The flags byte is
+  /// `switch | zone`, exactly as the vendor packs it.
   static Uint8List brightness(int first, int second,
-          {int flags = zoneUniform}) =>
-      lampFrgnFrame(typeSet, [subBrightness, flags, first, second]);
+          {bool switchOn = true, int zone = zoneUniform}) =>
+      lampFrgnFrame(typeSet, [
+        subBrightness,
+        (switchOn ? switchOnBit : 0) | zone,
+        first,
+        second,
+      ]);
 
   /// `ColorModelCmd` set. Rhythm sensitivity occupies the high nibble of the
   /// byte that also carries `mode1`.
@@ -514,10 +528,12 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
         _zone2Color = Rgb(d[5], d[6], d[7]);
         updateState((s) => s.copyWith(color: _lastColor));
       case LampFrgnCommands.subBrightness when d.length >= 4:
+        // d[1] is the flags byte; its switch bit is the real on/off state.
+        final on = (d[1] & LampFrgnCommands.switchOnBit) != 0;
         if (d[2] > 0) _lastBrightness = d[2];
         _zone1Brightness = d[2].clamp(0, 100);
         _zone2Brightness = d[3].clamp(0, 100);
-        updateState((s) => s.copyWith(brightness: d[2]));
+        updateState((s) => s.copyWith(brightness: d[2], power: on));
       case LampFrgnCommands.subColorMode when d.length >= 5:
         _colorModeRaw = List.of(d);
         _zone1Mode = d[1] & 0x0F;
@@ -635,25 +651,34 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
     if (v > 0) _lastBrightness = v;
     _zone1Brightness = v;
     _zone2Brightness = v;
-    await _send(LampFrgnCommands.brightness(v, v));
-    updateState((s) => s.copyWith(brightness: v));
+    // Keep the switch bit ON while adjusting brightness. Without it the unit
+    // reads the frame as "switch off" and shuts down mid-drag — the field bug
+    // where lowering brightness turned the light off.
+    await _send(LampFrgnCommands.brightness(v, v, switchOn: true));
+    updateState((s) => s.copyWith(brightness: v, power: true));
   }
 
-  /// This protocol has no dedicated on/off frame; off is brightness zero.
-  /// On restores the last brightness AND re-sends the last colour — on real
-  /// hardware (2026-08-05) a brightness frame alone did not wake the unit.
+  /// On/off is the brightness command's switch bit, not a brightness of zero
+  /// (verified against the vendor app: it toggles `BrightnessCmd.switch` and
+  /// leaves the brightness values alone). Turning off by sending brightness 0
+  /// with the bit clear left the unit in a state our own "on" could not wake,
+  /// which is why it took the vendor app to bring it back.
   @override
   Future<void> setPower(bool on) async {
     if (!on) {
-      await _send(LampFrgnCommands.brightness(0, 0));
-      updateState((s) => s.copyWith(brightness: 0, power: false));
+      // Clear the switch bit; keep the brightness so it restores on next on.
+      await _send(LampFrgnCommands.brightness(
+          _lastBrightness, _lastBrightness,
+          switchOn: false));
+      updateState((s) => s.copyWith(power: false));
       return;
     }
-    // Colour first, then brightness: on hardware the relight after
-    // brightness-first took ~20 s, suggesting the unit wants a visible
-    // frame before (or regardless of) the brightness restore.
+    // Assert the switch bit with the last brightness. The colour re-send stays
+    // (it avoided a ~20 s relight on hardware); the real wake is the switch bit.
     await _send(LampFrgnCommands.color(_lastColor, _lastColor));
-    await _send(LampFrgnCommands.brightness(_lastBrightness, _lastBrightness));
+    await _send(LampFrgnCommands.brightness(
+        _lastBrightness, _lastBrightness,
+        switchOn: true));
     updateState((s) =>
         s.copyWith(brightness: _lastBrightness, color: _lastColor, power: true));
   }
@@ -733,7 +758,7 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
     }
     await _send(LampFrgnCommands.brightness(
         _zone1Brightness, _zone2Brightness,
-        flags: LampFrgnCommands.zoneSplit));
+        switchOn: true, zone: LampFrgnCommands.zoneSplit));
     updateState((s) => s);
   }
 

@@ -73,13 +73,29 @@ void main() {
 
     test('split-zone brightness carries independent levels', () {
       final f = LampFrgnCommands.brightness(100, 25,
-          flags: LampFrgnCommands.zoneSplit);
-      expect(f.sublist(1, 7), [0x8D, 0x04, 0x00, 0x00, 100, 25]);
+          zone: LampFrgnCommands.zoneSplit);
+      // Switch bit (0x40) set by default | split zone (0x00).
+      expect(f.sublist(1, 7), [0x8D, 0x04, 0x00, 0x40, 100, 25]);
     });
 
-    test('brightness is 8D 00 <flags> B1 B2 (BrightnessCmd)', () {
+    test('brightness is 8D 00 <switch|zone> B1 B2 (BrightnessCmd)', () {
       final f = LampFrgnCommands.brightness(80, 60);
-      expect(f.sublist(1, 7), [0x8D, 0x04, 0x00, 0x08, 80, 60]);
+      // Uniform (0x08) with the light on (0x40) -> 0x48.
+      expect(f.sublist(1, 7), [0x8D, 0x04, 0x00, 0x48, 80, 60]);
+    });
+
+    test('the switch bit — not brightness 0 — is on/off', () {
+      // The field bug: TERRAX never set the 0x40 switch bit, so brightness
+      // writes read as "off" and could not be turned back on from our app.
+      expect(LampFrgnCommands.switchOnBit, 0x40);
+      // On: switch bit set.
+      expect(LampFrgnCommands.brightness(50, 50, switchOn: true)[4] & 0x40,
+          0x40);
+      // Off: switch bit clear, and the brightness values are RETAINED (not
+      // zeroed) — matching how the vendor app turns the light off.
+      final off = LampFrgnCommands.brightness(50, 50, switchOn: false);
+      expect(off[4] & 0x40, 0x00);
+      expect(off.sublist(5, 7), [50, 50]);
     });
 
     test('colour mode packs rhythm sensitivity in the high nibble', () {
