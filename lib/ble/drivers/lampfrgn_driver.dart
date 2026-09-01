@@ -381,14 +381,14 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   /// `modeParamRhythm` list). 0 makes the lights cycle every colour to the
   /// beat — the "rainbow" the customer did not want; 1–7 pin one colour.
   static const List<({int value, String label})> rhythmColorOptions = [
-    (value: 0, label: 'Multicolour (rainbow)'),
-    (value: 1, label: 'Red'),
-    (value: 2, label: 'Yellow'),
-    (value: 3, label: 'Green'),
-    (value: 4, label: 'Cyan'),
-    (value: 5, label: 'Blue'),
-    (value: 6, label: 'Purple'),
-    (value: 7, label: 'White'),
+    (value: 0, label: 'Colourful Groove (rainbow)'),
+    (value: 1, label: 'Red Groove'),
+    (value: 2, label: 'Yellow Groove'),
+    (value: 3, label: 'Green Groove'),
+    (value: 4, label: 'Cyan Groove'),
+    (value: 5, label: 'Blue Groove'),
+    (value: 6, label: 'Purple Groove'),
+    (value: 7, label: 'White Groove'),
   ];
 
   /// Chosen rhythm colour (`modeParam`), cached per device. Defaults to a
@@ -440,8 +440,8 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
         EffectPreset(1, 'Auto'),
         EffectPreset(2, 'Breathing'),
         EffectPreset(3, 'Burst flash'),
-        EffectPreset(4, 'Cheerful rhythm (music — pick colour)'),
-        EffectPreset(5, 'Soothing rhythm (music — pick colour)'),
+        EffectPreset(4, 'Cheerful Groove (single-colour music)'),
+        EffectPreset(5, 'Smooth Groove (single-colour music)'),
         EffectPreset(6, 'Sports'),
         EffectPreset(7, 'Magic dazzle'),
         EffectPreset(8, 'Illusive Color'),
@@ -834,13 +834,15 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   List<DriverSection> get sections => [
         DriverSection('Music', [
           DriverInfoSetting(
-            'Sound-reactive colour',
-            value: 'Pick the "Cheerful rhythm" or "Soothing rhythm" effect, '
-                'then choose a colour here. Multicolour is the rainbow look; '
-                'any single colour makes the lights pulse in just that colour.',
+            'Single-colour Groove',
+            value: 'For a groove that reacts to music in ONE colour, pick the '
+                '"Cheerful Groove" or "Smooth Groove" effect, then choose a '
+                'colour below (e.g. Red Groove). "Spectrum Groove" and '
+                '"Rainbow Groove" are always multicolour — the light itself '
+                'has no single-colour version of those two.',
           ),
           DriverOptionSetting<int>(
-            'Rhythm colour',
+            'Groove colour',
             value: _rhythmColor,
             options: rhythmColorOptions,
             onChanged: setRhythmColor,

@@ -124,11 +124,20 @@ void main() {
       // 0 = rainbow, then the seven single colours in the app's order.
       final labels =
           LampFrgnDriver.rhythmColorOptions.map((o) => o.label).toList();
-      expect(labels.first, contains('Multicolour'));
+      // 0 is the multicolour/rainbow groove; 1-7 are single-colour grooves,
+      // named as the vendor app names them ("Red Groove", ...).
+      expect(labels.first.toLowerCase(), contains('colourful'));
       expect(LampFrgnDriver.rhythmColorOptions.map((o) => o.value).toList(),
           [0, 1, 2, 3, 4, 5, 6, 7]);
-      expect(labels.sublist(1),
-          ['Red', 'Yellow', 'Green', 'Cyan', 'Blue', 'Purple', 'White']);
+      expect(labels.sublist(1), [
+        'Red Groove',
+        'Yellow Groove',
+        'Green Groove',
+        'Cyan Groove',
+        'Blue Groove',
+        'Purple Groove',
+        'White Groove',
+      ]);
       // A single colour lands verbatim in the modeParam byte of the frame.
       final redRhythm = LampFrgnCommands.colorMode(
           mode1: 0, mode2: 4, modeParam: 1, modeSpeed: 5);
