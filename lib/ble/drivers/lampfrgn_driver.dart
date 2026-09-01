@@ -430,38 +430,40 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
         hasStateFeedback: true,
       );
 
-  /// The vendor app's mode grid, in its display order (screenshotted from a
-  /// real unit 2026-08-05). Ids are 1-based mode2 values; "Single color" is
-  /// the static/no-animation mode. If selecting one style visibly plays the
-  /// previous/next one on hardware, the base is off by one — flip it here.
+  /// The vendor app's mode grid — mode2 ids and English names verified against
+  /// LAMP&FRGN 1.3.3 (`ColorModeItem`: modes 0–21, plus the "phantom-shadow"
+  /// modes 50–53). The equalizer-style modes (19/20/21/50) are multicolour by
+  /// firmware design; only the two Grooves (4/5) take a single colour.
+  /// The ids 50–53 are NOT 22–25: an earlier guess numbered them contiguously,
+  /// so those four modes never selected correctly.
   @override
   List<EffectPreset> get effects => const [
-        EffectPreset(0, 'Single color (static)'),
+        EffectPreset(0, 'Single Color (static)'),
         EffectPreset(1, 'Auto'),
         EffectPreset(2, 'Breathing'),
-        EffectPreset(3, 'Burst flash'),
+        EffectPreset(3, 'Burst Flash'),
         EffectPreset(4, 'Cheerful Groove (single-colour music)'),
         EffectPreset(5, 'Smooth Groove (single-colour music)'),
-        EffectPreset(6, 'Sports'),
-        EffectPreset(7, 'Magic dazzle'),
-        EffectPreset(8, 'Illusive Color'),
-        EffectPreset(9, 'Magic color'),
-        EffectPreset(10, 'Full-color wave'),
+        EffectPreset(6, 'Sport'),
+        EffectPreset(7, 'Magic Dazzle'),
+        EffectPreset(8, 'Bouncing Music (basic)'),
+        EffectPreset(9, 'Magical Color'),
+        EffectPreset(10, 'Full Color Wave'),
         EffectPreset(11, 'Opening Scroll'),
-        EffectPreset(12, 'Full color scroll'),
+        EffectPreset(12, 'Full Color Scroll'),
         EffectPreset(13, 'Comet Tail'),
         EffectPreset(14, 'Neon Lights'),
-        EffectPreset(15, 'Spring flowers'),
-        EffectPreset(16, 'Summer ocean'),
-        EffectPreset(17, 'Autumn fairy tale'),
-        EffectPreset(18, 'Winter sonata'),
-        EffectPreset(19, 'Bouncing Music'),
-        EffectPreset(20, 'Spectrum Groove'),
-        EffectPreset(21, 'Rainbow Groove'),
-        EffectPreset(22, 'Bouncing Disco'),
-        EffectPreset(23, 'Dynamic Light & Shadow'),
-        EffectPreset(24, 'Cloud Flow'),
-        EffectPreset(25, 'Classic Tetris'),
+        EffectPreset(15, 'Spring Flowers'),
+        EffectPreset(16, 'Summer Ocean'),
+        EffectPreset(17, 'Autumn Fairy Tale'),
+        EffectPreset(18, 'Winter Sonata'),
+        EffectPreset(19, 'Bouncing Music (equalizer)'),
+        EffectPreset(20, 'Spectrum Groove (equalizer)'),
+        EffectPreset(21, 'Rainbow Groove (equalizer)'),
+        EffectPreset(50, 'Bouncing Disco (equalizer)'),
+        EffectPreset(51, 'Dynamic Light & Shadow'),
+        EffectPreset(52, 'Cloud Flow'),
+        EffectPreset(53, 'Classic Tetris'),
       ];
 
   @override
