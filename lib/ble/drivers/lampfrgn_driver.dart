@@ -403,6 +403,62 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   String get _rhythmColorKey => 'lampfrgn.rhythmColor.${_device.remoteId.str}';
   String get _rhythmSensKey => 'lampfrgn.rhythmSens.${_device.remoteId.str}';
 
+  // ---- "TERRAX Groove" — experimental single-colour equalizer ----
+  // The equalizer modes (Spectrum/Rainbow/Bouncing) have no colour option in
+  // the vendor app; the board paints their colours itself. This is a WORKAROUND
+  // to test on hardware: set a solid colour first, then start an equalizer mode,
+  // in case that unit's firmware renders the level meter in the base colour.
+  // If the board ignores the base colour it stays multicolour — no app can
+  // change that.
+
+  /// Equalizer modes to try the single-colour trick on (the "level meter" ones).
+  static const List<({int value, String label})> terraxGrooveBaseOptions = [
+    (value: 20, label: 'Spectrum Groove'),
+    (value: 21, label: 'Rainbow Groove'),
+    (value: 19, label: 'Bouncing Music'),
+    (value: 50, label: 'Bouncing Disco'),
+  ];
+
+  Rgb _grooveColor = const Rgb(255, 0, 0);
+  int _grooveBase = 20;
+
+  String get _grooveColorKey => 'lampfrgn.grooveColor.${_device.remoteId.str}';
+  String get _grooveBaseKey => 'lampfrgn.grooveBase.${_device.remoteId.str}';
+
+  Future<void> setGrooveColor(Rgb color) async {
+    _grooveColor = color;
+    await _prefs.setInt(_grooveColorKey, (color.r << 16) | (color.g << 8) | color.b);
+    await applyTerraxGroove();
+  }
+
+  Future<void> setGrooveBase(int mode2) async {
+    _grooveBase = mode2;
+    await _prefs.setInt(_grooveBaseKey, mode2);
+    await applyTerraxGroove();
+  }
+
+  /// The experiment: paint a solid colour, then start the equalizer mode, then
+  /// re-assert the colour. Sending the colour on both sides of the mode covers
+  /// either firmware ordering (colour-before-mode or colour-after-mode). If the
+  /// board honours the base colour the equalizer runs in one colour; if not, it
+  /// falls back to its own colours.
+  Future<void> applyTerraxGroove() async {
+    await _send(LampFrgnCommands.color(_grooveColor, _grooveColor));
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    await _send(LampFrgnCommands.colorMode(
+      mode1: _calibMode1,
+      mode2: _grooveBase,
+      modeParam: _calibParam,
+      modeSpeed: _modeSpeed,
+    ));
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    await _send(LampFrgnCommands.color(_grooveColor, _grooveColor));
+    _lastColor = _grooveColor;
+    _zone2Mode = _grooveBase;
+    updateState((s) =>
+        s.copyWith(color: _grooveColor, effectId: _grooveBase, power: true));
+  }
+
   /// Raw 0x0C reply (per-mode param ranges, packed nibbles) — displayed so
   /// the real unit's table can be read off the screen.
   List<int>? _subModesRaw;
@@ -470,6 +526,12 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   Future<void> connect() async {
     _rhythmColor = _prefs.getInt(_rhythmColorKey) ?? 1;
     _rhythmSensitivity = _prefs.getInt(_rhythmSensKey) ?? 4;
+    final grooveRgb = _prefs.getInt(_grooveColorKey);
+    if (grooveRgb != null) {
+      _grooveColor =
+          Rgb((grooveRgb >> 16) & 0xFF, (grooveRgb >> 8) & 0xFF, grooveRgb & 0xFF);
+    }
+    _grooveBase = _prefs.getInt(_grooveBaseKey) ?? 20;
 
     final services = await _ble.discoverServices(_device);
     BluetoothCharacteristic? write;
@@ -856,6 +918,32 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
             min: 0,
             max: 7,
             onChanged: setRhythmSensitivity,
+          ),
+        ], icon: DriverSectionIcon.functions),
+        DriverSection('TERRAX Groove', [
+          DriverInfoSetting(
+            'Single-colour equalizer (experimental)',
+            value: 'Tries the equalizer look in ONE colour: it sets your colour, '
+                'then starts the equalizer. If the light still shows many '
+                'colours, this board generates the equalizer colours itself and '
+                'cannot be forced to one — that is a hardware limit, not a bug.',
+          ),
+          DriverOptionSetting<int>(
+            'Equalizer style',
+            value: _grooveBase,
+            options: terraxGrooveBaseOptions,
+            onChanged: setGrooveBase,
+          ),
+          DriverColorSetting(
+            'Groove colour',
+            description: 'Pick a colour to (try to) tint the equalizer.',
+            value: _grooveColor,
+            onChanged: setGrooveColor,
+          ),
+          DriverButtonSetting(
+            'Apply single-colour equalizer',
+            description: 'Re-sends colour + equalizer in sequence.',
+            run: applyTerraxGroove,
           ),
         ], icon: DriverSectionIcon.functions),
         DriverSection('Zones', [
