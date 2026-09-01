@@ -102,6 +102,23 @@ void main() {
           isNull);
     });
 
+    test('authTokenFor computes the KeeLoq token — verified against capture', () {
+      // The one ground-truth pair captured from real hardware: challenge
+      // 60 47 F7 5E -> token 5D 4A 06 ED. This is the whole reason one app can
+      // control any board; if it breaks, cross-board control breaks.
+      expect(IntelligoCommands.authTokenFor(const [0x60, 0x47, 0xF7, 0x5E]),
+          [0x5D, 0x4A, 0x06, 0xED]);
+      // It is deterministic and feeds straight into the B2 frame.
+      final token = IntelligoCommands.authTokenFor(const [0x60, 0x47, 0xF7, 0x5E]);
+      expect(IntelligoCommands.bAuth(token),
+          [0xFE, 0x1B, 0xB2, 0x04, 0x5D, 0x4A, 0x06, 0xED, 0x51]);
+      // A different challenge yields a different token (not a fixed replay).
+      expect(IntelligoCommands.authTokenFor(const [0x01, 0x02, 0x03, 0x04]),
+          isNot(equals([0x5D, 0x4A, 0x06, 0xED])));
+      // Malformed challenge is rejected, not guessed.
+      expect(IntelligoCommands.authTokenFor(const [0x60, 0x47]), isEmpty);
+    });
+
     test('pedal bits are momentary: a no-op frame is never useful', () {
       // Both pedal bits clear leaves only main+hand set, which asks the board
       // to move nothing — so this must never be used to mean "retract".

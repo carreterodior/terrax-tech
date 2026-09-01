@@ -522,9 +522,10 @@ class IntelligoCommands {
   static Uint8List bRequestChallenge() =>
       intelligoFrame(writeType(moduleB), opcodeChallenge, const []);
 
-  /// Sends the auth token the vendor app derives from the unit's password and
-  /// phone number. Verified shape: `FE 1B B2 04 <4 bytes> XOR`
-  /// (captured token 5D 4A 06 ED → `FE 1B B2 04 5D 4A 06 ED 51`).
+  /// Sends the auth token for the board's challenge. Shape:
+  /// `FE 1B B2 04 <4 bytes> XOR` (challenge 60 47 F7 5E → token 5D 4A 06 ED →
+  /// `FE 1B B2 04 5D 4A 06 ED 51`). The token is computed from the challenge by
+  /// [authTokenFor] — see that method.
   static Uint8List bAuth(List<int> token) =>
       intelligoFrame(writeType(moduleB), opcodeAuth, token);
 
@@ -537,6 +538,72 @@ class IntelligoCommands {
     final len = data[3];
     if (data.length < 4 + len) return null;
     return data.sublist(4, 4 + len);
+  }
+
+  // ---- KeeLoq auth-token derivation ----
+  //
+  // The board gates pedal control (A1) behind a KeeLoq challenge/response: it
+  // sends a 4-byte challenge (B1 reply) and expects a 4-byte token (B2). The
+  // token is a pure function of the challenge — no password, phone or server —
+  // so it can be computed offline for ANY IntelliGo board, which is what lets
+  // one app control every unit.
+  //
+  // Ported verbatim from the IntelliGo app 0.1.8 (uni-app JS,
+  // `keeloqEncrypt` / `readSecretKey` / `writeKeeloq`), key and NLF included,
+  // and verified byte-exact against a real capture (challenge 60 47 F7 5E →
+  // token 5D 4A 06 ED). Do not "simplify" these bits.
+
+  /// KeeLoq non-linear function, as a 32-bit lookup table (0x3A5C742E).
+  static const int _keeloqNlf = 979137582;
+
+  /// The app's embedded 64-bit KeeLoq key (0x2024120618442001).
+  static final BigInt _keeloqKey = BigInt.parse('2024120618442001', radix: 16);
+
+  static int _kbit(int v, int e) => (v & (1 << e)) != 0 ? 1 : 0;
+  static int _kbitBig(BigInt v, int e) =>
+      (v & (BigInt.one << e)) != BigInt.zero ? 1 : 0;
+
+  /// One KeeLoq round: shift right, feeding [d] into bit 31 (the app's `a`).
+  static int _kshift(int t, int d) {
+    var i = (t & 0xFFFFFFFF) >> 1;
+    if (d != 0) i |= 0x80000000;
+    return i & 0xFFFFFFFF;
+  }
+
+  static int _keeloqEncrypt(int input) {
+    var n = input & 0xFFFFFFFF;
+    for (var i = 0; i < 528; i++) {
+      final idx = (_kbit(n, 31) << 4) |
+          (_kbit(n, 26) << 3) |
+          (_kbit(n, 20) << 2) |
+          (_kbit(n, 9) << 1) |
+          _kbit(n, 1);
+      final r = _kbit(_keeloqNlf, idx);
+      final l = _kbit(n, 16);
+      final c = _kbit(n, 0);
+      final u = _kbitBig(_keeloqKey, i % 64);
+      n = _kshift(n, r ^ l ^ c ^ u);
+    }
+    return n & 0xFFFFFFFF;
+  }
+
+  /// Computes the 4-byte auth token (B2 payload) for a board's 4-byte [challenge]
+  /// (B1 reply). Returns empty if the challenge is malformed.
+  static List<int> authTokenFor(List<int> challenge) {
+    if (challenge.length < 4) return const [];
+    // readSecretKey: the challenge bytes are reversed to form the KeeLoq input.
+    final input = (challenge[3] << 24) |
+        (challenge[2] << 16) |
+        (challenge[1] << 8) |
+        challenge[0];
+    final out = _keeloqEncrypt(input);
+    // writeKeeloq: the token is emitted little-endian.
+    return [
+      out & 0xFF,
+      (out >> 8) & 0xFF,
+      (out >> 16) & 0xFF,
+      (out >> 24) & 0xFF,
+    ];
   }
 
   /// Parses `readDeviceStatus` (`C0`). Offsets are the vendor parser's:
@@ -828,14 +895,12 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
   String get _swapKey => 'intelligo.swapPosition.${_device.remoteId.str}';
   String get _tokenKey => 'intelligo.authToken.${_device.remoteId.str}';
 
-  /// Auth token captured from the vendor app's session on this hardware. The
-  /// vendor app derives it from the unit's password + phone number; replaying
-  /// it authenticates us the same way (see CLAUDE.md).
-  static const defaultAuthTokenHex = '5D4A06ED';
-
-  /// Hex string (no separators) of the 4-byte auth token, or '' to skip auth.
-  String get authTokenHex =>
-      _prefs.getString(_tokenKey) ?? defaultAuthTokenHex;
+  /// Optional manual override of the 4-byte auth token, as hex (no separators).
+  /// Empty is the normal case: the token is **computed from the board's live
+  /// challenge** ([IntelligoCommands.authTokenFor]), which works on any board.
+  /// A value here forces that token instead — only needed if a unit ever
+  /// diverges from the standard KeeLoq derivation.
+  String get authTokenHex => _prefs.getString(_tokenKey) ?? '';
 
   Future<void> setAuthTokenHex(String hex) async {
     final cleaned = hex.replaceAll(RegExp(r'[^0-9a-fA-F]'), '').toUpperCase();
@@ -1279,9 +1344,11 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
           onChanged: setUseAltOpcode,
         ),
         DriverTextSetting(
-          'Auth token (hex)',
+          'Auth token override (hex)',
           description:
-              'Unlocks the board. 4 bytes, e.g. 5D4A06ED. Empty = skip auth.'
+              'Normally leave blank — the unlock token is computed from the '
+              'board automatically, so any board works. Set 4 bytes here only '
+              'to force a specific token.'
               '${lastChallengeHex != null ? ' Board challenge: $lastChallengeHex' : ''}',
           value: authTokenHex,
           onChanged: setAuthTokenHex,
@@ -1353,6 +1420,33 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
     _startPolling();
   }
 
+  /// Completes with the board's 4-byte challenge once its B1 reply arrives.
+  Completer<List<int>>? _challengeReply;
+
+  /// Requests the board's challenge and answers it with the token computed from
+  /// it (or a manual override if the user set one). Unlocks the A1 control
+  /// module on any IntelliGo board — the token is derived, not replayed.
+  Future<void> _authenticate() async {
+    final override = _hexToBytes(authTokenHex);
+    final waiter = Completer<List<int>>();
+    _challengeReply = waiter;
+    await _send(IntelligoCommands.bRequestChallenge());
+    try {
+      final challenge = await waiter.future
+          .timeout(const Duration(milliseconds: 1500));
+      final token = override.isNotEmpty
+          ? override
+          : IntelligoCommands.authTokenFor(challenge);
+      if (token.isNotEmpty) await _send(IntelligoCommands.bAuth(token));
+    } on TimeoutException {
+      // No challenge came back. If the user pinned a token, still present it;
+      // otherwise there is nothing to compute from.
+      if (override.isNotEmpty) await _send(IntelligoCommands.bAuth(override));
+    } finally {
+      _challengeReply = null;
+    }
+  }
+
   /// Replays the vendor app's opening read sequence (all reads — nothing
   /// moves). Boards appear to start reporting state only after being polled
   /// this way. Any reply also confirms notifications are flowing.
@@ -1360,16 +1454,12 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
     final probe = Completer<void>();
     _probeReply = probe;
     try {
-      // Auth handshake: request the challenge, then present the token. The
-      // board gates its control module (A1) behind this.
+      // Auth handshake: request the challenge, then present the token computed
+      // from it. The board gates its control module (A1) behind this. The token
+      // is a pure function of the challenge, so this authenticates to any board
+      // — not just the one a token was once captured from.
       await _send(IntelligoCommands.bReadInfo());
-      final token = _hexToBytes(authTokenHex);
-      if (token.isNotEmpty) {
-        await _send(IntelligoCommands.bRequestChallenge());
-        // Give the board a moment to answer before presenting the token.
-        await Future<void>.delayed(const Duration(milliseconds: 300));
-        await _send(IntelligoCommands.bAuth(token));
-      }
+      await _authenticate();
       // Remainder of the vendor app's opening sequence, in its order.
       await _send(IntelligoCommands.bReadInfo2());
       await _send(IntelligoCommands.bReadStatus());
@@ -1443,6 +1533,8 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
       lastChallengeHex = challenge
           .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
           .join();
+      final waiter = _challengeReply;
+      if (waiter != null && !waiter.isCompleted) waiter.complete(challenge);
     }
     // Any complete frame proves notifications are flowing.
     final probe = _probeReply;

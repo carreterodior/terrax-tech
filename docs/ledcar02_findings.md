@@ -2,10 +2,11 @@
 
 Source: **LED+LAMP 4.3.5** (APKPure), `com.home.net.NetConnectBle` `setCar02*`
 methods, their `MainActivity_Car02` wrappers, and `com.home.fragment.car02.*`
-for the call-site parameters. **Vendor-code-verified, confirmed present on real
-hardware** (a unit advertising `LEDCAR-02-9930`, 2026-08-31) — but the byte
-protocol has not yet been checked against an HCI capture, so treat the frames as
-best-known until a capture confirms them.
+for the call-site parameters. **Verified working on real hardware 2026-08-31**
+(a unit advertising `LEDCAR-02-9930`): detection, connect, and the core controls
+(power / colour / brightness / modes / zone) drive the lights correctly through
+this driver. The frames therefore match the firmware; an HCI capture would still
+be the gold standard for the less-common commands left unimplemented below.
 
 ## Detection & transport
 
