@@ -12,6 +12,7 @@ import 'control/group_control_screen.dart';
 import 'scan_screen.dart';
 import '../billing/billing_config.dart';
 import '../state/pro_providers.dart';
+import 'about_sheet.dart';
 import 'paywall.dart';
 import 'theme.dart';
 
@@ -42,6 +43,14 @@ class HomeScreen extends ConsumerWidget {
                   MaterialPageRoute<void>(
                       builder: (_) => const PaywallScreen())),
             ),
+          // Always visible: Google Play and the App Store require a privacy
+          // policy link inside the app, and this is the only guaranteed
+          // screen. Keep it even if the paywall above is hidden.
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'About',
+            onPressed: () => showAboutSheet(context),
+          ),
         ],
       ),
       body: TerraxWatermark(

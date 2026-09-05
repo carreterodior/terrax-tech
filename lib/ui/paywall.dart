@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../links.dart';
 import '../state/pro_providers.dart';
 import 'theme.dart';
 
@@ -23,7 +24,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
   static final _termsUrl = Uri.parse(
       'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/');
-  static final _privacyUrl = Uri.parse('https://terraxtech.com/privacy');
+  static final _privacyUrl = TerraxLinks.privacyPolicyUri;
 
   static const _proFeatures = [
     ('Animation effects', 'Every lighting effect and scene, with speed control'),
