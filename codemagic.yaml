@@ -28,8 +28,9 @@ workflows:
         script: xcode-project use-profiles
       - name: Build signed IPA
         script: |
+          # Build number comes from pubspec.yaml (version: x.y.z+N) so iOS and
+          # Android carry the same number; Codemagic's own counter is not used.
           flutter build ipa --release \
-            --build-number=$PROJECT_BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
     artifacts:
       - build/ios/ipa/*.ipa

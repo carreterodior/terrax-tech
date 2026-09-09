@@ -7,10 +7,14 @@ import 'drivers/elk_7e_driver.dart';
 import 'drivers/intelligo_driver.dart';
 import 'drivers/lampfrgn_driver.dart';
 import 'drivers/ledcar02_driver.dart';
+import 'drivers/leddmx_driver.dart';
 import 'drivers/triones_driver.dart';
 
-typedef DriverFactory = DeviceDriver Function(
-    BleService ble, BluetoothDevice device, SharedPreferences prefs);
+/// [advertisedName] is the name the device was scanned with (or the saved
+/// device's stored name on reconnect); families with several sub-variants
+/// behind one prefix (LEDDMX-00…04) pick their dialect from it.
+typedef DriverFactory = DeviceDriver Function(BleService ble,
+    BluetoothDevice device, SharedPreferences prefs, String advertisedName);
 
 /// Maps a scanned device to a driver. Identification is by advertised name
 /// prefix + service UUID — never by MAC (rule 3; iOS has no stable MAC).
@@ -107,7 +111,7 @@ final List<DetectionRule> detectionRules = [
     serviceUuids: [Elk7eUuids.service],
     defaultProductHint: 'RGB light strip',
     isLighting: true,
-    createDriver: (ble, device, prefs) => Elk7eDriver(ble, device, prefs),
+    createDriver: (ble, device, prefs, _) => Elk7eDriver(ble, device, prefs),
   ),
   DetectionRule(
     driverId: TrionesDriver.id,
@@ -138,7 +142,7 @@ final List<DetectionRule> detectionRules = [
     },
     defaultProductHint: 'RGB light strip or bulb',
     isLighting: true,
-    createDriver: (ble, device, prefs) => TrionesDriver(ble, device, prefs),
+    createDriver: (ble, device, prefs, _) => TrionesDriver(ble, device, prefs),
   ),
   DetectionRule(
     driverId: LampFrgnDriver.id,
@@ -159,7 +163,7 @@ final List<DetectionRule> detectionRules = [
     serviceUuids: [LampFrgnUuids.service, LampFrgnUuids.telinkService],
     defaultProductHint: 'Car ambient lighting',
     isLighting: true,
-    createDriver: (ble, device, prefs) => LampFrgnDriver(ble, device, prefs),
+    createDriver: (ble, device, prefs, _) => LampFrgnDriver(ble, device, prefs),
   ),
   DetectionRule(
     driverId: LedCar02Driver.id,
@@ -175,7 +179,28 @@ final List<DetectionRule> detectionRules = [
     namePrefixes: const ['LEDCAR-02'],
     defaultProductHint: 'RGB car lighting',
     isLighting: true,
-    createDriver: (ble, device, prefs) => LedCar02Driver(ble, device, prefs),
+    createDriver: (ble, device, prefs, _) => LedCar02Driver(ble, device, prefs),
+  ),
+  DetectionRule(
+    driverId: LedDmxDriver.id,
+    label: 'Addressable LED controller (LEDDMX)',
+    // Same LED+LAMP app, DMX branch: five sub-variants "LEDDMX-00-" … "-04-"
+    // that the vendor tells apart by name alone (docs/leddmx_findings.md).
+    // Name only for the same reason as LEDCAR-02: it advertises 0xFFE0, which
+    // IntelliGo boards advertise too.
+    namePrefixes: const ['LEDDMX'],
+    productHints: const {
+      'leddmx-00': 'LED strip controller (DMX-00)',
+      'leddmx-01': 'LED strip controller (DMX-01)',
+      'leddmx-02': 'LED strip controller (DMX-02)',
+      'leddmx-03': 'LED strip controller (DMX-03)',
+      'leddmx-04': 'LED strip controller (DMX-04, RGBW/CT)',
+    },
+    defaultProductHint: 'Addressable LED controller',
+    isLighting: true,
+    createDriver: (ble, device, prefs, advName) => LedDmxDriver(
+        ble, device, prefs,
+        variant: LedDmxVariant.fromName(advName)),
   ),
   DetectionRule(
     driverId: IntelligoDriver.id,
@@ -185,7 +210,7 @@ final List<DetectionRule> detectionRules = [
     // is the name real boards advertise (verified 2026-08-03).
     namePrefixes: const ['IntelliGo', 'INTELLIGO', 'IntelliGO', 'DianDongTaBan'],
     defaultProductHint: 'Running board',
-    createDriver: (ble, device, prefs) => IntelligoDriver(ble, device, prefs),
+    createDriver: (ble, device, prefs, _) => IntelligoDriver(ble, device, prefs),
   ),
 ];
 

@@ -167,8 +167,12 @@ class DeviceController extends FamilyNotifier<DeviceControllerState, String>
       // on listen, so subscribing earlier delivers a spurious `disconnected`
       // that would kick off a competing reconnect.
       _connSub ??= _device!.connectionState.listen(_onConnectionState);
-      _driver ??= _rule!
-          .createDriver(ble, _device!, ref.read(sharedPreferencesProvider));
+      _driver ??= _rule!.createDriver(
+          ble,
+          _device!,
+          ref.read(sharedPreferencesProvider),
+          ref.read(savedDevicesProvider.notifier).byId(arg)?.advertisedName ??
+              '');
       await _driver!.connect();
       await _stateSub?.cancel();
       _stateSub = _driver!.stateStream.listen((deviceState) {

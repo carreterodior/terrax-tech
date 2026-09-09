@@ -107,6 +107,22 @@ Service `0xAE30`, write `0xAE01`, notify `0xAE02` (Telink fallback service
 `0x8D` set, `0x90` query (`90 7C <sub>`), `0xD9` OTA — and the function is the first data
 byte. Full sub-command table and status: `docs/lampfrgn_findings.md`.
 
+### ledcar02 / leddmx — LED+LAMP app families (`LEDCAR-02-*`, `LEDDMX-00…04-*`)
+
+Both from **LED+LAMP 4.3.5** (`com.home.net.NetConnectBle`); transport service `0xFFE0`,
+write `0xFFE1`, 9-byte frames `7B … BF`, optimistic state. **Name-only detection** (they
+advertise `0xFFE0`, which IntelliGo boards advertise too). Full tables:
+`docs/ledcar02_findings.md`, `docs/leddmx_findings.md`.
+
+- LEDCAR-02: `7B <op> d0..d4 <zone> BF` — colour `07`, brightness `01`, speed `02`, mode `03`,
+  power `04`, play/stop `06`; zone 0 all / 1 / 2. Modes = `R.array/dmx_model` (211, AUTO=255).
+- LEDDMX has **two dialects chosen from the name digit**: A (00/01/03) `7B FF <op> p0..p4 BF`,
+  B (02/04) `7B <op> p0..p5 BF`. Colour A `7B FF 07 R G B 00 FF BF` / B `7B 07 R G B 00 FF FF BF`;
+  brightness A `7B FF 01 v32 v 00 FF FF BF` (`v32=(v*32)~/100`) / B `7B 01 v 00 FF FF FF FF BF`;
+  mode A `7B FF 03 id …` / B `7B 03 id …`; power RGB layer `04 01/00` (Dim/Aisle sub-codes are
+  swapped between dialects). DMX-03 has its own mode names (`R.array/dmx03_model`, same ids).
+  Variant comes from the advertised name via `DriverFactory`'s 4th argument.
+
 ### intelligo — electric running board / step board
 - Advertises as `DianDongTaBan` (电动踏板; verified on real hardware 2026-08-03, services
   `0xFFE0`+`0xFEE7` in the advertisement). Also match `IntelliGo*` prefixes.

@@ -75,7 +75,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     final ble = ref.read(bleServiceProvider);
     final prefs = ref.read(sharedPreferencesProvider);
     // Instantiate the driver only to read its default category.
-    final driver = detected.rule.createDriver(ble, detected.result.device, prefs);
+    final driver = detected.rule.createDriver(ble, detected.result.device, prefs, detected.advertisedName);
     ref.read(savedDevicesProvider.notifier).add(TerraxDevice(
           id: detected.id,
           advertisedName: detected.advertisedName,
@@ -160,7 +160,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
 
     final ble = ref.read(bleServiceProvider);
     final prefs = ref.read(sharedPreferencesProvider);
-    final driver = rule.createDriver(ble, result.device, prefs);
+    final driver = rule.createDriver(ble, result.device, prefs, advName);
     ref.read(savedDevicesProvider.notifier).add(TerraxDevice(
           id: result.device.remoteId.str,
           advertisedName: advName,
@@ -335,7 +335,7 @@ class _DetectedTile extends ConsumerWidget {
     final ble = ref.read(bleServiceProvider);
     final prefs = ref.read(sharedPreferencesProvider);
     final category = detected.rule
-        .createDriver(ble, detected.result.device, prefs)
+        .createDriver(ble, detected.result.device, prefs, detected.advertisedName)
         .defaultCategory;
     final hint = detected.rule.productHint(detected.advertisedName);
     final rssi = detected.result.rssi;

@@ -151,6 +151,7 @@ void main() {
         'triones': true,
         'lampfrgn': true,
         'ledcar02': true,
+        'leddmx': true,
         'intelligo': false,
       });
     });
