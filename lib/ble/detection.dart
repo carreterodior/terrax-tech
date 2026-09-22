@@ -7,6 +7,7 @@ import 'drivers/elk_7e_driver.dart';
 import 'drivers/intelligo_driver.dart';
 import 'drivers/lampfrgn_driver.dart';
 import 'drivers/ledcar02_driver.dart';
+import 'drivers/ledcar_driver.dart';
 import 'drivers/leddmx_driver.dart';
 import 'drivers/triones_driver.dart';
 
@@ -180,6 +181,23 @@ final List<DetectionRule> detectionRules = [
     defaultProductHint: 'RGB car lighting',
     isLighting: true,
     createDriver: (ble, device, prefs, _) => LedCar02Driver(ble, device, prefs),
+  ),
+  DetectionRule(
+    driverId: LedCarDriver.id,
+    label: 'RGB car lighting (LEDCAR-00 / LEDCAR-01)',
+    // The other two car variants of the LED+LAMP app. -00 speaks the classic
+    // 7E dialect, -01 mixes 7E and 7B frames behind an RGB / LED / DMX switch
+    // (docs/ledlamp_4.3.7_findings.md §3). Name only, like LEDCAR-02.
+    namePrefixes: const ['LEDCAR-00', 'LEDCAR-01'],
+    productHints: const {
+      'ledcar-00': 'RGB car lighting (LEDCAR-00)',
+      'ledcar-01': 'RGB car lighting (LEDCAR-01)',
+    },
+    defaultProductHint: 'RGB car lighting',
+    isLighting: true,
+    createDriver: (ble, device, prefs, advName) => LedCarDriver(
+        ble, device, prefs,
+        variant: LedCarVariant.fromName(advName)),
   ),
   DetectionRule(
     driverId: LedDmxDriver.id,

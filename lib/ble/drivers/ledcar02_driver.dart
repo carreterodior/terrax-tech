@@ -9,6 +9,7 @@ import '../../models/rgb.dart';
 import '../ble_service.dart';
 import '../device_driver.dart';
 import 'ledcar02_modes.dart';
+import 'ledlamp_unlock.dart';
 
 /// Pure command builders for the LEDCAR-02 family (`LEDCAR-02-*`), the RGB car
 /// lighting the LED+LAMP app drives from its Car02 screens. Do not "improve"
@@ -112,20 +113,31 @@ class LedCar02Driver extends DeviceDriver with DriverStateMixin {
       ];
 
   /// Zone picker, so the user can drive both channels together or each one on
-  /// its own — the app's ALL / LED1 / LED2 tabs.
+  /// its own — the app's ALL / LED1 / LED2 tabs. Shown as a section (not the
+  /// gear menu) so it is visible next to the colour controls.
   @override
-  List<DriverSetting> get settings => [
-        DriverOptionSetting<int>(
-          'Zone',
-          description: 'Which lights the controls affect.',
-          value: _zone,
-          options: const [
-            (value: LedCar02Commands.zoneAll, label: 'All'),
-            (value: LedCar02Commands.zoneLed1, label: 'LED 1'),
-            (value: LedCar02Commands.zoneLed2, label: 'LED 2'),
-          ],
-          onChanged: setZone,
-        ),
+  List<DriverSection> get sections => [
+        DriverSection('Zones', [
+          DriverInfoSetting(
+            'LED 1 / LED 2',
+            value: 'Pick which output the colour, brightness, pattern and '
+                'power controls drive: both together, or one channel alone.',
+          ),
+          DriverOptionSetting<int>(
+            'Zone',
+            value: _zone,
+            options: const [
+              (value: LedCar02Commands.zoneAll, label: 'All'),
+              (value: LedCar02Commands.zoneLed1, label: 'LED 1'),
+              (value: LedCar02Commands.zoneLed2, label: 'LED 2'),
+            ],
+            onChanged: setZone,
+          ),
+          DriverButtonSetting('Pause pattern',
+              run: () => _send(LedCar02Commands.playStop(false))),
+          DriverButtonSetting('Resume pattern',
+              run: () => _send(LedCar02Commands.playStop(true))),
+        ], icon: DriverSectionIcon.lights),
       ];
 
   String get _zoneKey => 'ledcar02.zone.${_device.remoteId.str}';
@@ -161,6 +173,15 @@ class LedCar02Driver extends DeviceDriver with DriverStateMixin {
     if (notify != null && notify.properties.notify) {
       final stream = await _ble.subscribe(notify);
       _notifySub = stream.listen((_) {}); // silent; state stays optimistic
+    }
+
+    // Vendor "hello" 300 ms after discovery (LED+LAMP 4.3.7 sends it to every
+    // LEDCAR/LEDDMX/LEDBLE unit; newer firmware may wait for it).
+    await Future<void>.delayed(LedLampUnlock.delay);
+    try {
+      await _send(LedLampUnlock.frame(DateTime.now()));
+    } catch (_) {
+      // Older units (hardware-verified 2026-08-31) never needed it.
     }
     emitState(currentState);
   }

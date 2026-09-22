@@ -10,6 +10,7 @@ import '../ble_service.dart';
 import '../device_driver.dart';
 import 'ledcar02_modes.dart';
 import 'leddmx_modes.dart';
+import 'ledlamp_unlock.dart';
 
 /// Which LEDDMX sub-family a unit belongs to. The vendor app decides this from
 /// the advertised name alone (`LEDDMX-00-…` … `LEDDMX-04-…`) and never probes
@@ -613,6 +614,14 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
       throw StateError('leddmx: no write characteristic (0xFFE1) found');
     }
     _write = write;
+
+    // Vendor "hello" 300 ms after discovery (docs/ledlamp_4.3.7_findings §7.3).
+    await Future<void>.delayed(LedLampUnlock.delay);
+    try {
+      await _send(LedLampUnlock.frame(DateTime.now()));
+    } catch (_) {
+      // Must never block control on units that ignore it.
+    }
     emitState(currentState);
   }
 

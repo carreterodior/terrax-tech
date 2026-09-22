@@ -122,6 +122,14 @@ advertise `0xFFE0`, which IntelliGo boards advertise too). Full tables:
   mode A `7B FF 03 id …` / B `7B 03 id …`; power RGB layer `04 01/00` (Dim/Aisle sub-codes are
   swapped between dialects). DMX-03 has its own mode names (`R.array/dmx03_model`, same ids).
   Variant comes from the advertised name via `DriverFactory`'s 4th argument.
+- LEDCAR-00/01 (`ledcar_driver.dart`, from LED+LAMP **4.3.7**, `docs/ledlamp_4.3.7_findings.md`
+  §3): -00 is pure BLE-A `7E FF <op> …EF` (colour `7E FF 05 03 R G B FF EF`, mode
+  `7E FF 03 id 03 …` ids 135–157); -01 has three sources — RGB (BLE-A), LED/sync
+  (`7B 01 07 R G B d FF BF`, brightness `7B FF 01 v32 v 02 …`, power `7B FF 04 07/06`), DMX
+  (`7B 00 07 …`, `7B FF 03 id …` 211 modes, power `7B FF 04 01/00`).
+- **Unlock hello**: every LED+LAMP driver writes `2A 02 A1 23 45 67 <(wd<<5)|HH> <MM> AF`
+  300 ms after service discovery (`ledlamp_unlock.dart`; the vendor app does this for every
+  LEDBLE/LEDDMX/LEDCAR unit; wd Mon=1…Sun=7). Failure is ignored.
 
 ### intelligo — electric running board / step board
 - Advertises as `DianDongTaBan` (电动踏板; verified on real hardware 2026-08-03, services

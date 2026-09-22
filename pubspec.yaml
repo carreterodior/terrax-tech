@@ -4,7 +4,7 @@ publish_to: 'none'
 
 # Build 3 = the iOS binary submitted to Apple on Aug 8; Android versionCode
 # tracks the same number.
-version: 1.0.3+6
+version: 1.0.4+7
 
 environment:
   sdk: ^3.12.2
