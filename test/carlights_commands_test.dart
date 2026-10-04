@@ -118,10 +118,10 @@ void main() {
   });
 
   group('hello burst', () {
-    test('28 FF 00 00 00 00 F0 11 11, 100 × 10 ms', () {
+    test('28 FF 00 00 00 00 F0 11 11, repeated 10 ms apart', () {
       expect(CarLightsCommands.hello,
           [0x28, 0xFF, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x11, 0x11]);
-      expect(CarLightsCommands.helloRepeat, 100);
+      expect(CarLightsCommands.helloRepeat, 10);
       expect(CarLightsCommands.helloGap, const Duration(milliseconds: 10));
     });
   });

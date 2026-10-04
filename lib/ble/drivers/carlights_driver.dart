@@ -110,9 +110,15 @@ class CarLightsCommands {
   /// any queued command). Not a checksummed frame: it is the "static red"
   /// colour frame with its tail byte changed to `11`, and the firmware is
   /// evidently happy with it, so we send it verbatim.
+  ///
+  /// [helloRepeat] is deliberately smaller than the vendor's 100: Android's
+  /// `BluetoothGatt.writeCharacteristic` *drops* a write while another is in
+  /// flight, so of the vendor's 100 un-awaited writes only a handful ever
+  /// reached the device. Our queue is serialized (rule 4), so 100 real writes
+  /// would hold the user's first command back by several seconds.
   static final Uint8List hello =
       Uint8List.fromList([0x28, 0xFF, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x11, 0x11]);
-  static const int helloRepeat = 100;
+  static const int helloRepeat = 10;
   static const Duration helloGap = Duration(milliseconds: 10);
 }
 
@@ -133,7 +139,6 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
 
   static final _skipWrite = Guid('ffb2');
   static final _skipNoResp = [Guid('ff14'), Guid('ff15')];
-  static final _preferredWrite = Guid('ffe1');
 
   /// Minimum gap between sound frames so the serialized write queue never
   /// backs up behind the microphone (rule 4; the vendor fires one per 40–80 ms
@@ -332,28 +337,24 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
     }
   }
 
-  /// Vendor rule (`BleHelper.initServiceAndChara`): walk every service in
-  /// order; a characteristic with WRITE (not `FFB2`) or WRITE-NO-RESPONSE
-  /// (not `FF14`/`FF15`) replaces the previous pick, so the last one wins.
-  /// We additionally prefer `FFE1` when present, the write endpoint of every
-  /// other `7B`/`7E`-era controller we know.
+  /// Vendor rule (`BleHelper.initServiceAndChara`), mirrored exactly: walk
+  /// every service in order; a characteristic with WRITE (not `FFB2`) or
+  /// WRITE-NO-RESPONSE (not `FF14`/`FF15`) replaces the previous pick, so the
+  /// **last** one wins. No "smarter" preference on top — the vendor's rule is
+  /// the one known to work with this hardware.
   static BluetoothCharacteristic? pickWriteCharacteristic(
       List<BluetoothService> services) {
     BluetoothCharacteristic? pick;
-    BluetoothCharacteristic? preferred;
     for (final s in services) {
       for (final c in s.characteristics) {
         final p = c.properties;
         final isWrite = p.write && c.uuid != _skipWrite;
         final isNoResp =
             p.writeWithoutResponse && !_skipNoResp.contains(c.uuid);
-        if (isWrite || isNoResp) {
-          pick = c;
-          if (c.uuid == _preferredWrite) preferred = c;
-        }
+        if (isWrite || isNoResp) pick = c;
       }
     }
-    return preferred ?? pick;
+    return pick;
   }
 
   static BluetoothCharacteristic? pickNotifyCharacteristic(
@@ -376,11 +377,14 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
     _write = null;
   }
 
+  /// Write type as Android picks it for the vendor (`setValue` +
+  /// `writeCharacteristic` with the characteristic's default type): WRITE
+  /// with response whenever the characteristic supports it, no-response only
+  /// when that is all it offers.
   Future<void> _send(Uint8List bytes) {
     final write = _write;
     if (write == null) throw StateError('carlights: not connected');
-    return _ble.write(write, bytes,
-        withoutResponse: write.properties.writeWithoutResponse);
+    return _ble.write(write, bytes, withoutResponse: !write.properties.write);
   }
 
   @override

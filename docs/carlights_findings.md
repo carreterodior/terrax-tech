@@ -30,14 +30,21 @@ hardware or by capture.** Key classes:
   - notify: property NOTIFY (0x10) with the same FF14/FF15 exclusion
     (subscribed, but `onCharacteristicChanged` does nothing);
   - read / indicate are recorded and never used.
-  The driver mirrors this and additionally prefers `0xFFE1` when present.
+  The driver mirrors this exactly (no extra preference).
 - **Hello burst.** In `onServicesDiscovered` the app writes
   `28 FF 00 00 00 00 F0 11 11` **100 times with `Thread.sleep(10)`** between
   writes, then flushes any command queued while disconnected. The bytes are the
   "static red" colour frame with the `FA` tail replaced by `11`; its last byte
   `11` happens to equal the checksum of the real red frame, so this looks like a
   copy-paste that the firmware tolerates (or needs). The driver sends it
-  verbatim, fire-and-forget, right after discovery.
+  verbatim, fire-and-forget, right after discovery — but **10 times, not
+  100**: Android drops `writeCharacteristic` calls made while a write is
+  pending, so the vendor's un-awaited loop only ever delivered a few frames,
+  whereas our serialized queue would really send all 100 and hold the first
+  user command back for seconds.
+- Write type: Android's default for `setValue` + `writeCharacteristic` is
+  WRITE *with response* when the characteristic has the WRITE property, else
+  WRITE-NO-RESPONSE; the driver uses the same rule.
 - State: nothing is read back; optimistic.
 
 ## Frame format

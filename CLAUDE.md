@@ -138,7 +138,8 @@ From **CAR-LIGHTS 1.2.9** (`ysn.com.app.lights`, `CommandHelper` +
 `EncryptUtils.getSumCheck`); full trace in `docs/carlights_findings.md`. Detection
 is by **name containing** `CL-`/`CL_` (whitespace stripped), as the vendor app does
 (`DetectionRule.nameContains`). No fixed service: write = last WRITE char (not FFB2)
-or WRITE-NO-RESPONSE char (not FF14/FF15), FFE1 preferred. Frames are
+or WRITE-NO-RESPONSE char (not FF14/FF15), last one wins; write *with* response when
+the char has WRITE (Android default), else no-response. Frames are
 `<body…> <sum>` — **sum = low byte of the body total**, no head/tail.
 
 - Power `FB F0 FA` / `FB 0F FA` · Colour `28 R' G' B' 00 00 F0 FA` with
@@ -147,8 +148,8 @@ or WRITE-NO-RESPONSE char (not FF14/FF15), FFE1 preferred. Frames are
   wheel index + 1) · Stop `EB 0F EF` sent **twice** · Music `E8 b0..b5 EC <scheme 1–5>` ·
   Mic `E9 b0..b5 ED 02` (bands 250 Hz…8 kHz scaled so max = 250) · Chip
   `66 <big 1–11> <small 1–11> 00 54` (SMT66…SMT24).
-- **Hello burst** after discovery: `28 FF 00 00 00 00 F0 11 11` ×100, 10 ms apart
-  (vendor `BleHelper.onServicesDiscovered`); fire-and-forget.
+- **Hello burst** after discovery: `28 FF 00 00 00 00 F0 11 11`, 10 ms apart (vendor
+  loops 100× but Android drops overlapping writes; we send 10); fire-and-forget.
 - Sound-reactive mode uses the phone mic via `lib/audio/mic_bands.dart` (package
   `record`, 8 kHz PCM16, FFT bins `(n-1)*f/8000`), one frame per 80 ms.
 
