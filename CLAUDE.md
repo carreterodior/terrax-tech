@@ -36,7 +36,8 @@ Dart null-safety. Material 3, dark-mode friendly.
 lib/ble/ble_service.dart          scan/connect/discover/write/notify wrapper
 lib/ble/device_driver.dart        DeviceDriver + DeviceCapabilities (the contract)
 lib/ble/detection.dart            scanned device -> driver
-lib/ble/drivers/                  elk_7e / triones / intelligo
+lib/ble/drivers/                  elk_7e / triones / lampfrgn / ledcar02 / ledcar / leddmx / carlights / intelligo
+lib/audio/mic_bands.dart          phone-mic band sampler for sound-reactive drivers (no BLE, no UI)
 lib/models/                       terrax_device, device_category, rgb
 lib/state/                        scan / devices / device controllers (riverpod)
 lib/ui/                           home (categorized), scan, control/*
@@ -130,6 +131,26 @@ advertise `0xFFE0`, which IntelliGo boards advertise too). Full tables:
 - **Unlock hello**: every LED+LAMP driver writes `2A 02 A1 23 45 67 <(wd<<5)|HH> <MM> AF`
   300 ms after service discovery (`ledlamp_unlock.dart`; the vendor app does this for every
   LEDBLE/LEDDMX/LEDCAR unit; wd Mon=1…Sun=7). Failure is ignored.
+
+### carlights — CAR-LIGHTS rock-light controllers (`CL-*` / `CL_*`)
+
+From **CAR-LIGHTS 1.2.9** (`ysn.com.app.lights`, `CommandHelper` +
+`EncryptUtils.getSumCheck`); full trace in `docs/carlights_findings.md`. Detection
+is by **name containing** `CL-`/`CL_` (whitespace stripped), as the vendor app does
+(`DetectionRule.nameContains`). No fixed service: write = last WRITE char (not FFB2)
+or WRITE-NO-RESPONSE char (not FF14/FF15), FFE1 preferred. Frames are
+`<body…> <sum>` — **sum = low byte of the body total**, no head/tail.
+
+- Power `FB F0 FA` / `FB 0F FA` · Colour `28 R' G' B' 00 00 F0 FA` with
+  `c' = c*brightness/100` (**no brightness opcode** — brightness re-sends colour) ·
+  Pattern `FD <mode 1–122> <speed 1–255> <light 1–255> FC` (`carlights_modes.dart`,
+  wheel index + 1) · Stop `EB 0F EF` sent **twice** · Music `E8 b0..b5 EC <scheme 1–5>` ·
+  Mic `E9 b0..b5 ED 02` (bands 250 Hz…8 kHz scaled so max = 250) · Chip
+  `66 <big 1–11> <small 1–11> 00 54` (SMT66…SMT24).
+- **Hello burst** after discovery: `28 FF 00 00 00 00 F0 11 11` ×100, 10 ms apart
+  (vendor `BleHelper.onServicesDiscovered`); fire-and-forget.
+- Sound-reactive mode uses the phone mic via `lib/audio/mic_bands.dart` (package
+  `record`, 8 kHz PCM16, FFT bins `(n-1)*f/8000`), one frame per 80 ms.
 
 ### intelligo — electric running board / step board
 - Advertises as `DianDongTaBan` (电动踏板; verified on real hardware 2026-08-03, services

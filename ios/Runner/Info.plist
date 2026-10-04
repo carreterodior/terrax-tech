@@ -28,6 +28,8 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>TERRAX TECH listens through the microphone only while the sound-reactive lighting mode is switched on, to drive your lights to the music. Nothing is recorded or stored.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Terrax uses Bluetooth to find and control your BLE accessories (lights and running boards).</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>

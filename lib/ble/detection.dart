@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ble_service.dart';
 import 'device_driver.dart';
+import 'drivers/carlights_driver.dart';
 import 'drivers/elk_7e_driver.dart';
 import 'drivers/intelligo_driver.dart';
 import 'drivers/lampfrgn_driver.dart';
@@ -37,6 +38,11 @@ class DetectionRule {
 
   final List<String> namePrefixes;
 
+  /// Substrings that claim the device anywhere in its advertised name (with
+  /// whitespace removed), for vendors whose own app filters with `contains`
+  /// rather than a prefix (CAR-LIGHTS: `CL-` / `CL_`). Keep these distinctive.
+  final List<String> nameContains;
+
   /// Advertised service UUIDs, when the family reliably advertises any.
   /// Several families ship under more than one (e.g. Telink fallback), so a
   /// match on any one of them claims the device.
@@ -55,6 +61,7 @@ class DetectionRule {
     required this.createDriver,
     required this.defaultProductHint,
     this.productHints = const {},
+    this.nameContains = const [],
     this.serviceUuids = const [],
     this.isLighting = false,
   });
@@ -74,9 +81,12 @@ class DetectionRule {
   bool matches(String advName, List<Guid> advertisedServiceUuids) {
     final name = advName.toLowerCase();
     final nameMatch = namePrefixes.any((p) => name.startsWith(p.toLowerCase()));
+    final compact = name.replaceAll(RegExp(r'\s+'), '');
+    final containsMatch =
+        nameContains.any((p) => compact.contains(p.toLowerCase()));
     final serviceMatch =
         serviceUuids.any(advertisedServiceUuids.contains);
-    return nameMatch || serviceMatch;
+    return nameMatch || containsMatch || serviceMatch;
   }
 }
 
@@ -144,6 +154,20 @@ final List<DetectionRule> detectionRules = [
     defaultProductHint: 'RGB light strip or bulb',
     isLighting: true,
     createDriver: (ble, device, prefs, _) => TrionesDriver(ble, device, prefs),
+  ),
+  DetectionRule(
+    driverId: CarLightsDriver.id,
+    label: 'Rock lights (CAR-LIGHTS)',
+    // The CAR-LIGHTS app (ysn.com.app.lights 1.2.9) strips whitespace from
+    // the advertised name and accepts it if it *contains* "CL-" or "CL_"
+    // (`Constant.BLE_NAME_PREFIX1/2`, `MainPresenter.onLeScanCallback`), so
+    // the rule mirrors that. Transport is discovered at runtime (no fixed
+    // service), hence no service UUID here.
+    namePrefixes: const ['CL-', 'CL_'],
+    nameContains: const ['CL-', 'CL_'],
+    defaultProductHint: 'Rock lights',
+    isLighting: true,
+    createDriver: (ble, device, prefs, _) => CarLightsDriver(ble, device, prefs),
   ),
   DetectionRule(
     driverId: LampFrgnDriver.id,

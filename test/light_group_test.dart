@@ -149,6 +149,7 @@ void main() {
       expect(byId, {
         'elk_7e': true,
         'triones': true,
+        'carlights': true,
         'lampfrgn': true,
         'ledcar02': true,
         'ledcar': true,
