@@ -46,7 +46,11 @@ class CarLightsCommands {
   /// (the main-screen power button, sent per selected device).
   static Uint8List power(bool on) => frame([0xFB, on ? 0xF0 : 0x0F, 0xFA]);
 
-  /// `28 R' G' B' 00 00 F0 FA <sum>` — `settingColorLight(argb, light)`.
+  /// `28 R' G' B' 00 00 F0 C8 <sum>` — `settingColorLight(argb, light)`.
+  /// The tail is **`C8` (200)**: the vendor passes
+  /// `ItemTouchHelper.Callback.DEFAULT_DRAG_ANIMATION_DURATION` here, whereas
+  /// the power frames use `DEFAULT_SWIPE_ANIMATION_DURATION` (250 = `FA`).
+  /// Hardware-confirmed 2026-10-05: with `FA` the light ignores the frame.
   /// The app has no brightness opcode: brightness is applied by scaling each
   /// channel, `c' = c * light / 100`. The vendor slider reaches 105, which
   /// overflows a byte at full red (the Java `(byte)` cast wraps); we clamp
@@ -54,7 +58,7 @@ class CarLightsCommands {
   static Uint8List color(int r, int g, int b, {int brightness = 100}) {
     final l = brightness.clamp(0, 100);
     int scale(int c) => ((c.clamp(0, 255) * l) ~/ 100).clamp(0, 255);
-    return frame([0x28, scale(r), scale(g), scale(b), 0x00, 0x00, 0xF0, 0xFA]);
+    return frame([0x28, scale(r), scale(g), scale(b), 0x00, 0x00, 0xF0, 0xC8]);
   }
 
   /// `FD <mode> <speed> <light> FC <sum>` — `settingMode(mode, seek1, seek2)`.
@@ -108,8 +112,8 @@ class CarLightsCommands {
   /// `28 FF 00 00 00 00 F0 11 11` — the burst `BleHelper.onServicesDiscovered`
   /// writes **100 times, 10 ms apart**, right after service discovery (before
   /// any queued command). Not a checksummed frame: it is the "static red"
-  /// colour frame with its tail byte changed to `11`, and the firmware is
-  /// evidently happy with it, so we send it verbatim.
+  /// colour frame with its tail byte changed to `11` (byte array literal in
+  /// the vendor code, sent verbatim).
   ///
   /// [helloRepeat] is deliberately smaller than the vendor's 100: Android's
   /// `BluetoothGatt.writeCharacteristic` *drops* a write while another is in

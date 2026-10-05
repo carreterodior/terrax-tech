@@ -3,8 +3,8 @@
 Source: **CAR-LIGHTS 1.2.9** (APKPure XAPK, package `ysn.com.app.lights`,
 versionCode 7, min SDK 23). Decompiled with jadx 1.5.1 to
 `C:\dev\tmp\carlights-out`. Dior used this app for TERRAX rock lights before
-TERRAX TECH. Traced from the decompiled code only — **not yet verified on
-hardware or by capture.** Key classes:
+TERRAX TECH. Traced from the decompiled code; **hardware-verified 2026-10-05** on Dior's
+rock light for power, modes and colour (after the `C8` tail fix below). Key classes:
 
 | What | Class |
 | --- | --- |
@@ -64,12 +64,19 @@ Opcodes are the first body byte.
 | --- | --- | --- | --- |
 | Power on | `openLight` | `FB F0 FA` + sum | `FB F0 FA E5` |
 | Power off | `closeLight` | `FB 0F FA` + sum | `FB 0F FA 04` |
-| Colour | `settingColorLight(argb, light)` | `28 R' G' B' 00 00 F0 FA` + sum, `c' = c*light/100` | red 100 % → `28 FF 00 00 00 00 F0 FA 11` |
+| Colour | `settingColorLight(argb, light)` | `28 R' G' B' 00 00 F0 C8` + sum, `c' = c*light/100` | red 100 % → `28 FF 00 00 00 00 F0 C8 DF` |
 | Pattern | `settingMode(mode, speed, light)` | `FD <mode> <speed> <light> FC` + sum | mode 1, 127, 127 → `FD 01 7F 7F FC F8` |
 | Stop (music/mic off) | `stop()` — **sent twice** | `EB 0F EF` + sum | `EB 0F EF E9` |
 | Music (player) | `settingMusic(b0…b5)` | `E8 b0 b1 b2 b3 b4 b5 EC <scheme>` + sum | `E8 FA 00 00 00 00 00 EC 01 CF` |
 | Mic | `settingAudio(b0…b5)` | `E9 b0 b1 b2 b3 b4 b5 ED 02` + sum | `E9 FA 00 00 00 00 00 ED 02 D2` |
 | Chip setting | `chip(lDot, sDot)` | `66 <big> <small> 00 54` + sum | `66 01 01 00 54 BC` |
+
+**Constant trap.** jadx shows the frame tails as AndroidX symbols:
+`ItemTouchHelper.Callback.DEFAULT_SWIPE_ANIMATION_DURATION` = **250 (`FA`)** in
+the power frames, but `DEFAULT_DRAG_ANIMATION_DURATION` = **200 (`C8`)** in the
+colour frame. The first port used `FA` for both; on hardware (2026-10-05) power
+and modes worked and colour did nothing until the tail became `C8`. The hello
+burst is a literal byte array (`… F0 11 11`) and is unaffected.
 
 Call-site details:
 

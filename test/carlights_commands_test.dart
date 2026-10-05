@@ -29,9 +29,11 @@ void main() {
   });
 
   group('colour (settingColorLight)', () {
-    test('28 R G B 00 00 F0 FA <sum> at 100 %', () {
+    test('28 R G B 00 00 F0 C8 <sum> at 100 % (tail is 200, not 250)', () {
+      // DEFAULT_DRAG_ANIMATION_DURATION = 200 (0xC8); hardware-confirmed
+      // 2026-10-05 — the FA tail of the power frames is silently ignored here.
       expect(CarLightsCommands.color(255, 0, 0),
-          [0x28, 0xFF, 0x00, 0x00, 0x00, 0x00, 0xF0, 0xFA, 0x11]);
+          [0x28, 0xFF, 0x00, 0x00, 0x00, 0x00, 0xF0, 0xC8, 0xDF]);
       expect(CarLightsCommands.color(10, 20, 30), [
         0x28,
         10,
@@ -40,8 +42,8 @@ void main() {
         0x00,
         0x00,
         0xF0,
-        0xFA,
-        (0x28 + 60 + 0xF0 + 0xFA) & 0xFF
+        0xC8,
+        (0x28 + 60 + 0xF0 + 0xC8) & 0xFF
       ]);
     });
     test('brightness scales each channel (c * light / 100, integer)', () {

@@ -144,7 +144,7 @@ or WRITE-NO-RESPONSE char (not FF14/FF15), last one wins; write *with* response 
 the char has WRITE (Android default), else no-response. Frames are
 `<body…> <sum>` — **sum = low byte of the body total**, no head/tail.
 
-- Power `FB F0 FA` / `FB 0F FA` · Colour `28 R' G' B' 00 00 F0 FA` with
+- Power `FB F0 FA` / `FB 0F FA` · Colour `28 R' G' B' 00 00 F0 C8` (tail **C8**, not FA — hardware-verified) with
   `c' = c*brightness/100` (**no brightness opcode** — brightness re-sends colour) ·
   Pattern `FD <mode 1–122> <speed 1–255> <light 1–255> FC` (`carlights_modes.dart`,
   wheel index + 1) · Stop `EB 0F EF` sent **twice** · Music `E8 b0..b5 EC <scheme 1–5>` ·
