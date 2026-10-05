@@ -143,7 +143,30 @@ void main() {
         final c = cameraTargetFor(t);
         expect(c.theta % 45, 0, reason: t.name);
         expect(c.zoom, inInclusiveRange(1.0, 2.4));
+        expect(c.interior, t == LightingZoneType.interiorAmbient ? 1 : 0, reason: t.name);
       }
+      expect(interiorGeometry.strips, isNotEmpty);
+      expect(interiorGeometry.footwells, hasLength(2));
+    });
+
+    testWidgets('hero enters the cabin for Interior and leaves on an angle tap', (tester) async {
+      final key = GlobalKey<VehicleHeroState>();
+      Widget hero(LightingZoneType? focus) => MaterialApp(
+            home: Scaffold(body: VehicleHero(key: key, zones: const [], focusZone: focus, height: 240)),
+          );
+      await tester.pumpWidget(hero(null));
+      await tester.pumpWidget(hero(LightingZoneType.interiorAmbient));
+      await tester.pump(const Duration(seconds: 3));
+      expect(key.currentState!.camera.interior, closeTo(1, 0.02));
+      expect(key.currentState!.camera.isInside, isTrue);
+      expect(find.text('S'), findsOneWidget);
+      await tester.tap(find.text('S'), warnIfMissed: true);
+      // One real frame so the ticker baselines, then let the springs settle.
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(key.currentState!.cameraMoving, isTrue);
+      await tester.pump(const Duration(seconds: 3));
+      expect(key.currentState!.camera.interior, closeTo(0, 0.02));
+      expect(key.currentState!.camera.theta, closeTo(90, 0.5));
     });
 
     testWidgets('hero camera glides to a zone and retargets mid-flight without snapping',
@@ -193,7 +216,10 @@ void main() {
           home: SizedBox(
             width: 400,
             height: 240,
-            child: VehicleView(zones: zones, camera: CameraState(theta: theta, zoom: 1.5, focus: const Offset(0.3, 0.5))),
+            child: VehicleView(
+                zones: zones,
+                camera: CameraState(
+                    theta: theta, zoom: 1.5, focus: const Offset(0.3, 0.5), interior: theta == 45.0 ? 0.6 : 0)),
           ),
         ));
         await tester.pump(const Duration(milliseconds: 300));

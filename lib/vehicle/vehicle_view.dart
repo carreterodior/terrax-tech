@@ -70,7 +70,25 @@ class VehicleRenders {
     });
   }
 
-  static Future<void> preloadAll() => Future.wait(VehicleAngle.values.map(load));
+  static Future<void> preloadAll() =>
+      Future.wait([...VehicleAngle.values.map(load), loadInterior()]);
+
+  static ui.Image? _interior;
+  static Future<ui.Image>? _interiorLoading;
+  static ui.Image? get interior => _interior;
+
+  static Future<ui.Image> loadInterior() {
+    final cached = _interior;
+    if (cached != null) return Future.value(cached);
+    return _interiorLoading ??= () async {
+      final data = await rootBundle.load(interiorGeometry.asset);
+      final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+      final frame = await codec.getNextFrame();
+      _interior = frame.image;
+      _interiorLoading = null;
+      return frame.image;
+    }();
+  }
 }
 
 class _VehicleViewState extends State<VehicleView> with TickerProviderStateMixin {
@@ -92,6 +110,9 @@ class _VehicleViewState extends State<VehicleView> with TickerProviderStateMixin
         if (mounted) setState(() => _loadedCount++);
       });
     }
+    VehicleRenders.loadInterior().then((_) {
+      if (mounted) setState(() => _loadedCount++);
+    });
   }
 
   @override
@@ -403,7 +424,9 @@ class _TwinPainter extends CustomPainter {
       w = h * aspect;
     }
     final base = Rect.fromCenter(center: Offset(size.width / 2, size.height / 2), width: w, height: h);
-    final zoom = camera.zoom.clamp(1.0, 2.4);
+    final inside = camera.interior.clamp(0.0, 1.0);
+    // Push-in toward the windshield as the camera enters the cabin.
+    final zoom = (camera.zoom * (1 + 0.45 * inside)).clamp(1.0, 3.2);
     final zw = w * zoom, zh = h * zoom;
     // Position so the focus point lands at the box centre, clamped so the
     // render always covers the box.
@@ -427,7 +450,70 @@ class _TwinPainter extends CustomPainter {
       _paintLayer(canvas, a, dst.shift(Offset(-parallax * ease, 0)), 1);
       _paintLayer(canvas, b, dst.shift(Offset(parallax * (1 - ease), 0)), ease);
     }
+    if (inside > 0.001) _paintCabin(canvas, size, base, inside);
     canvas.restore();
+  }
+
+  /// Cabin keyframe, dissolved in over the dollied-in exterior. Drawn
+  /// slightly larger while entering so it, too, feels like a camera move.
+  void _paintCabin(Canvas canvas, Size size, Rect base, double inside) {
+    final img = VehicleRenders.interior;
+    if (img == null) return;
+    final ease = Curves.easeInOutCubic.transform(inside);
+    final s = 1.12 - 0.12 * ease;
+    final dst = Rect.fromCenter(center: base.center, width: base.width * s, height: base.height * s);
+    canvas.drawImageRect(
+      img,
+      Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble()),
+      dst,
+      Paint()
+        ..filterQuality = FilterQuality.medium
+        ..color = Colors.white.withValues(alpha: ease),
+    );
+    _dst = dst;
+    _layerAlpha = ease;
+    final g = interiorGeometry;
+    final wash = _polyPath(g.cabinWash);
+    Path stripPath(List<Offset> strip) {
+      final path = Path();
+      final first = _m(strip.first);
+      path.moveTo(first.dx, first.dy);
+      for (final p in strip.skip(1)) {
+        final q = _m(p);
+        path.lineTo(q.dx, q.dy);
+      }
+      return path;
+    }
+
+    final marker = Path();
+    for (final strip in g.strips) {
+      marker.addPath(stripPath(strip), Offset.zero);
+    }
+    _zone(canvas, LightingZoneType.interiorAmbient, marker, (l, z) {
+      final k = (l.intensity * glowScale).clamp(0.0, 1.0);
+      // Soft wash over the whole lower cabin first, like real diffused LEDs.
+      canvas.drawPath(wash, _plus(l.color, 0.10 * k, blur: _w(0.06)));
+      for (var i = 0; i < g.strips.length; i++) {
+        final seg = _seq(z, l, i, g.strips.length) * k;
+        final path = stripPath(g.strips[i]);
+        // Wide soft spill, tighter bloom, then the hot LED line itself.
+        canvas.drawPath(path, _plus(l.color, 0.35 * seg, blur: _w(0.03))
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = _h(0.05)
+          ..strokeCap = StrokeCap.round);
+        canvas.drawPath(path, _plus(l.color, 0.7 * seg, blur: _w(0.008))
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = _h(0.014)
+          ..strokeCap = StrokeCap.round);
+        canvas.drawPath(path, _plus(Color.lerp(l.color, Colors.white, 0.45)!, 0.95 * seg, blur: 1.2)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = _h(0.004)
+          ..strokeCap = StrokeCap.round);
+      }
+      for (final (c, r) in g.footwells) {
+        _pool(canvas, _m(c), _w(r.width), _h(r.height), l.color, l.intensity * 0.9);
+      }
+    });
   }
 
   void _paintLayer(Canvas canvas, VehicleAngle angle, Rect dst, double alpha) {
@@ -773,6 +859,7 @@ class _TwinPainter extends CustomPainter {
       old.camera.theta != camera.theta ||
       old.camera.zoom != camera.zoom ||
       old.camera.focus != camera.focus ||
+      old.camera.interior != camera.interior ||
       !identical(old.zones, zones);
 }
 

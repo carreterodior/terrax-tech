@@ -130,8 +130,15 @@ class VehicleHeroState extends State<VehicleHero> with SingleTickerProviderState
                   child: Row(
                     children: [
                       if (widget.statusLabel != null)
-                        TxStatusPill(widget.statusLabel!,
-                            dot: widget.statusColor ?? TerraxBrand.textMuted, pulsing: widget.statusPulsing),
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: TxStatusPill(widget.statusLabel!,
+                                dot: widget.statusColor ?? TerraxBrand.textMuted,
+                                pulsing: widget.statusPulsing),
+                          ),
+                        ),
                       const Spacer(),
                       ?widget.action,
                     ],
@@ -155,7 +162,17 @@ class VehicleHeroState extends State<VehicleHero> with SingleTickerProviderState
                         )
                       else
                         const Spacer(),
-                      _AngleSwitch(current: cam.nearestAngle, onChanged: _toAngle),
+                      // Six pills must fit beside the caption on a 360 px
+                      // phone; scale the switch down rather than overflow.
+                      Flexible(
+                        flex: 3,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: _AngleSwitch(
+                              current: cam.nearestAngle, inside: cam.isInside, onChanged: _toAngle),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -170,8 +187,9 @@ class VehicleHeroState extends State<VehicleHero> with SingleTickerProviderState
 
 class _AngleSwitch extends StatelessWidget {
   final VehicleAngle current;
+  final bool inside;
   final ValueChanged<VehicleAngle> onChanged;
-  const _AngleSwitch({required this.current, required this.onChanged});
+  const _AngleSwitch({required this.current, required this.inside, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +211,7 @@ class _AngleSwitch extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
-                  color: a == current ? TerraxBrand.accent : Colors.transparent,
+                  color: a == current && !inside ? TerraxBrand.accent : Colors.transparent,
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -201,11 +219,29 @@ class _AngleSwitch extends StatelessWidget {
                   style: theme.textTheme.labelSmall?.copyWith(
                     letterSpacing: 1.2,
                     fontWeight: FontWeight.w700,
-                    color: a == current ? TerraxBrand.background : TerraxBrand.textMuted,
+                    color: a == current && !inside ? TerraxBrand.background : TerraxBrand.textMuted,
                   ),
                 ),
               ),
             ),
+          // Cabin indicator: lit while the camera is inside; tapping any
+          // angle above steps back out.
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+            decoration: BoxDecoration(
+              color: inside ? TerraxBrand.accent : Colors.transparent,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              'IN',
+              style: theme.textTheme.labelSmall?.copyWith(
+                letterSpacing: 1.2,
+                fontWeight: FontWeight.w700,
+                color: inside ? TerraxBrand.background : TerraxBrand.textMuted,
+              ),
+            ),
+          ),
         ],
       ),
     );

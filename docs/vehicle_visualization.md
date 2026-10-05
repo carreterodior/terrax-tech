@@ -37,6 +37,12 @@ rear bumper (rear views) and the front door (side) by
 `scratchpad/prep_vehicle_assets.py` from the 1920×1080 originals in `C:\dev\tmp\truck`.
 Re-run that script if the renders or the logo change.
 
+A sixth render, `interior.jpg`, is the cabin keyframe (rear-centre-seat view of the
+dash, ambient strips unlit) generated from the customer's own interior photo. It is
+not on the orbit: `CameraState.interior` (0–1) dollies the exterior toward the
+windshield and dissolves into the cabin. `cameraTargetFor(interiorAmbient)` goes
+inside; any angle tap or drag steps back out. The pill shows `IN` while inside.
+
 ## Geometry (`vehicle_geometry.dart`)
 
 Per keyframe, authored in the renders' 1920×1080 pixel space and normalised: floor

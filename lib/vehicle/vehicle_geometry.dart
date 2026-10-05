@@ -78,6 +78,50 @@ class VehicleCircle {
   const VehicleCircle(this.c, this.r);
 }
 
+/// The cabin keyframe for interior ambient lighting: the strips the TERRAX
+/// kit runs along the dash, doors and console, plus the footwell pools.
+class InteriorGeometry {
+  final String asset;
+
+  /// Thin polylines the LED strips follow (dash top edge, lower dash edge,
+  /// door panels, console sides).
+  final List<List<Offset>> strips;
+
+  /// Footwell / under-seat pools: centre + radii.
+  final List<(Offset, Size)> footwells;
+
+  /// Region that catches a soft colour wash (the whole lower cabin).
+  final List<Offset> cabinWash;
+
+  const InteriorGeometry({
+    required this.asset,
+    required this.strips,
+    required this.footwells,
+    required this.cabinWash,
+  });
+}
+
+final InteriorGeometry interiorGeometry = InteriorGeometry(
+  asset: 'assets/vehicle/interior.jpg',
+  strips: [
+    // Dash upper edge, the signature line under the windshield.
+    [_p(248, 438), _p(760, 426), _p(1180, 426), _p(1700, 440)],
+    // Lower dash edge beneath the vents and screen.
+    [_p(720, 660), _p(1690, 652)],
+    // Door panels.
+    [_p(20, 556), _p(182, 548)],
+    [_p(1738, 548), _p(1900, 556)],
+    // Centre console sides.
+    [_p(818, 700), _p(812, 1000)],
+    [_p(1104, 700), _p(1110, 1000)],
+  ],
+  footwells: [
+    (_p(430, 1010), const Size(230 / _sw, 70 / _sh)),
+    (_p(1490, 1010), const Size(230 / _sw, 70 / _sh)),
+  ],
+  cabinWash: _poly([0, 440, 1920, 440, 1920, 1080, 0, 1080]),
+);
+
 // Source renders are 1920×1080.
 const double _sw = 1920;
 const double _sh = 1080;
