@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../links.dart';
+import 'showroom_screen.dart';
 
 /// About / legal sheet, reachable from the home app bar.
 ///
@@ -38,13 +39,26 @@ class AboutSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('TERRAX TECH', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 4),
+            Text('DEFY LIMITS',
+                style: theme.textTheme.labelSmall?.copyWith(letterSpacing: 4)),
+            const SizedBox(height: 8),
             Text(
               'Controls TERRAX Bluetooth accessories directly from your phone. '
               'The app works offline and collects no personal data.',
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.auto_awesome_outlined),
+              title: const Text('Showroom'),
+              subtitle: const Text('Explore every TERRAX lighting zone on a demo vehicle'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(MaterialPageRoute<void>(
+                    builder: (_) => const ShowroomScreen()));
+              },
+            ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.privacy_tip_outlined),

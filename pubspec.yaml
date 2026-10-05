@@ -1,10 +1,10 @@
-name: terrax
-description: "Terrax — one categorized app to scan, connect to, and control BLE accessories."
+﻿name: terrax
+description: "Terrax â€” one categorized app to scan, connect to, and control BLE accessories."
 publish_to: 'none'
 
 # Build 3 = the iOS binary submitted to Apple on Aug 8; Android versionCode
 # tracks the same number.
-version: 1.0.5+11
+version: 1.1.0+12
 
 environment:
   sdk: ^3.12.2

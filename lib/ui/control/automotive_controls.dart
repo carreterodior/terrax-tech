@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../ble/device_driver.dart' show DeviceCapabilities, DeviceState;
 import '../../state/device_controller.dart';
+import '../theme.dart';
+import '../widgets/tx_components.dart';
 
-/// Motorized-accessory controls: extend / pause / retract + device light.
+/// Motorized-accessory controls: deploy / pause / retract + courtesy light.
+/// The vehicle above animates the board; this card is the physical switch.
 class AutomotiveControls extends StatelessWidget {
   final DeviceController controller;
   final DeviceCapabilities caps;
@@ -24,86 +28,98 @@ class AutomotiveControls extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (extended != null || manualMode != null)
-          Card(
-            child: ListTile(
-              leading: Icon(
-                extended == true
-                    ? Icons.vertical_align_bottom
-                    : Icons.vertical_align_top,
-                color: theme.colorScheme.primary,
-              ),
-              title: Text(switch (extended) {
-                true => 'Extended',
-                false => 'Retracted',
-                null => 'Position unknown',
-              }),
-              subtitle: Text(switch (manualMode) {
-                true => 'Manual mode active',
-                false => 'Manual mode off — tap "Manual mode" first',
-                null => 'Manual mode unknown',
-              }),
-            ),
-          ),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _BigButton(
-                        icon: Icons.keyboard_double_arrow_down,
-                        label: 'Extend',
-                        onPressed: controller.extend,
-                      ),
-                    ),
-                    // Hidden where the firmware has no pause frame; a button
-                    // that silently does nothing reads as a broken app.
-                    if (caps.canPause) ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _BigButton(
-                          icon: Icons.pause,
-                          label: 'Pause',
-                          onPressed: controller.stop,
+        TxCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const TxLabel('Step board'),
+                        const SizedBox(height: 4),
+                        Text(
+                          switch (extended) {
+                            true => 'Deployed',
+                            false => 'Retracted',
+                            null => 'Position unknown',
+                          },
+                          style: theme.textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w300),
                         ),
-                      ),
-                    ],
-                    const SizedBox(width: 12),
+                      ],
+                    ),
+                  ),
+                  if (manualMode != null)
+                    TxStatusPill(
+                      manualMode ? 'Manual' : 'Auto',
+                      dot: manualMode ? Colors.white : TerraxBrand.textMuted,
+                    ),
+                ],
+              ),
+              if (manualMode == false)
+                Padding(
+                  padding: const EdgeInsets.only(top: TxSpace.s),
+                  child: Text(
+                    'Manual mode is off — enable it under Functions to drive the board from the app.',
+                    style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textMuted),
+                  ),
+                ),
+              const SizedBox(height: TxSpace.l),
+              Row(
+                children: [
+                  Expanded(
+                    child: _MotionButton(
+                      icon: Icons.keyboard_double_arrow_down_rounded,
+                      label: 'Deploy',
+                      active: extended == true,
+                      onPressed: controller.extend,
+                    ),
+                  ),
+                  if (caps.canPause) ...[
+                    const SizedBox(width: TxSpace.m),
                     Expanded(
-                      child: _BigButton(
-                        icon: Icons.keyboard_double_arrow_up,
-                        label: 'Retract',
-                        onPressed: controller.retract,
+                      child: _MotionButton(
+                        icon: Icons.pause_rounded,
+                        label: 'Pause',
+                        active: false,
+                        onPressed: controller.stop,
                       ),
                     ),
                   ],
-                ),
-                if (caps.hasDeviceLight) ...[
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.light_mode_outlined),
-                    label: const Text('Toggle light'),
-                    onPressed: () => controller.setDeviceLight(true),
+                  const SizedBox(width: TxSpace.m),
+                  Expanded(
+                    child: _MotionButton(
+                      icon: Icons.keyboard_double_arrow_up_rounded,
+                      label: 'Retract',
+                      active: extended == false,
+                      onPressed: controller.retract,
+                    ),
                   ),
                 ],
+              ),
+              if (caps.hasDeviceLight) ...[
+                const SizedBox(height: TxSpace.m),
+                TxButton('Courtesy light',
+                    icon: Icons.light_mode_outlined,
+                    filled: false,
+                    onPressed: () => controller.setDeviceLight(true)),
               ],
-            ),
+            ],
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(TxSpace.s, TxSpace.m, TxSpace.s, 0),
           child: Row(
             children: [
-              Icon(Icons.warning_amber_rounded,
-                  size: 18, color: theme.colorScheme.tertiary),
-              const SizedBox(width: 8),
+              const Icon(Icons.warning_amber_rounded, size: 16, color: TerraxBrand.textMuted),
+              const SizedBox(width: TxSpace.s),
               Expanded(
                 child: Text(
-                  'Make sure the area around the board is clear before operating.',
-                  style: theme.textTheme.bodySmall,
+                  'Keep the area around the board clear before operating.',
+                  style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textMuted),
                 ),
               ),
             ],
@@ -114,29 +130,46 @@ class AutomotiveControls extends StatelessWidget {
   }
 }
 
-class _BigButton extends StatelessWidget {
+class _MotionButton extends StatelessWidget {
   final IconData icon;
   final String label;
+  final bool active;
   final Future<void> Function() onPressed;
 
-  const _BigButton({
+  const _MotionButton({
     required this.icon,
     required this.label,
+    required this.active,
     required this.onPressed,
   });
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton.tonal(
-      style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 20)),
-      onPressed: onPressed,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 32),
-          const SizedBox(height: 4),
-          Text(label),
-        ],
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        onPressed();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: active ? TerraxBrand.accent : TerraxBrand.background,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: active ? TerraxBrand.accent : TerraxBrand.borderStrong),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 28, color: active ? TerraxBrand.background : TerraxBrand.textPrimary),
+            const SizedBox(height: 6),
+            Text(label.toUpperCase(),
+                style: theme.textTheme.labelSmall?.copyWith(
+                    letterSpacing: 1.4,
+                    fontWeight: FontWeight.w700,
+                    color: active ? TerraxBrand.background : TerraxBrand.textSecondary)),
+          ],
+        ),
       ),
     );
   }

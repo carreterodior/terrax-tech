@@ -40,10 +40,19 @@ lib/ble/device_driver.dart        DeviceDriver + DeviceCapabilities (the contrac
 lib/ble/detection.dart            scanned device -> driver
 lib/ble/drivers/                  elk_7e / triones / lampfrgn / ledcar02 / ledcar / leddmx / carlights / intelligo
 lib/audio/mic_bands.dart          phone-mic band sampler for sound-reactive drivers (no BLE, no UI)
-lib/models/                       terrax_device, device_category, rgb
+lib/models/                       terrax_device, device_category, rgb, lighting_zone
 lib/state/                        scan / devices / device controllers (riverpod)
-lib/ui/                           home (categorized), scan, control/*
+lib/vehicle/                      digital twin: zone_profile (device→zones), zone_visuals,
+                                  effect_visual (name→look), vehicle_view (painter), vehicle_hero
+lib/ui/                           home (vehicle hero + equipment), scan, zone_assignment,
+                                  showroom (demo, no BLE), control/*, widgets/tx_components
 ```
+
+**UI architecture (1.1.0):** every paired device becomes a `LightingZone` placed on a
+procedurally drawn vehicle (`docs/vehicle_visualization.md`). The UI still renders
+controls purely from `DeviceCapabilities`; the zone type only decides *where* the
+glow is painted and which camera angle to show. Effects are classified by **name**
+into visual looks — never add protocol knowledge to the painter.
 
 ## The contract (`DeviceDriver`)
 

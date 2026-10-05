@@ -11,6 +11,8 @@ import '../state/device_controller.dart';
 import '../state/scan_state.dart';
 import 'category_icons.dart';
 import 'theme.dart';
+import 'widgets/tx_components.dart';
+import 'zone_assignment_screen.dart';
 
 /// Scans for supported devices and lets the user save them.
 class ScanScreen extends ConsumerStatefulWidget {
@@ -83,9 +85,17 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
           driverId: detected.rule.driverId,
           category: driver.defaultCategory,
         ));
-    if (mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Added "$name"')));
+    if (mounted) await _assignZone(detected.id);
+  }
+
+  /// Pairing step 2: place the new product on the vehicle, then land on the
+  /// home screen where it is already glowing in the right spot.
+  Future<void> _assignZone(String deviceId) async {
+    final chosen = await Navigator.of(context).push<Object?>(MaterialPageRoute(
+        builder: (_) => ZoneAssignmentScreen(deviceId: deviceId, fromPairing: true)));
+    if (!mounted) return;
+    if (chosen != null) {
+      Navigator.of(context).popUntil((r) => r.isFirst);
     }
   }
 
@@ -168,10 +178,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
           driverId: rule.driverId,
           category: driver.defaultCategory,
         ));
-    if (mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Added "$name" (${rule.label})')));
-    }
+    if (mounted) await _assignZone(result.device.remoteId.str);
   }
 
   /// Buckets scan results by their product hint, strongest signal first, so
@@ -200,18 +207,20 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add device'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Add device', style: theme.textTheme.titleMedium),
+            Text(isScanning ? 'SCANNING' : 'SCAN PAUSED',
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(letterSpacing: 2, color: TerraxBrand.textMuted)),
+          ],
+        ),
         actions: [
           if (isScanning)
             const Padding(
               padding: EdgeInsets.only(right: 16),
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
+              child: Center(child: _ScanPulse()),
             )
           else
             IconButton(
@@ -250,7 +259,8 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                       padding: const EdgeInsets.all(32),
                       child: Text(
                         isScanning
-                            ? 'Scanning for supported devices…'
+                            ? 'Looking for TERRAX products nearby…\n\n'
+                              'Power the accessory on and keep it out of its vendor app.'
                             : 'No supported devices found.\n\n'
                               'Make sure the accessory is powered on, in '
                               'range, and NOT connected to its vendor app '
@@ -340,32 +350,49 @@ class _DetectedTile extends ConsumerWidget {
     final hint = detected.rule.productHint(detected.advertisedName);
     final rssi = detected.result.rssi;
 
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: theme.colorScheme.surface,
-        child: Icon(categoryIcon(category),
-            color: theme.colorScheme.onSurface, size: 20),
-      ),
-      // Lead with what the thing *is*; the cryptic BLE name goes underneath.
-      title: Text(hint, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return TxCard(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
         children: [
-          Text(detected.advertisedName.isEmpty
-              ? 'unnamed'
-              : detected.advertisedName),
-          Row(children: [
-            Icon(_signalIcon(rssi), size: 13, color: theme.hintColor),
-            const SizedBox(width: 4),
-            Text('${_signalLabel(rssi)} · ${detected.rule.driverId}',
-                style: theme.textTheme.bodySmall),
-          ]),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: TerraxBrand.background,
+              border: Border.all(color: TerraxBrand.borderStrong),
+            ),
+            child: Icon(categoryIcon(category), color: TerraxBrand.textPrimary, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Lead with what the thing *is*; the cryptic BLE name goes underneath.
+                Text(hint, style: theme.textTheme.titleSmall),
+                const SizedBox(height: 2),
+                Text(
+                  detected.advertisedName.isEmpty ? 'unnamed' : detected.advertisedName,
+                  style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textSecondary),
+                ),
+                Row(children: [
+                  Icon(_signalIcon(rssi), size: 12, color: TerraxBrand.textMuted),
+                  const SizedBox(width: 4),
+                  Text('${_signalLabel(rssi).toUpperCase()} · ${detected.rule.driverId.toUpperCase()}',
+                      style: theme.textTheme.labelSmall
+                          ?.copyWith(letterSpacing: 1.2, color: TerraxBrand.textMuted)),
+                ]),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          alreadySaved
+              ? _AddedChip(deviceId: detected.id)
+              : TxButton('Pair', onPressed: onAdd),
         ],
       ),
-      isThreeLine: true,
-      trailing: alreadySaved
-          ? _AddedChip(deviceId: detected.id)
-          : FilledButton(onPressed: onAdd, child: const Text('Add')),
     );
   }
 
@@ -491,4 +518,42 @@ class _AddedChip extends ConsumerWidget {
       },
     );
   }
+}
+
+
+/// Small breathing Bluetooth mark shown while scanning.
+class _ScanPulse extends StatefulWidget {
+  const _ScanPulse();
+  @override
+  State<_ScanPulse> createState() => _ScanPulseState();
+}
+
+class _ScanPulseState extends State<_ScanPulse> with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))
+        ..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _c,
+        builder: (_, _) => Container(
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.white.withValues(alpha: 0.15 + 0.35 * _c.value),
+                  blurRadius: 10 + 10 * _c.value),
+            ],
+          ),
+          child: const Icon(Icons.bluetooth_searching, size: 18),
+        ),
+      );
 }

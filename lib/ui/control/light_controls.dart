@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../../ble/device_driver.dart';
+import '../../models/lighting_zone.dart';
 import '../../models/rgb.dart';
 import '../../state/light_group.dart';
+import '../../vehicle/effect_visual.dart';
+import '../theme.dart';
+import '../widgets/tx_components.dart';
 import 'color_wheel.dart';
 
-/// Lighting controls rendered from [DeviceCapabilities]: power, color
-/// (swatches + hue slider), brightness, white channel and effects.
+/// Lighting controls rendered from [DeviceCapabilities]: power, colour,
+/// brightness, white and effects — only what the hardware supports.
 ///
 /// Talks only to [LightCommands], so the same widget drives one device (a
-/// `DeviceController`) or a whole group (`LightGroup`).
+/// `DeviceController`) or a whole group (`LightGroup`). Reports every local
+/// change through [onPreview] so the vehicle can react before the device
+/// echoes anything back.
 class LightControls extends StatefulWidget {
   final LightCommands controller;
   final DeviceState deviceState;
@@ -17,10 +23,13 @@ class LightControls extends StatefulWidget {
   final List<EffectPreset> effects;
 
   /// Effects are a Pro feature; when false the picker is replaced by an
-  /// upgrade prompt. Power, colour and brightness are never gated: they are
-  /// the basic control of hardware the customer already bought.
+  /// upgrade prompt. Power, colour and brightness are never gated.
   final bool isPro;
   final VoidCallback onUpgrade;
+
+  /// Fired with the control's own optimistic view of the zone whenever the
+  /// user touches anything — colour, brightness, power, effect.
+  final void Function(LightPreview preview)? onPreview;
 
   const LightControls({
     super.key,
@@ -30,217 +39,337 @@ class LightControls extends StatefulWidget {
     required this.effects,
     required this.isPro,
     required this.onUpgrade,
+    this.onPreview,
   });
 
   @override
   State<LightControls> createState() => _LightControlsState();
 }
 
+/// What the controls believe the light looks like right now.
+class LightPreview {
+  final bool power;
+  final Rgb color;
+  final int brightness;
+  final EffectPreset? effect;
+  final int speed;
+  const LightPreview({
+    required this.power,
+    required this.color,
+    required this.brightness,
+    required this.effect,
+    required this.speed,
+  });
+}
+
 class _LightControlsState extends State<LightControls> {
   static const _swatches = <Rgb>[
-    Rgb(255, 0, 0),
-    Rgb(255, 128, 0),
-    Rgb(255, 255, 0),
-    Rgb(0, 255, 0),
-    Rgb(0, 255, 255),
-    Rgb(0, 128, 255),
-    Rgb(0, 0, 255),
-    Rgb(128, 0, 255),
-    Rgb(255, 0, 255),
-    Rgb(255, 105, 180),
     Rgb(255, 255, 255),
     Rgb(255, 244, 229),
+    Rgb(255, 0, 0),
+    Rgb(255, 96, 0),
+    Rgb(255, 200, 0),
+    Rgb(0, 255, 80),
+    Rgb(0, 220, 255),
+    Rgb(0, 90, 255),
+    Rgb(120, 0, 255),
+    Rgb(255, 0, 170),
   ];
 
-  /// Last colour shown on the wheel. Seeded from device state when the device
-  /// reports it, then tracked locally as the user drags.
-  Rgb _lastColor = const Rgb(255, 0, 0);
+  Rgb _color = const Rgb(255, 255, 255);
   double _brightness = 100;
   double _white = 0;
-  EffectPreset? _selectedEffect;
-  double _effectSpeed = 16;
-  bool _initializedFromState = false;
+  EffectPreset? _effect;
+  double _speed = 16;
+  bool _seeded = false;
+  bool _showAllEffects = false;
 
-  DeviceState get _deviceState => widget.deviceState;
-
-  @override
-  void didUpdateWidget(covariant LightControls oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _maybeInitFromDeviceState();
-  }
+  DeviceState get _s => widget.deviceState;
 
   @override
   void initState() {
     super.initState();
-    _maybeInitFromDeviceState();
+    _seed();
   }
 
-  /// Seed local slider positions from real device state once (devices with
-  /// state feedback report it shortly after connect).
-  void _maybeInitFromDeviceState() {
-    if (_initializedFromState) return;
-    final color = _deviceState.color;
-    if (color != null) {
-      _lastColor = color;
-      _initializedFromState = true;
+  @override
+  void didUpdateWidget(covariant LightControls old) {
+    super.didUpdateWidget(old);
+    _seed();
+  }
+
+  /// Seed local values from real device state once (families with feedback
+  /// report shortly after connect); afterwards the controls own their value.
+  void _seed() {
+    if (_seeded) return;
+    final c = _s.color;
+    if (c != null) {
+      _color = c;
+      _seeded = true;
     }
-    final brightness = _deviceState.brightness;
-    if (brightness != null) _brightness = brightness.toDouble();
-    final white = _deviceState.white;
-    if (white != null) _white = white.toDouble();
+    if (_s.brightness != null) _brightness = _s.brightness!.toDouble();
+    if (_s.white != null) _white = _s.white!.toDouble();
+    if (_s.effectId != null) {
+      for (final e in widget.effects) {
+        if (e.id == _s.effectId) _effect = e;
+      }
+    }
+  }
+
+  void _preview() {
+    widget.onPreview?.call(LightPreview(
+      power: _s.power ?? true,
+      color: _color,
+      brightness: _brightness.round(),
+      effect: _effect,
+      speed: _speed.round(),
+    ));
   }
 
   void _sendColor(Rgb color) {
     setState(() {
-      _selectedEffect = null;
-      _lastColor = color;
+      _effect = null;
+      _color = color;
     });
     widget.controller.setColor(color);
+    _preview();
+  }
+
+  void _sendEffect(EffectPreset e) {
+    setState(() => _effect = e);
+    widget.controller.setEffect(e.id, _speed.round());
+    _preview();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final caps = widget.caps;
-    final power = _deviceState.power;
+    final power = _s.power ?? true;
+    final accent = _color.asColor;
+    final signature = signatureEffects(widget.effects);
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (caps.hasPower)
-          Card(
-            child: SwitchListTile(
-              title: const Text('Power'),
-              secondary: Icon(
-                Icons.power_settings_new,
-                color: (power ?? false) ? theme.colorScheme.primary : null,
-              ),
-              value: power ?? false,
-              onChanged: (on) => widget.controller.setPower(on),
+        // ---- Power + brightness: the two controls everyone reaches for.
+        if (caps.hasPower || caps.hasBrightness)
+          TxCard(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (caps.hasPower) ...[
+                  TxPowerButton(
+                    on: power,
+                    accent: accent,
+                    onChanged: (on) {
+                      widget.controller.setPower(on);
+                      widget.onPreview?.call(LightPreview(
+                        power: on,
+                        color: _color,
+                        brightness: _brightness.round(),
+                        effect: _effect,
+                        speed: _speed.round(),
+                      ));
+                    },
+                  ),
+                  const SizedBox(width: TxSpace.l),
+                ],
+                Expanded(
+                  child: caps.hasBrightness
+                      ? TxSlider(
+                          label: 'Brightness',
+                          icon: Icons.light_mode_outlined,
+                          value: _brightness,
+                          accent: accent,
+                          onChanged: (v) {
+                            setState(() => _brightness = v);
+                            widget.controller.setBrightness(v.round());
+                            _preview();
+                          },
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const TxLabel('Power'),
+                            const SizedBox(height: 4),
+                            Text(power ? 'On' : 'Off',
+                                style: theme.textTheme.titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.w300)),
+                          ],
+                        ),
+                ),
+              ],
             ),
           ),
+
+        // ---- Colour.
         if (caps.hasColor) ...[
-          const SizedBox(height: 16),
-          Text('Color', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              for (final swatch in _swatches)
-                InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => _sendColor(swatch),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color.fromARGB(255, swatch.r, swatch.g, swatch.b),
-                      border: Border.all(color: theme.dividerColor),
+          const TxSectionHeader('Colour'),
+          TxCard(
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 46,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    itemCount: _swatches.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 10),
+                    itemBuilder: (_, i) => Center(
+                      child: TxSwatch(
+                        color: _swatches[i],
+                        selected: _effect == null && _swatches[i] == _color,
+                        onTap: () => _sendColor(_swatches[i]),
+                      ),
                     ),
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Full hue+saturation wheel. Writes are throttled by the controller
-          // (rule 4), so dragging can stream continuously.
-          Center(
-            child: ColorWheel(
-              value: _lastColor,
-              onChanged: _sendColor,
+                const SizedBox(height: TxSpace.l),
+                // Full hue+saturation wheel. Writes are throttled by the
+                // controller (rule 4), so dragging can stream continuously.
+                ColorWheel(value: _color, onChanged: _sendColor, size: 210),
+              ],
             ),
           ),
         ],
-        if (caps.hasBrightness) ...[
-          const SizedBox(height: 8),
-          Text('Brightness', style: theme.textTheme.titleMedium),
-          Slider(
-            value: _brightness,
-            min: 0,
-            max: 100,
-            label: '${_brightness.round()}%',
-            onChanged: (value) {
-              setState(() => _brightness = value);
-              widget.controller.setBrightness(value.round());
-            },
-          ),
-        ],
+
         if (caps.hasWhite) ...[
-          const SizedBox(height: 8),
-          Text('White', style: theme.textTheme.titleMedium),
-          Slider(
-            value: _white,
-            min: 0,
-            max: 255,
-            onChanged: (value) {
-              setState(() {
-                _white = value;
-                _selectedEffect = null;
-              });
-              widget.controller.setWhite(value.round());
-            },
-          ),
-        ],
-        if (caps.hasEffects && widget.effects.isNotEmpty && !widget.isPro) ...[
-          const SizedBox(height: 16),
-          Text('Effects', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.auto_awesome),
-              title: const Text('Animations are a Pro feature'),
-              subtitle: Text('${widget.effects.length} effects and scenes, '
-                  'with speed control.'),
-              trailing: FilledButton(
-                onPressed: widget.onUpgrade,
-                child: const Text('Unlock'),
-              ),
+          const TxSectionHeader('White'),
+          TxCard(
+            child: TxSlider(
+              label: 'White channel',
+              icon: Icons.wb_sunny_outlined,
+              value: _white,
+              max: 255,
+              format: (v) => '${(v / 255 * 100).round()}%',
+              accent: const Color(0xFFFFF2DC),
+              onChanged: (v) {
+                setState(() {
+                  _white = v;
+                  _effect = null;
+                });
+                widget.controller.setWhite(v.round());
+              },
             ),
           ),
         ],
-        if (caps.hasEffects && widget.effects.isNotEmpty && widget.isPro) ...[
-          const SizedBox(height: 16),
-          Text('Effects', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          DropdownMenu<EffectPreset>(
-            width: double.infinity,
-            hintText: 'Choose an effect',
-            initialSelection: _selectedEffect,
-            dropdownMenuEntries: [
-              for (final effect in widget.effects)
-                DropdownMenuEntry(value: effect, label: effect.name),
-            ],
-            onSelected: (effect) {
-              if (effect == null) return;
-              setState(() => _selectedEffect = effect);
-              widget.controller.setEffect(effect.id, _effectSpeed.round());
-            },
+
+        // ---- Effects.
+        if (caps.hasEffects && widget.effects.isNotEmpty) ...[
+          TxSectionHeader(
+            'Effects',
+            trailing: widget.isPro && widget.effects.length > signature.length
+                ? TextButton(
+                    onPressed: () => setState(() => _showAllEffects = !_showAllEffects),
+                    child: Text(_showAllEffects
+                        ? 'Fewer'
+                        : 'All ${widget.effects.length}'),
+                  )
+                : null,
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const SizedBox(width: 4),
-              Text('Speed', style: theme.textTheme.bodyMedium),
-              Expanded(
-                child: Slider(
-                  value: _effectSpeed,
-                  min: 1,
-                  max: 31,
-                  onChanged: (value) => setState(() => _effectSpeed = value),
-                  onChangeEnd: (value) {
-                    final effect = _selectedEffect;
-                    if (effect != null) {
-                      widget.controller.setEffect(effect.id, value.round());
-                    }
-                  },
-                ),
+          if (!widget.isPro)
+            TxCard(
+              child: Row(
+                children: [
+                  const Icon(Icons.auto_awesome, color: TerraxBrand.textSecondary),
+                  const SizedBox(width: TxSpace.m),
+                  Expanded(
+                    child: Text(
+                        '${widget.effects.length} animations with speed control are a Pro feature.',
+                        style: theme.textTheme.bodyMedium),
+                  ),
+                  TxButton('Unlock', onPressed: widget.onUpgrade),
+                ],
               ),
-            ],
-          ),
+            )
+          else
+            TxCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      TxChip(
+                        label: 'Static',
+                        selected: _effect == null,
+                        onTap: () => _sendColor(_color),
+                      ),
+                      for (final e in signature)
+                        TxChip(
+                          label: effectVisualLabel(effectVisualFor(e)),
+                          selected: _effect?.id == e.id,
+                          accent: _effect?.id == e.id ? accent : null,
+                          onTap: () => _sendEffect(e),
+                        ),
+                    ],
+                  ),
+                  if (_showAllEffects) ...[
+                    const SizedBox(height: TxSpace.l),
+                    const Divider(),
+                    const SizedBox(height: TxSpace.s),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 280),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: widget.effects.length,
+                        itemBuilder: (_, i) {
+                          final e = widget.effects[i];
+                          final sel = _effect?.id == e.id;
+                          return ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(e.name,
+                                style: TextStyle(
+                                    color: sel ? Colors.white : TerraxBrand.textSecondary,
+                                    fontWeight: sel ? FontWeight.w600 : FontWeight.w400)),
+                            trailing: sel
+                                ? Icon(Icons.check, size: 18, color: accent)
+                                : Text(effectVisualLabel(effectVisualFor(e)),
+                                    style: theme.textTheme.labelSmall
+                                        ?.copyWith(color: TerraxBrand.textMuted)),
+                            onTap: () => _sendEffect(e),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                  if (_effect != null) ...[
+                    const SizedBox(height: TxSpace.l),
+                    Text(_effect!.name,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: TerraxBrand.textMuted)),
+                    const SizedBox(height: TxSpace.s),
+                    TxSlider(
+                      label: 'Speed',
+                      icon: Icons.speed_outlined,
+                      value: _speed,
+                      min: 1,
+                      max: 31,
+                      format: (v) => '${((v - 1) / 30 * 100).round()}%',
+                      accent: accent,
+                      onChanged: (v) {
+                        setState(() => _speed = v);
+                        _preview();
+                      },
+                      onChangeEnd: (v) {
+                        final e = _effect;
+                        if (e != null) widget.controller.setEffect(e.id, v.round());
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ),
         ],
+        if (caps.hasEffects && widget.effects.isEmpty && _effect == null)
+          const SizedBox.shrink(),
       ],
     );
   }
 }
+
+/// Zone-type aware label for the colour card so "Colour" reads in context.
+String zoneControlTitle(LightingZoneType type) => type.label;
