@@ -6,7 +6,10 @@ import 'package:terrax/models/lighting_zone.dart';
 import 'package:terrax/models/rgb.dart';
 import 'package:terrax/models/terrax_device.dart';
 import 'package:terrax/state/device_controller.dart';
+import 'package:terrax/vehicle/camera_rig.dart';
 import 'package:terrax/vehicle/effect_visual.dart';
+import 'package:terrax/vehicle/vehicle_geometry.dart';
+import 'package:terrax/vehicle/vehicle_hero.dart';
 import 'package:terrax/vehicle/vehicle_view.dart';
 import 'package:terrax/vehicle/zone_profile.dart';
 import 'package:terrax/vehicle/zone_visuals.dart';
@@ -105,14 +108,74 @@ void main() {
     });
 
     test('best angle follows the majority of zones', () {
-      expect(bestAngleFor([LightingZoneType.drl, LightingZoneType.devilEyes, LightingZoneType.rockLights]),
-          VehicleAngle.front);
-      expect(bestAngleFor([LightingZoneType.rockLights]), VehicleAngle.side);
+      expect(bestAngleFor([LightingZoneType.drl, LightingZoneType.devilEyes, LightingZoneType.wheelLights]),
+          VehicleAngle.q34Front);
+      expect(bestAngleFor([LightingZoneType.runningBoard]), VehicleAngle.side);
       expect(bestAngleFor(const []), VehicleAngle.side);
     });
   });
 
-  group('VehicleView renders every angle without throwing', () {
+  group('camera', () {
+    test('every angle has geometry and a render asset', () {
+      for (final a in VehicleAngle.values) {
+        final g = vehicleGeometry[a];
+        expect(g, isNotNull, reason: a.name);
+        expect(g!.asset, endsWith('.jpg'));
+        expect(g.groundY, inInclusiveRange(0.5, 1.0));
+      }
+    });
+
+    test('keyframes: exact angles are crisp, in-between blends neighbours', () {
+      expect(const CameraState(theta: 45).keyframes(), (VehicleAngle.q34Front, VehicleAngle.side, 0.0));
+      expect(CameraState.thetaOf(VehicleAngle.front), 0);
+      expect(CameraState.thetaOf(VehicleAngle.rear), 180);
+      final (a, b, f) = const CameraState(theta: 67.5).keyframes();
+      expect(a, VehicleAngle.q34Front);
+      expect(b, VehicleAngle.side);
+      expect(f, closeTo(0.5, 1e-9));
+      expect(const CameraState(theta: 180).nearestAngle, VehicleAngle.rear);
+      expect(const CameraState(theta: 150).nearestAngle, VehicleAngle.q34Rear);
+      expect(const CameraState(theta: 0).nearestAngle, VehicleAngle.front);
+    });
+
+    test('every zone has a camera target on a keyframe angle', () {
+      for (final t in LightingZoneType.values) {
+        final c = cameraTargetFor(t);
+        expect(c.theta % 45, 0, reason: t.name);
+        expect(c.zoom, inInclusiveRange(1.0, 2.4));
+      }
+    });
+
+    testWidgets('hero camera glides to a zone and retargets mid-flight without snapping',
+        (tester) async {
+      final key = GlobalKey<VehicleHeroState>();
+      Widget hero(LightingZoneType? focus) => MaterialApp(
+            home: Scaffold(body: VehicleHero(key: key, zones: const [], focusZone: focus, height: 240)),
+          );
+      await tester.pumpWidget(hero(null));
+      expect(key.currentState!.camera.theta, 45); // overview = ¾ front
+
+      await tester.pumpWidget(hero(LightingZoneType.runningBoard)); // θ 45 → 90
+      await tester.pump(const Duration(milliseconds: 250));
+      final mid = key.currentState!.camera.theta;
+      expect(mid, greaterThan(45));
+      expect(mid, lessThan(90));
+
+      // Retarget to the tail lights (θ 135) while still moving.
+      await tester.pumpWidget(hero(LightingZoneType.tailLights));
+      await tester.pump(const Duration(milliseconds: 16));
+      final after = key.currentState!.camera.theta;
+      // Continuous: one frame later we are near where we were, still moving.
+      expect((after - mid).abs(), lessThan(6));
+
+      await tester.pump(const Duration(seconds: 3));
+      expect(key.currentState!.camera.theta, closeTo(135, 0.5));
+      expect(key.currentState!.camera.zoom, closeTo(1.6, 0.05));
+      expect(key.currentState!.cameraMoving, isFalse);
+    });
+  });
+
+  group('VehicleView renders every keyframe and a blend without throwing', () {
     final zones = [
       for (final t in LightingZoneType.values)
         zoneVisual(
@@ -124,10 +187,14 @@ void main() {
         ),
       zoneVisual(type: LightingZoneType.underglow, online: false),
     ];
-    for (final angle in VehicleAngle.values) {
-      testWidgets(angle.label, (tester) async {
+    for (final theta in [0.0, 45.0, 67.5, 90.0, 135.0, 180.0]) {
+      testWidgets('θ=$theta', (tester) async {
         await tester.pumpWidget(MaterialApp(
-          home: SizedBox(width: 400, height: 240, child: VehicleView(zones: zones, angle: angle)),
+          home: SizedBox(
+            width: 400,
+            height: 240,
+            child: VehicleView(zones: zones, camera: CameraState(theta: theta, zoom: 1.5, focus: const Offset(0.3, 0.5))),
+          ),
         ));
         await tester.pump(const Duration(milliseconds: 300));
         expect(find.byType(VehicleView), findsOneWidget);
@@ -135,19 +202,25 @@ void main() {
       });
     }
 
-    testWidgets('swiping changes the angle', (tester) async {
-      VehicleAngle? got;
+    testWidgets('dragging reports orbit degrees and release velocity', (tester) async {
+      double orbited = 0;
+      double? released;
       await tester.pumpWidget(MaterialApp(
         home: SizedBox(
           width: 400,
           height: 240,
-          child: VehicleView(zones: const [], angle: VehicleAngle.side, onAngleChanged: (a) => got = a),
+          child: VehicleView(
+            zones: const [],
+            camera: CameraState.overview,
+            onOrbit: (d) => orbited += d,
+            onOrbitEnd: (v) => released = v,
+          ),
         ),
       ));
-      await tester.fling(find.byType(VehicleView), const Offset(-300, 0), 1200);
-      // The idle halo animation never settles by design; pump a fixed slice.
-      await tester.pump(const Duration(milliseconds: 500));
-      expect(got, VehicleAngle.rear);
+      await tester.fling(find.byType(VehicleView), const Offset(-200, 0), 800);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(orbited, greaterThan(20)); // leftward drag orbits forward
+      expect(released, isNotNull);
     });
   });
 }

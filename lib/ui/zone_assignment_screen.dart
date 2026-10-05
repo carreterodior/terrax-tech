@@ -63,8 +63,7 @@ class _ZoneAssignmentScreenState extends ConsumerState<ZoneAssignmentScreen> {
         children: [
           VehicleHero(
             zones: preview,
-            preferredAngle: choice.preferredAngle,
-            focusKey: choice,
+            focusZone: choice,
             statusLabel: 'Preview',
             statusColor: Colors.white,
             caption: '${choice.label} · ${choice.description}',

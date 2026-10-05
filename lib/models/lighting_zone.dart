@@ -7,18 +7,18 @@ import 'rgb.dart';
 /// Adding a TERRAX product = add a value here + a painter mapping in
 /// `lib/vehicle/vehicle_view.dart`. Nothing else needs to change.
 enum LightingZoneType {
-  drl('DRL', 'Daytime running lights', VehicleAngle.front),
-  devilEyes('Devil Eyes', 'Projector halo rings', VehicleAngle.front),
-  headlights('Headlights', 'Main beam projectors', VehicleAngle.front),
-  fogLamps('Fog Lamps', 'Bumper fog lights', VehicleAngle.front),
-  grilleLights('Grille Lights', 'Front grille accents', VehicleAngle.front),
-  rockLights('Rock Lights', 'Under-body rock lights', VehicleAngle.side),
-  underglow('Underglow', 'Ground-effect underglow', VehicleAngle.side),
-  interiorAmbient('Interior', 'Cabin ambient lighting', VehicleAngle.side),
+  drl('DRL', 'Daytime running lights', VehicleAngle.q34Front),
+  devilEyes('Devil Eyes', 'Projector halo rings', VehicleAngle.q34Front),
+  headlights('Headlights', 'Main beam projectors', VehicleAngle.q34Front),
+  fogLamps('Fog Lamps', 'Bumper fog lights', VehicleAngle.q34Front),
+  grilleLights('Grille Lights', 'Front grille accents', VehicleAngle.q34Front),
+  rockLights('Rock Lights', 'Under-body rock lights', VehicleAngle.q34Front),
+  underglow('Underglow', 'Ground-effect underglow', VehicleAngle.q34Front),
+  interiorAmbient('Interior', 'Cabin ambient lighting', VehicleAngle.q34Front),
   wheelLights('Wheel Lights', 'Wheel-well and rim lights', VehicleAngle.side),
-  tailLights('Tail Lights', 'Rear light bars', VehicleAngle.rear),
-  auxiliary('Auxiliary', 'Light bar / aux lamps', VehicleAngle.front),
-  lightStrip('Light Strip', 'Accent light strip', VehicleAngle.side),
+  tailLights('Tail Lights', 'Rear light bars', VehicleAngle.q34Rear),
+  auxiliary('Auxiliary', 'Light bar / aux lamps', VehicleAngle.q34Front),
+  lightStrip('Light Strip', 'Accent light strip', VehicleAngle.q34Front),
   runningBoard('Step Board', 'Electric running board', VehicleAngle.side);
 
   final String label;
@@ -42,14 +42,21 @@ enum LightingZoneType {
   }
 }
 
-/// Camera angles the vehicle visualization can render.
+/// Camera keyframes the vehicle visualization can render. **Order is angular**
+/// (walking around the car, 45° apart): index × 45 = orbit angle, which the
+/// camera rig relies on.
 enum VehicleAngle {
-  front('Front'),
-  side('Side'),
-  rear('Rear');
+  front('Front', 'F'),
+  q34Front('3/4 Front', '¾ F'),
+  side('Side', 'S'),
+  q34Rear('3/4 Rear', '¾ R'),
+  rear('Rear', 'R');
 
   final String label;
-  const VehicleAngle(this.label);
+
+  /// Compact label for the angle pill on narrow phones.
+  final String shortLabel;
+  const VehicleAngle(this.label, this.shortLabel);
 }
 
 /// Which controls a zone's hardware channel actually supports. Mirrors the

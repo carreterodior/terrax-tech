@@ -177,8 +177,7 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
         children: [
           VehicleHero(
             zones: [visual],
-            preferredAngle: zoneType.preferredAngle,
-            focusKey: zoneType,
+            focusZone: zoneType,
             statusLabel: statusLabel,
             statusColor: statusColor,
             statusPulsing: pulsing,

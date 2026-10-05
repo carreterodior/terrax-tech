@@ -87,8 +87,7 @@ class _ShowroomScreenState extends State<ShowroomScreen> {
         children: [
           VehicleHero(
             zones: zones,
-            preferredAngle: _selected.preferredAngle,
-            focusKey: _selected,
+            focusZone: _selected,
             statusLabel: 'Showroom',
             statusColor: Colors.white,
             caption: '${_selected.label} · ${_selected.description}',
@@ -112,6 +111,27 @@ class _ShowroomScreenState extends State<ShowroomScreen> {
             ],
           ),
           const SizedBox(height: TxSpace.l),
+          // Controls cross-fade/slide when the zone changes instead of
+          // snapping; the vehicle camera is flying at the same time.
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 320),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            transitionBuilder: (child, anim) => FadeTransition(
+              opacity: anim,
+              child: SlideTransition(
+                position: Tween(begin: const Offset(0, 0.03), end: Offset.zero).animate(anim),
+                child: child,
+              ),
+            ),
+            layoutBuilder: (current, previous) => Stack(
+              alignment: Alignment.topCenter,
+              children: [...previous, ?current],
+            ),
+            child: Column(
+              key: ValueKey(isBoard ? 'board' : 'light'),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
           if (isBoard)
             TxCard(
               child: Column(
@@ -245,6 +265,9 @@ class _ShowroomScreenState extends State<ShowroomScreen> {
               ),
             ),
           ],
+              ],
+            ),
+          ),
           const SizedBox(height: TxSpace.xl),
           Center(
             child: Text('TERRAX · DEFY LIMITS',

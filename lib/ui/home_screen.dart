@@ -76,7 +76,6 @@ class HomeScreen extends ConsumerWidget {
           children: [
             VehicleHero(
               zones: visuals,
-              preferredAngle: bestAngleFor(zones.map((z) => z.type)),
               statusLabel: statusLabel,
               statusColor: statusColor,
               statusPulsing: connecting,
