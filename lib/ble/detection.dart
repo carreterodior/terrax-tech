@@ -78,16 +78,21 @@ class DetectionRule {
   /// A suggested friendly name to prefill when the user adds the device.
   String suggestedName(String advName) => productHint(advName);
 
-  bool matches(String advName, List<Guid> advertisedServiceUuids) {
+  /// True when the advertised name alone identifies this family (prefix or
+  /// [nameContains]).
+  bool matchesName(String advName) {
     final name = advName.toLowerCase();
-    final nameMatch = namePrefixes.any((p) => name.startsWith(p.toLowerCase()));
+    if (namePrefixes.any((p) => name.startsWith(p.toLowerCase()))) return true;
     final compact = name.replaceAll(RegExp(r'\s+'), '');
-    final containsMatch =
-        nameContains.any((p) => compact.contains(p.toLowerCase()));
-    final serviceMatch =
-        serviceUuids.any(advertisedServiceUuids.contains);
-    return nameMatch || containsMatch || serviceMatch;
+    return nameContains.any((p) => compact.contains(p.toLowerCase()));
   }
+
+  /// True when an advertised service UUID alone claims this family.
+  bool matchesService(List<Guid> advertisedServiceUuids) =>
+      serviceUuids.any(advertisedServiceUuids.contains);
+
+  bool matches(String advName, List<Guid> advertisedServiceUuids) =>
+      matchesName(advName) || matchesService(advertisedServiceUuids);
 }
 
 /// Every GATT service our drivers talk to, including ones that aren't
@@ -262,8 +267,26 @@ DetectionRule? detect(ScanResult result) {
   final name = adv.advName.isNotEmpty
       ? adv.advName
       : result.device.platformName;
+  return detectFor(name, adv.serviceUuids);
+}
+
+/// Pure form of [detect], for callers and tests that already have the name
+/// and advertised services.
+///
+/// **Name evidence wins over service evidence.** A vendor name prefix is
+/// specific to one family, while 16-bit service UUIDs such as `FFF0`/`FFE0`
+/// are shared by unrelated cheap BLE modules. Checking names across *all*
+/// rules first means a `CL-…` rock light that happens to advertise `FFF0` goes
+/// to the CAR-LIGHTS driver, not to the 7E strip driver that merely claims
+/// `FFF0` and sits earlier in the list (it would connect fine and then send
+/// frames the light ignores). Service-only matches still work for nameless
+/// units (LAMP&FRGN) exactly as before.
+DetectionRule? detectFor(String name, List<Guid> advertisedServiceUuids) {
   for (final rule in detectionRules) {
-    if (rule.matches(name, adv.serviceUuids)) return rule;
+    if (rule.matchesName(name)) return rule;
+  }
+  for (final rule in detectionRules) {
+    if (rule.matchesService(advertisedServiceUuids)) return rule;
   }
   return null;
 }

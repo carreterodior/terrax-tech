@@ -10,6 +10,30 @@ import 'package:terrax/ble/drivers/triones_driver.dart';
 DetectionRule ruleOf(String driverId) => ruleForDriverId(driverId)!;
 
 void main() {
+  group('detectFor priority', () {
+    test('a name match beats an earlier rule that only claims the service', () {
+      // A CL- rock light advertising FFF0 (claimed by elk_7e, first in the
+      // list) must still go to the CAR-LIGHTS driver.
+      expect(detectFor('CL-1A2B', [Guid('fff0')])!.driverId, 'carlights');
+      expect(detectFor('CL_7788', [Guid('ffd5')])!.driverId, 'carlights');
+      // Same for the other name-only families.
+      expect(detectFor('LEDCAR-02-9930', [Guid('fff0')])!.driverId, 'ledcar02');
+      expect(detectFor('LEDDMX-03-1', [Guid('ffd5')])!.driverId, 'leddmx');
+      expect(detectFor('DianDongTaBan', [Guid('fff0')])!.driverId, 'intelligo');
+    });
+    test('service-only matches still work for nameless units', () {
+      expect(detectFor('', [Guid('ae30')])!.driverId, 'lampfrgn');
+      expect(detectFor('whatever', [Guid('fff0')])!.driverId, 'elk_7e');
+      expect(detectFor('whatever', [Guid('ffd5')])!.driverId, 'triones');
+      expect(detectFor('', [Guid('af30')]), isNull);
+      expect(detectFor('unknown', []), isNull);
+    });
+    test('rule order still decides between two name matches', () {
+      // 'LED BLE' is an elk_7e prefix and comes before everything else.
+      expect(detectFor('LED BLE-CL-1', [])!.driverId, 'elk_7e');
+    });
+  });
+
   group('detection rules', () {
     test('elk_7e matches its advertised names and service uuid', () {
       final rule = ruleOf(Elk7eDriver.id);

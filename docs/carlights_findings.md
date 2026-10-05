@@ -23,6 +23,13 @@ hardware or by capture.** Key classes:
   **contains** `CL-` or `CL_` (`BLE_NAME_PREFIX1/2`, `ENABLE_FILTER = true`).
   Our `DetectionRule` got a `nameContains` list for this; prefixes `CL-`/`CL_`
   are also listed so the scan-list hint resolves.
+- **Detection priority (2026-10-05 fix).** Name evidence now beats service
+  evidence across all rules (`detectFor`). Before, a `CL-` unit that also
+  advertised `FFF0` or `FFD5` was claimed by the 7E / Triones rule that sits
+  earlier in the list, connected fine, and silently ignored their frames —
+  the exact symptom Dior reported ("connects, cannot control"). Devices
+  added before the fix keep their old driver id; **Re-detect** (or remove
+  and add again) moves them to `carlights`.
 - No fixed service UUID. `initServiceAndChara` walks every service and
   characteristic in discovery order and keeps the **last** one matching:
   - write: property WRITE (0x08), unless the UUID is `0000FFB2-…`;
@@ -104,6 +111,12 @@ Call-site details:
 - **Groups.** The app's group screen only decides which connected units receive
   a write (it loops `write()` over the selected devices); TERRAX TECH's group
   control covers that.
+
+## Diagnostics
+
+The driver's **Connection** section lists the write target it chose and every
+service/characteristic discovered (`FFF0: FFF1[W N] …`), plus a button to resend
+the hello burst. Ask for a screenshot of it when a unit misbehaves.
 
 ## Not ported
 

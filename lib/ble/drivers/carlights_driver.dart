@@ -164,6 +164,12 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
   int _smallRing = 1;
   CarLightsSoundFrame _soundFrame = CarLightsSoundFrame.mic;
 
+  /// What service discovery actually found, for the Connection section — the
+  /// quickest way to learn a unit's GATT layout from a customer's phone
+  /// without a sniffer.
+  List<String> _gattRows = const [];
+  String _writeTarget = 'not connected';
+
   BandSource? _bandSource;
   StreamSubscription<List<int>>? _bandSub;
   DateTime _lastSoundFrame = DateTime.fromMillisecondsSinceEpoch(0);
@@ -266,6 +272,19 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
             run: stopSound,
           ),
         ]),
+        DriverSection('Connection', [
+          DriverInfoSetting('Write target', value: _writeTarget),
+          DriverInfoSetting(
+            'Services found',
+            value: _gattRows.isEmpty ? 'none yet' : _gattRows.join('\n'),
+          ),
+          DriverButtonSetting(
+            'Resend hello burst',
+            description: 'The wake-up frames the CAR-LIGHTS app sends right '
+                'after connecting.',
+            run: _helloBurst,
+          ),
+        ], icon: DriverSectionIcon.info),
         DriverSection('Setup', [
           DriverInfoSetting(
             'Chip setting',
@@ -302,11 +321,17 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
     _smallRing = _prefs.getInt(_key('small')) ?? 1;
 
     final services = await _ble.discoverServices(_device);
+    _gattRows = describeGatt(services);
     final write = pickWriteCharacteristic(services);
     if (write == null) {
-      throw StateError('carlights: no writable characteristic found');
+      _writeTarget = 'none (no writable characteristic)';
+      throw StateError('carlights: no writable characteristic found '
+          '(services: ${_gattRows.join('; ')})');
     }
     _write = write;
+    _writeTarget = '${write.serviceUuid.str.toUpperCase()} / '
+        '${write.uuid.str.toUpperCase()} '
+        '(${write.properties.write ? 'write' : 'write-no-response'})';
     _connected = true;
 
     final notify = pickNotifyCharacteristic(services);
@@ -357,6 +382,23 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
     return pick;
   }
 
+  /// One line per service: `FFF0: FFF1[W N] FFF2[Wn]` with the property
+  /// flags R(read) W(write) Wn(write-no-response) N(notify) I(indicate).
+  static List<String> describeGatt(List<BluetoothService> services) {
+    String flags(CharacteristicProperties p) => [
+          if (p.read) 'R',
+          if (p.write) 'W',
+          if (p.writeWithoutResponse) 'Wn',
+          if (p.notify) 'N',
+          if (p.indicate) 'I',
+        ].join(' ');
+    return [
+      for (final s in services)
+        '${s.uuid.str.toUpperCase()}: '
+            '${s.characteristics.map((c) => '${c.uuid.str.toUpperCase()}[${flags(c.properties)}]').join(' ')}',
+    ];
+  }
+
   static BluetoothCharacteristic? pickNotifyCharacteristic(
       List<BluetoothService> services) {
     BluetoothCharacteristic? pick;
@@ -375,6 +417,7 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
     await _notifySub?.cancel();
     _notifySub = null;
     _write = null;
+    _writeTarget = 'not connected';
   }
 
   /// Write type as Android picks it for the vendor (`setValue` +

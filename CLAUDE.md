@@ -17,6 +17,8 @@ Fully offline/local — no backend, no API keys, no secrets.
    Never special-case a protocol inside the UI or a shared controller.
 3. **Identify devices by advertised name prefix + service UUID, never by MAC.** iOS
    exposes only a per-app peripheral UUID; MAC-based logic will break on iOS.
+   `detectFor` checks **names across all rules first, then service UUIDs** — 16-bit
+   UUIDs like `FFF0`/`FFE0` are shared by unrelated modules, names are not.
 4. **All GATT writes are serialized per device.** Never fire overlapping writes; use a
    per-device queue. Throttle color-wheel drags (~10 writes/sec max).
 5. **Everything BLE is async and non-blocking**, with explicit loading/error/connection
