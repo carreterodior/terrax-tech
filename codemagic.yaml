@@ -44,7 +44,8 @@ workflows:
   android-release:
     name: Android → Play AAB
     max_build_duration: 45
-    instance_type: linux_x2
+    # Same machine as the iOS workflow: the Linux tier is not in the billing plan.
+    instance_type: mac_mini_m2
     environment:
       # Upload keystore saved in Codemagic (Teams → Personal Account → Code
       # signing identities → Android keystores, reference name below). The
