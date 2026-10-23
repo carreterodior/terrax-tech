@@ -10,6 +10,7 @@ import 'drivers/lampfrgn_driver.dart';
 import 'drivers/ledcar02_driver.dart';
 import 'drivers/ledcar_driver.dart';
 import 'drivers/leddmx_driver.dart';
+import 'drivers/magiclantern_driver.dart';
 import 'drivers/triones_driver.dart';
 
 /// [advertisedName] is the name the device was scanned with (or the saved
@@ -173,6 +174,22 @@ final List<DetectionRule> detectionRules = [
     defaultProductHint: 'Rock lights',
     isLighting: true,
     createDriver: (ble, device, prefs, _) => CarLightsDriver(ble, device, prefs),
+  ),
+  DetectionRule(
+    driverId: MagicLanternDriver.id,
+    label: 'Underglow (Magic Lantern, MELK)',
+    // Magic Lantern (wl.smartled.rgb 6.11.10) lists a unit only if its name
+    // starts with "MELK-" (`Global.NAME_FILTER`) — and, on Android, if its MAC
+    // starts with "BE"; iOS has no MAC, so the name alone is the rule here.
+    // The hardware is the ELK-BLEDOM 7E family (service FFF0, which the
+    // elk_7e rule also claims by service), but it uses its own 213-mode table
+    // and extra frames, so the name sends it to its own driver — name
+    // evidence wins over service evidence in `detectFor`.
+    namePrefixes: const ['MELK-'],
+    defaultProductHint: 'Underglow kit',
+    isLighting: true,
+    createDriver: (ble, device, prefs, advName) =>
+        MagicLanternDriver(ble, device, prefs, advertisedName: advName),
   ),
   DetectionRule(
     driverId: LampFrgnDriver.id,

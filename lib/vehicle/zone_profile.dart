@@ -11,6 +11,7 @@ import '../ble/drivers/lampfrgn_driver.dart';
 import '../ble/drivers/ledcar02_driver.dart';
 import '../ble/drivers/ledcar_driver.dart';
 import '../ble/drivers/leddmx_driver.dart';
+import '../ble/drivers/magiclantern_driver.dart';
 import '../ble/drivers/triones_driver.dart';
 import '../models/lighting_zone.dart';
 import '../models/terrax_device.dart';
@@ -37,7 +38,9 @@ LightingZoneType defaultZoneTypeFor(String driverId) {
       driverId == LedCarDriver.id) {
     return LightingZoneType.interiorAmbient;
   }
-  if (driverId == LedDmxDriver.id) return LightingZoneType.underglow;
+  if (driverId == LedDmxDriver.id || driverId == MagicLanternDriver.id) {
+    return LightingZoneType.underglow;
+  }
   if (driverId == Elk7eDriver.id) return LightingZoneType.lightStrip;
   return LightingZoneType.lightStrip;
 }

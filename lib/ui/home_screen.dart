@@ -105,8 +105,8 @@ class HomeScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('All lights', style: theme.textTheme.titleSmall),
-                            Text('Set every zone at once · ${lights.length} lights',
+                            Text('Light groups', style: theme.textTheme.titleSmall),
+                            Text('Pick which lights to drive together · ${lights.length} lights',
                                 style: theme.textTheme.bodySmall
                                     ?.copyWith(color: TerraxBrand.textMuted)),
                           ],

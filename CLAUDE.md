@@ -38,7 +38,7 @@ Dart null-safety. Material 3, dark-mode friendly.
 lib/ble/ble_service.dart          scan/connect/discover/write/notify wrapper
 lib/ble/device_driver.dart        DeviceDriver + DeviceCapabilities (the contract)
 lib/ble/detection.dart            scanned device -> driver
-lib/ble/drivers/                  elk_7e / triones / lampfrgn / ledcar02 / ledcar / leddmx / carlights / intelligo
+lib/ble/drivers/                  elk_7e / triones / lampfrgn / ledcar02 / ledcar / leddmx / carlights / magiclantern / intelligo
 lib/audio/mic_bands.dart          phone-mic band sampler for sound-reactive drivers (no BLE, no UI)
 lib/models/                       terrax_device, device_category, rgb, lighting_zone
 lib/state/                        scan / devices / device controllers (riverpod)
@@ -163,6 +163,31 @@ the char has WRITE (Android default), else no-response. Frames are
   loops 100× but Android drops overlapping writes; we send 10); fire-and-forget.
 - Sound-reactive mode uses the phone mic via `lib/audio/mic_bands.dart` (package
   `record`, 8 kHz PCM16, FFT bins `(n-1)*f/8000`), one frame per 80 ms.
+
+### magiclantern — Magic Lantern underglow controllers (`MELK-*`)
+
+From **Magic Lantern 6.11.10** (`wl.smartled.rgb`, Easylink — the duoCo code base
+rebranded; `com.easylink.colorful.service.BluetoothLEService`), full trace in
+`docs/magiclantern_findings.md`. Same hardware family as elk_7e (service `FFF0`,
+char `FFF3`, 9-byte `7E … EF`, no checksum, no notify) but its **own 213-mode table
+and extra frames**, so it is its own driver; detection by name prefix `MELK-` (the
+vendor also requires an Android MAC starting `BE`; iOS has no MAC, so name only).
+Zone default: **Underglow** (that is what TERRAX installs them for).
+
+- Power `7E 04 04 on 00 on FF 00 EF` · Colour `7E 07 05 03 R G B 10 EF` (music stream
+  uses tail `20`) · White `7E 05 05 01 pct FF FF 08 EF` (`MELK-…W…`) · CCT
+  `7E 06 05 02 warm cold FF 08 EF` (`MELK-…CT…`) · Brightness `7E 04 01 pct ch FF FF 00 EF`
+  (ch `FF` mode page, `01/02/03` RGB/W/CT) · **Mode `7E 05 03 id 06 FF FF 00 EF`**, ids 0–212
+  (`magiclantern_modes.dart`, tabs Basic/Curtain/Trans/Water/Flow/Tail/Run/RunBack) ·
+  Scene `7E 05 31 id 07 FF FF 01 EF` 1–28 (OC/OT units) · Speed `7E 04 02 sp FF FF FF 00 EF`
+  0–100 · External mic `7E 04 07 on …`, EQ `7E 07 03 (80+eq) 04 FF FF 00 EF`, sensitivity
+  `7E 04 06 s …` · Channel enable `7E 04 04 mask ch flag FF 00 EF` · Pin order
+  `7E 06 81 p1 p2 p3 FF 00 EF` · Pixels `7E 07 21 lo hi 00 FF 00 EF` (10–1000) · Timer
+  `7E 08 82 hh mm 00 which days EF` (days bit0 Mon…bit6 Sun, bit7 enabled; query with
+  `FF FF FF which 00` then GATT **read** FFF3) · System time `7E 07 83 hh mm ss wd FF EF`
+  (wd 0 = Sunday) sent after the connect-confirmation read.
+- Phone-mic mode = the app streams colour frames (tail `20`) at ≤10 Hz: beat → next of
+  seven colours, quiet → black (`MagicLanternBeatDetector`, fed by `mic_bands.dart`).
 
 ### intelligo — electric running board / step board
 - Advertises as `DianDongTaBan` (电动踏板; verified on real hardware 2026-08-03, services

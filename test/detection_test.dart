@@ -20,6 +20,10 @@ void main() {
       expect(detectFor('LEDCAR-02-9930', [Guid('fff0')])!.driverId, 'ledcar02');
       expect(detectFor('LEDDMX-03-1', [Guid('ffd5')])!.driverId, 'leddmx');
       expect(detectFor('DianDongTaBan', [Guid('fff0')])!.driverId, 'intelligo');
+      // Magic Lantern underglow: ELK 7E hardware (FFF0) but its own table.
+      expect(detectFor('MELK-OB1234', [Guid('fff0')])!.driverId, 'magiclantern');
+      expect(detectFor('melk-tx99', [])!.driverId, 'magiclantern');
+      expect(detectFor('ELK-BLEDOM', [Guid('fff0')])!.driverId, 'elk_7e');
     });
     test('service-only matches still work for nameless units', () {
       expect(detectFor('', [Guid('ae30')])!.driverId, 'lampfrgn');

@@ -85,6 +85,11 @@ class BleService {
     }
   }
 
+  /// Plain GATT read, for families that answer queries through the value of
+  /// their write characteristic instead of a notify (Magic Lantern).
+  Future<List<int>> read(BluetoothCharacteristic characteristic) =>
+      characteristic.read();
+
   /// Enables notifications on [characteristic] and returns its value stream.
   Future<Stream<List<int>>> subscribe(
       BluetoothCharacteristic characteristic) async {

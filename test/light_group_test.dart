@@ -30,6 +30,20 @@ class _RecordingLight implements LightCommands {
       calls.add('effect $id $speed');
 }
 
+/// A light whose connection dropped: every command throws.
+class _FailingLight implements LightCommands {
+  @override
+  void setColor(Rgb color) {}
+  @override
+  void setBrightness(int percent) {}
+  @override
+  void setWhite(int value) {}
+  @override
+  Future<void> setPower(bool on) async => throw StateError('gone');
+  @override
+  Future<void> setEffect(int id, int speed) async => throw StateError('gone');
+}
+
 TerraxDevice _device(String id, String driverId) => TerraxDevice(
       id: id,
       advertisedName: id,
@@ -97,6 +111,17 @@ void main() {
       ]);
     });
 
+    test('a member that throws does not block the others or the gesture',
+        () async {
+      final good = _RecordingLight();
+      final group = LightGroup([_FailingLight(), good, _FailingLight()]);
+      await group.setPower(true);
+      await group.setEffect(3, 10);
+      expect(good.calls, ['power true', 'effect 3 10']);
+      expect(group.state.power, isTrue);
+      expect(group.state.effectId, 3);
+    });
+
     test('commands with no members are harmless no-ops', () async {
       final group = LightGroup([]);
       group.setColor(const Rgb(9, 9, 9));
@@ -143,6 +168,30 @@ void main() {
     });
   });
 
+  group('lightGroupSelectionProvider', () {
+    test('starts empty — nothing is assumed — and persists the choice', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final c1 = ProviderContainer(
+          overrides: [sharedPreferencesProvider.overrideWithValue(prefs)]);
+      addTearDown(c1.dispose);
+      expect(c1.read(lightGroupSelectionProvider), isEmpty);
+      final sel = c1.read(lightGroupSelectionProvider.notifier);
+      sel.toggle('a');
+      sel.addAll(['b', 'c']);
+      sel.setSelected('b', false);
+      expect(c1.read(lightGroupSelectionProvider), {'a', 'c'});
+
+      // A fresh container (new app launch) reads the same selection back.
+      final c2 = ProviderContainer(
+          overrides: [sharedPreferencesProvider.overrideWithValue(prefs)]);
+      addTearDown(c2.dispose);
+      expect(c2.read(lightGroupSelectionProvider), {'a', 'c'});
+      c2.read(lightGroupSelectionProvider.notifier).replace(const []);
+      expect(c2.read(lightGroupSelectionProvider), isEmpty);
+    });
+  });
+
   group('DetectionRule.isLighting', () {
     test('is set for exactly the lighting families', () {
       final byId = {for (final r in detectionRules) r.driverId: r.isLighting};
@@ -154,6 +203,7 @@ void main() {
         'ledcar02': true,
         'ledcar': true,
         'leddmx': true,
+        'magiclantern': true,
         'intelligo': false,
       });
     });

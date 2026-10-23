@@ -16,12 +16,13 @@ EffectVisual effectVisualFor(EffectPreset? effect) {
   if (has(['strobe', 'stroboflash'])) return EffectVisual.strobe;
   if (has(['flash', 'blink', 'jump'])) return EffectVisual.flash;
   if (has(['breath', 'pulse', 'breathing'])) return EffectVisual.breathing;
-  if (has(['chas', 'running', 'run ', 'meteor', 'wave', 'flow', 'sequen',
-        'scan', 'dripping', 'wheeling', 'curtain'])) {
+  if (has(['chas', 'running', 'run ', 'run back', 'meteor', 'wave', 'flow',
+        'sequen', 'scan', 'dripping', 'wheeling', 'curtain', 'marquee', 'race',
+        'flush', 'water', 'tail', 'trans', ' open', ' close'])) {
     return EffectVisual.chase;
   }
   if (has(['rainbow', 'seven color', '7 color', '7-color', 'auto cycle',
-        'cycle', 'dreaming', 'mixed'])) {
+        'auto play', 'magic', 'energy', 'cycle', 'dreaming', 'mixed'])) {
     return EffectVisual.rainbow;
   }
   if (has(['fade', 'gradient', 'gradual', 'smooth', 'transition'])) {

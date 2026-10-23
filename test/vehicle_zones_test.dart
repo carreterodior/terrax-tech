@@ -22,6 +22,7 @@ void main() {
       expect(defaultZoneTypeFor('intelligo'), LightingZoneType.runningBoard);
       expect(defaultZoneTypeFor('ledcar02'), LightingZoneType.interiorAmbient);
       expect(defaultZoneTypeFor('leddmx'), LightingZoneType.underglow);
+      expect(defaultZoneTypeFor('magiclantern'), LightingZoneType.underglow);
       expect(defaultZoneTypeFor('nope'), LightingZoneType.lightStrip);
     });
 
