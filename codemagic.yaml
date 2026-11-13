@@ -14,7 +14,9 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.terraxtech.app
-      flutter: stable
+      # Pinned to the toolchain the tests run on locally (newer stable deprecates
+      # package:flutter/material.dart and flutter analyze then exits 1).
+      flutter: 3.47.2
       xcode: latest
       cocoapods: default
     scripts:
@@ -53,7 +55,9 @@ workflows:
       # ever sees them as CM_KEYSTORE* variables on the build machine.
       android_signing:
         - terrax-upload
-      flutter: stable
+      # Pinned to the toolchain the tests run on locally (newer stable deprecates
+      # package:flutter/material.dart and flutter analyze then exits 1).
+      flutter: 3.47.2
       java: 21
     scripts:
       - name: Get dependencies
