@@ -67,6 +67,10 @@ class _DriverSectionsViewState extends State<DriverSectionsView>
         TabBar(
           controller: _tabs,
           labelColor: theme.colorScheme.primary,
+          // Scrollable so full names ("Schedule", "Connection") fit on a
+          // phone instead of being clipped to "Sche…", "Conn…".
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           tabs: [
             for (final s in widget.sections)
               Tab(icon: Icon(_icon(s.icon)), text: s.title),

@@ -5,6 +5,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'demo/demo_mode.dart';
 import 'state/core_providers.dart';
 import 'billing/billing_config.dart';
 import 'state/pro_providers.dart';
@@ -18,10 +19,20 @@ Future<void> main() async {
     // Log every scan result / GATT operation to logcat while debugging.
     await FlutterBluePlus.setLogLevel(LogLevel.verbose);
   }
+  final demo = isDemoMode;
+  if (demo) {
+    // Web preview demo (?demo=1): session-only storage, simulated devices.
+    // ignore: invalid_use_of_visible_for_testing_member
+    SharedPreferences.setMockInitialValues({});
+  }
   final prefs = await SharedPreferences.getInstance();
   final container = ProviderContainer(
-    overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      if (demo) ...demoOverrides(),
+    ],
   );
+  if (demo) seedDemoDevices(container);
   // Ask StoreKit for products and any existing entitlement before first paint;
   // failures here must never block the app, which works offline by design.
   // Skipped entirely while the app is free, so no billing connection is ever
@@ -50,6 +61,13 @@ class TerraxApp extends StatelessWidget {
       darkTheme: theme,
       themeMode: ThemeMode.dark,
       home: const SplashGate(child: HomeScreen()),
+      builder: isDemoMode
+          ? (context, child) => Banner(
+                message: 'DEMO',
+                location: BannerLocation.topEnd,
+                child: child!,
+              )
+          : null,
     );
   }
 }
