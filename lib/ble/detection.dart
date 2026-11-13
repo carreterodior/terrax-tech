@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ble_service.dart';
 import 'device_driver.dart';
+import 'drivers/ambientlight_driver.dart';
 import 'drivers/carlights_driver.dart';
 import 'drivers/elk_7e_driver.dart';
 import 'drivers/intelligo_driver.dart';
@@ -265,6 +266,22 @@ final List<DetectionRule> detectionRules = [
     createDriver: (ble, device, prefs, advName) => LedDmxDriver(
         ble, device, prefs,
         variant: LedDmxVariant.fromName(advName)),
+  ),
+  DetectionRule(
+    driverId: AmbientLightDriver.id,
+    label: 'Car ambient lighting (AmbientLight app)',
+    // AmbientLight (com.lomo.ambientlight 1.81.10) has no name rule of its
+    // own: it lists anything advertising AF30, FFF0 or FEE7 (minus names
+    // starting ZYCL- / CAL-TK4 / BLE-LIGHT). None of those can be claimed
+    // here: FFF0 is elk_7e, FEE7 is IntelliGo, and AF30 is also what nameless
+    // LAMP&FRGN units advertise (see lampfrgn rule). So the rule is the
+    // vendor's own name-filter default, "ATW"; any other unit is added with
+    // "Add as…" and verified at connect (it must expose FFE0/FFE2).
+    // docs/ambientlight_findings.md.
+    namePrefixes: const ['ATW'],
+    defaultProductHint: 'Car ambient lighting',
+    isLighting: true,
+    createDriver: (ble, device, prefs, _) => AmbientLightDriver(ble, device, prefs),
   ),
   DetectionRule(
     driverId: IntelligoDriver.id,

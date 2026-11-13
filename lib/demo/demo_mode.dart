@@ -65,6 +65,15 @@ const List<(TerraxDevice, LightingZoneType?)> demoDevices = [
   ),
   (
     TerraxDevice(
+        id: 'DEMO-AMB',
+        advertisedName: 'ATW-5A21',
+        name: 'Cabin ambient',
+        driverId: 'ambientlight',
+        category: DeviceCategory.lightStrips),
+    null,
+  ),
+  (
+    TerraxDevice(
         id: 'DEMO-BOARD',
         advertisedName: 'DianDongTaBan',
         name: 'Step boards',

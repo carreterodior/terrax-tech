@@ -38,7 +38,7 @@ Dart null-safety. Material 3, dark-mode friendly.
 lib/ble/ble_service.dart          scan/connect/discover/write/notify wrapper
 lib/ble/device_driver.dart        DeviceDriver + DeviceCapabilities (the contract)
 lib/ble/detection.dart            scanned device -> driver
-lib/ble/drivers/                  elk_7e / triones / lampfrgn / ledcar02 / ledcar / leddmx / carlights / magiclantern / intelligo
+lib/ble/drivers/                  elk_7e / triones / lampfrgn / ledcar02 / ledcar / leddmx / carlights / magiclantern / ambientlight / intelligo
 lib/audio/mic_bands.dart          phone-mic band sampler for sound-reactive drivers (no BLE, no UI)
 lib/models/                       terrax_device, device_category, rgb, lighting_zone
 lib/state/                        scan / devices / device controllers (riverpod)
@@ -188,6 +188,29 @@ Zone default: **Underglow** (that is what TERRAX installs them for).
   (wd 0 = Sunday) sent after the connect-confirmation read.
 - Phone-mic mode = the app streams colour frames (tail `20`) at ≤10 Hz: beat → next of
   seven colours, quiet → black (`MagicLanternBeatDetector`, fed by `mic_bands.dart`).
+
+### ambientlight — AmbientLight app interior kits (`com.lomo.ambientlight`)
+
+From **AmbientLight 1.81.10** (vendor SDK `com.lm.sdk`, lmyiot — same vendor family as the
+IntelliGo boards); full trace in `docs/ambientlight_findings.md`. Service `FFE0`, **write
+`FFE2` without response, notify `FFE1`**. Frames are **ASCII hex text inside `<` `>`**
+(`"0701"` → `3C 30 37 30 31 3E`), no checksum/auth; `%02x` values lowercase, `%02d`/`%04d`
+fields BCD. ~1 s after connect send `<0A01>`; the status reply code picks the grammar:
+`0x12` legacy (RGB `08nn`, effects `11nn`), `0x1F`/`0x4E`/`0x5A` grouped (RGB `04nn`,
+effects `1Enn`, extra Piled Up / Water Ripple groups). Detection: name prefix `ATW` only (the
+vendor's own filter default); AF30/FFF0/FEE7 are NOT claimed (LAMP&FRGN, elk_7e, IntelliGo
+use them) — other units via "Add as…", verified at connect (needs FFE0/FFE2). Zone default: Interior.
+
+- Power `07 00/01/02` (off/on/auto) · colour `06|10|09` + `RRGGBB` (all/zone1/zone2) ·
+  brightness 0–9 `0200xx` global, `0101xx`/`0102xx` zones · partition `14xx` · night
+  `1A` en lvl · control `51xx` · effect speed `0Bxx` 1–5 · direction `0Cxx` · common
+  effects `28xx` · toggle `29xx` · custom RGB `2B`/`2A`+8 nibbles/`3E` · custom effect
+  `3B`/`3A`/`3C`/`3D` · sound `1Bxx`, mic `0300xx` · welcome `30`/`39`/`38` (`380F` Sync
+  RGB) · linkage `31–35`,`44` + `01/00`, colours `45/46/47` · mirror `59`, delays
+  `5A–5D` BCD · reset `4200` · installer `21`/`20`/`1C 0F 13 1D 52`/`2C 2F 23 2D 48–4B 53 54`/
+  `4C`/`4D0055xx`/`40`/`43`/`41`/`22`. OTA (vendor cloud) not implemented.
+- Replies: status (power, zone colours, brightness, mic, speed, direction, …), `0x13`
+  version, `0x26` settings, `0x27` custom tables, `0x56` mirror, `0x2E`/`0x19` alerts.
 
 ### intelligo — electric running board / step board
 - Advertises as `DianDongTaBan` (电动踏板; verified on real hardware 2026-08-03, services

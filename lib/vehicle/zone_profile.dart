@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../ble/detection.dart';
 import '../ble/device_driver.dart';
+import '../ble/drivers/ambientlight_driver.dart';
 import '../ble/drivers/carlights_driver.dart';
 import '../ble/drivers/elk_7e_driver.dart';
 import '../ble/drivers/intelligo_driver.dart';
@@ -34,6 +35,7 @@ LightingZoneType defaultZoneTypeFor(String driverId) {
     return LightingZoneType.rockLights;
   }
   if (driverId == LampFrgnDriver.id ||
+      driverId == AmbientLightDriver.id ||
       driverId == LedCar02Driver.id ||
       driverId == LedCarDriver.id) {
     return LightingZoneType.interiorAmbient;

@@ -204,6 +204,7 @@ void main() {
         'ledcar': true,
         'leddmx': true,
         'magiclantern': true,
+        'ambientlight': true,
         'intelligo': false,
       });
     });
