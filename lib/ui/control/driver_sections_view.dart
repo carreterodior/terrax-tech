@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
+import '../widgets/tx_components.dart';
+
 import '../../ble/device_driver.dart';
 import '../../models/rgb.dart';
 import 'color_wheel.dart';
@@ -307,30 +310,42 @@ class _OptionTileState extends State<_OptionTile> {
     final s = widget.setting;
     final value = _pending ?? s.value;
     final known = s.options.any((o) => o.value == value);
-    return ListTile(
-      dense: true,
-      title: Text(s.label),
-      subtitle: s.description == null ? null : Text(s.description!),
-      trailing: DropdownButton<Object?>(
-        value: known ? value : null,
-        hint: const Text('—'),
-        items: [
-          for (final o in s.options)
-            DropdownMenuItem<Object?>(value: o.value, child: Text(o.label)),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TxPicker<Object?>(
+            label: s.label,
+            value: known ? value : null,
+            options: [
+              for (final o in s.options)
+                TxPickerOption<Object?>(value: o.value, label: o.label),
+            ],
+            onChanged: (v) async {
+              if (v == null) return;
+              final messenger = ScaffoldMessenger.of(context);
+              setState(() => _pending = v);
+              try {
+                await s.apply(v);
+              } catch (e) {
+                if (!mounted) return;
+                setState(() => _pending = null);
+                messenger
+                    .showSnackBar(SnackBar(content: Text('${s.label} failed: $e')));
+              }
+            },
+          ),
+          if (s.description != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 4),
+              child: Text(s.description!,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: TerraxBrand.textMuted)),
+            ),
         ],
-        onChanged: (v) async {
-          if (v == null) return;
-          final messenger = ScaffoldMessenger.of(context);
-          setState(() => _pending = v);
-          try {
-            await s.apply(v);
-          } catch (e) {
-            if (!mounted) return;
-            setState(() => _pending = null);
-            messenger
-                .showSnackBar(SnackBar(content: Text('${s.label} failed: $e')));
-          }
-        },
       ),
     );
   }

@@ -224,10 +224,11 @@ class _ShowroomScreenState extends State<ShowroomScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
+                  TxPicker<EffectVisual>(
+                    label: 'Pattern',
+                    value: _z.effect,
+                    accent: _z.effect == EffectVisual.static ? null : accent,
+                    options: [
                       for (final e in const [
                         EffectVisual.static,
                         EffectVisual.breathing,
@@ -235,15 +236,13 @@ class _ShowroomScreenState extends State<ShowroomScreen> {
                         EffectVisual.rainbow,
                         EffectVisual.chase,
                         EffectVisual.strobe,
+                        EffectVisual.flash,
+                        EffectVisual.cycle,
                         EffectVisual.music,
                       ])
-                        TxChip(
-                          label: effectVisualLabel(e),
-                          selected: _z.effect == e,
-                          accent: _z.effect == e && e != EffectVisual.static ? accent : null,
-                          onTap: () => _update((z) => z.copyWith(effect: e)),
-                        ),
+                        TxPickerOption(value: e, label: effectVisualLabel(e)),
                     ],
+                    onChanged: (e) => _update((z) => z.copyWith(effect: e)),
                   ),
                   if (_z.effect != EffectVisual.static) ...[
                     const SizedBox(height: TxSpace.l),

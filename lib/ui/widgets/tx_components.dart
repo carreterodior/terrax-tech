@@ -506,3 +506,349 @@ class TxGlow extends StatelessWidget {
         child: child,
       );
 }
+
+/// One choice in a [TxPicker]. [group] puts a header above the first option of
+/// each run of equal groups ("Run", "Curtain"); [hint] is small text on the
+/// right ("Sequential", "Rainbow").
+class TxPickerOption<T> {
+  final T value;
+  final String label;
+  final String? group;
+  final String? hint;
+  const TxPickerOption({required this.value, required this.label, this.group, this.hint});
+}
+
+/// Dropdown-style field: shows the current choice and opens a scrollable,
+/// searchable sheet of every option on tap. Replaces chip rows and the
+/// framework dropdown for long lists (hundreds of lighting patterns).
+class TxPicker<T> extends StatelessWidget {
+  final String label;
+  final T? value;
+  final List<TxPickerOption<T>> options;
+  final ValueChanged<T> onChanged;
+  final String placeholder;
+
+  /// Tints the current choice and the check mark (the light's colour).
+  final Color? accent;
+  final bool enabled;
+
+  const TxPicker({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+    this.placeholder = 'Choose…',
+    this.accent,
+    this.enabled = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    TxPickerOption<T>? current;
+    for (final o in options) {
+      if (o.value == value) current = o;
+    }
+    final text = current == null
+        ? placeholder
+        : current.group == null
+            ? current.label
+            : '${current.group} · ${current.label}';
+    return Semantics(
+      button: true,
+      label: '$label: $text',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: !enabled
+            ? null
+            : () async {
+                HapticFeedback.selectionClick();
+                final picked = await showTxPickerSheet<T>(
+                  context,
+                  title: label,
+                  options: options,
+                  value: value,
+                  accent: accent,
+                );
+                if (picked != null) onChanged(picked.value);
+              },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: TxSpace.l, vertical: TxSpace.m),
+          decoration: BoxDecoration(
+            color: TerraxBrand.background.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: enabled ? TerraxBrand.borderStrong : TerraxBrand.border),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TxLabel(label),
+                    const SizedBox(height: 4),
+                    Text(
+                      text,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: current == null
+                            ? TerraxBrand.textMuted
+                            : (accent ?? TerraxBrand.textPrimary),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: TxSpace.s),
+              Icon(Icons.expand_more,
+                  color: enabled ? TerraxBrand.textSecondary : TerraxBrand.textMuted),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The sheet behind [TxPicker]; usable on its own. Resolves with the tapped
+/// option, or null when dismissed.
+Future<TxPickerOption<T>?> showTxPickerSheet<T>(
+  BuildContext context, {
+  required String title,
+  required List<TxPickerOption<T>> options,
+  T? value,
+  Color? accent,
+}) {
+  return showModalBottomSheet<TxPickerOption<T>>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) =>
+        _TxPickerSheet<T>(title: title, options: options, value: value, accent: accent),
+  );
+}
+
+class _TxPickerSheet<T> extends StatefulWidget {
+  final String title;
+  final List<TxPickerOption<T>> options;
+  final T? value;
+  final Color? accent;
+  const _TxPickerSheet(
+      {required this.title, required this.options, this.value, this.accent});
+
+  @override
+  State<_TxPickerSheet<T>> createState() => _TxPickerSheetState<T>();
+}
+
+class _TxPickerSheetState<T> extends State<_TxPickerSheet<T>> {
+  static const double _rowHeight = 48;
+  static const double _headerHeight = 36;
+
+  String _query = '';
+  late final ScrollController _scroll;
+
+  bool get _searchable => widget.options.length > 12;
+
+  /// Flattened rows (group headers + options) after the search filter.
+  List<Object> _rows() {
+    final q = _query.trim().toLowerCase();
+    final rows = <Object>[];
+    String? lastGroup;
+    for (final o in widget.options) {
+      if (q.isNotEmpty &&
+          !o.label.toLowerCase().contains(q) &&
+          !(o.group?.toLowerCase().contains(q) ?? false) &&
+          !(o.hint?.toLowerCase().contains(q) ?? false)) {
+        continue;
+      }
+      if (o.group != null && o.group != lastGroup) {
+        rows.add(o.group!);
+        lastGroup = o.group;
+      }
+      rows.add(o);
+    }
+    return rows;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Open scrolled to the current choice so a 200-entry list lands on it.
+    var offset = 0.0;
+    var found = false;
+    for (final r in _rows()) {
+      if (r is TxPickerOption<T> && r.value == widget.value) {
+        found = true;
+        break;
+      }
+      offset += r is String ? _headerHeight : _rowHeight;
+    }
+    _scroll = ScrollController(
+        initialScrollOffset: found ? (offset - _rowHeight * 2).clamp(0, double.infinity) : 0);
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  OutlineInputBorder _border(Color c) => OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: c),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final rows = _rows();
+    final accent = widget.accent ?? TerraxBrand.accent;
+    final height = MediaQuery.sizeOf(context).height;
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: Container(
+        height: (height * 0.72).clamp(320.0, 640.0),
+        decoration: const BoxDecoration(
+          color: TerraxBrand.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+          border: Border(top: BorderSide(color: TerraxBrand.borderStrong)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: TxSpace.s),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: TerraxBrand.borderStrong,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(TxSpace.xl, TxSpace.m, TxSpace.m, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(widget.title.toUpperCase(),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                            letterSpacing: 1.6,
+                            fontWeight: FontWeight.w700,
+                            color: TerraxBrand.textSecondary)),
+                  ),
+                  Text('${widget.options.length}',
+                      style: theme.textTheme.labelSmall?.copyWith(color: TerraxBrand.textMuted)),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: TerraxBrand.textSecondary),
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            if (_searchable)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(TxSpace.l, 0, TxSpace.l, TxSpace.s),
+                child: TextField(
+                  onChanged: (v) => setState(() => _query = v),
+                  style: theme.textTheme.bodyMedium,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    prefixIcon:
+                        const Icon(Icons.search, size: 20, color: TerraxBrand.textMuted),
+                    hintText: 'Search ${widget.title.toLowerCase()}',
+                    hintStyle: const TextStyle(color: TerraxBrand.textMuted),
+                    filled: true,
+                    fillColor: TerraxBrand.background,
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: TxSpace.m, vertical: 10),
+                    border: _border(TerraxBrand.border),
+                    enabledBorder: _border(TerraxBrand.border),
+                    focusedBorder: _border(TerraxBrand.borderStrong),
+                  ),
+                ),
+              ),
+            const Divider(height: 1, color: TerraxBrand.border),
+            Expanded(
+              child: rows.isEmpty
+                  ? Center(
+                      child: Text('Nothing matches "$_query"',
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(color: TerraxBrand.textMuted)),
+                    )
+                  : Scrollbar(
+                      controller: _scroll,
+                      thumbVisibility: true,
+                      child: ListView.builder(
+                        controller: _scroll,
+                        padding: const EdgeInsets.only(bottom: TxSpace.xl),
+                        itemCount: rows.length,
+                        itemBuilder: (context, i) {
+                          final r = rows[i];
+                          if (r is String) {
+                            return SizedBox(
+                              height: _headerHeight,
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                    TxSpace.xl, TxSpace.m, TxSpace.xl, 0),
+                                child: TxLabel(r),
+                              ),
+                            );
+                          }
+                          final o = r as TxPickerOption<T>;
+                          final selected = o.value == widget.value;
+                          return SizedBox(
+                            height: _rowHeight,
+                            child: InkWell(
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                Navigator.of(context).pop(o);
+                              },
+                              child: Container(
+                                color: selected ? accent.withValues(alpha: 0.10) : null,
+                                padding: const EdgeInsets.symmetric(horizontal: TxSpace.xl),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        o.label,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.textTheme.bodyLarge?.copyWith(
+                                          color: selected
+                                              ? TerraxBrand.textPrimary
+                                              : TerraxBrand.textSecondary,
+                                          fontWeight:
+                                              selected ? FontWeight.w600 : FontWeight.w400,
+                                        ),
+                                      ),
+                                    ),
+                                    if (o.hint != null)
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: TxSpace.m),
+                                        child: Text(o.hint!,
+                                            style: theme.textTheme.labelSmall
+                                                ?.copyWith(color: TerraxBrand.textMuted)),
+                                      ),
+                                    if (selected)
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: TxSpace.m),
+                                        child: Icon(Icons.check, size: 18, color: accent),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

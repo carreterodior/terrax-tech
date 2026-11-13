@@ -82,7 +82,6 @@ class _LightControlsState extends State<LightControls> {
   EffectPreset? _effect;
   double _speed = 16;
   bool _seeded = false;
-  bool _showAllEffects = false;
 
   DeviceState get _s => widget.deviceState;
 
@@ -147,8 +146,6 @@ class _LightControlsState extends State<LightControls> {
     final caps = widget.caps;
     final power = _s.power ?? true;
     final accent = _color.asColor;
-    final signature = signatureEffects(widget.effects);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -255,19 +252,10 @@ class _LightControlsState extends State<LightControls> {
           ),
         ],
 
-        // ---- Effects.
+        // ---- Effects: one scrollable, searchable list of every pattern the
+        // hardware offers (213 on some families), opened from a dropdown field.
         if (caps.hasEffects && widget.effects.isNotEmpty) ...[
-          TxSectionHeader(
-            'Effects',
-            trailing: widget.isPro && widget.effects.length > signature.length
-                ? TextButton(
-                    onPressed: () => setState(() => _showAllEffects = !_showAllEffects),
-                    child: Text(_showAllEffects
-                        ? 'Fewer'
-                        : 'All ${widget.effects.length}'),
-                  )
-                : null,
-          ),
+          const TxSectionHeader('Effects'),
           if (!widget.isPro)
             TxCard(
               child: Row(
@@ -288,60 +276,23 @@ class _LightControlsState extends State<LightControls> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      TxChip(
-                        label: 'Static',
-                        selected: _effect == null,
-                        onTap: () => _sendColor(_color),
-                      ),
-                      for (final e in signature)
-                        TxChip(
-                          label: effectVisualLabel(effectVisualFor(e)),
-                          selected: _effect?.id == e.id,
-                          accent: _effect?.id == e.id ? accent : null,
-                          onTap: () => _sendEffect(e),
-                        ),
-                    ],
+                  TxPicker<int>(
+                    label: 'Pattern',
+                    value: _effect?.id ?? staticEffectId,
+                    accent: _effect == null ? null : accent,
+                    options: effectPickerOptions(widget.effects),
+                    onChanged: (id) {
+                      if (id == staticEffectId) {
+                        _sendColor(_color);
+                        return;
+                      }
+                      for (final e in widget.effects) {
+                        if (e.id == id) _sendEffect(e);
+                      }
+                    },
                   ),
-                  if (_showAllEffects) ...[
-                    const SizedBox(height: TxSpace.l),
-                    const Divider(),
-                    const SizedBox(height: TxSpace.s),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 280),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: widget.effects.length,
-                        itemBuilder: (_, i) {
-                          final e = widget.effects[i];
-                          final sel = _effect?.id == e.id;
-                          return ListTile(
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(e.name,
-                                style: TextStyle(
-                                    color: sel ? Colors.white : TerraxBrand.textSecondary,
-                                    fontWeight: sel ? FontWeight.w600 : FontWeight.w400)),
-                            trailing: sel
-                                ? Icon(Icons.check, size: 18, color: accent)
-                                : Text(effectVisualLabel(effectVisualFor(e)),
-                                    style: theme.textTheme.labelSmall
-                                        ?.copyWith(color: TerraxBrand.textMuted)),
-                            onTap: () => _sendEffect(e),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
                   if (_effect != null) ...[
                     const SizedBox(height: TxSpace.l),
-                    Text(_effect!.name,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: TerraxBrand.textMuted)),
-                    const SizedBox(height: TxSpace.s),
                     TxSlider(
                       label: 'Speed',
                       icon: Icons.speed_outlined,
@@ -373,3 +324,26 @@ class _LightControlsState extends State<LightControls> {
 
 /// Zone-type aware label for the colour card so "Colour" reads in context.
 String zoneControlTitle(LightingZoneType type) => type.label;
+
+/// Picker id for "no pattern, solid colour" — effect ids are never negative.
+const int staticEffectId = -1;
+
+/// Every effect as picker rows: "Static" first, then the driver's list in its
+/// own order. Names of the form "Group · Name" (the Magic Lantern tabs) become
+/// group headers; the hint is the look the vehicle animates for it.
+List<TxPickerOption<int>> effectPickerOptions(List<EffectPreset> effects) {
+  final rows = <TxPickerOption<int>>[
+    const TxPickerOption(value: staticEffectId, label: 'Static', hint: 'Solid colour'),
+  ];
+  for (final e in effects) {
+    final sep = e.name.indexOf(' · ');
+    final grouped = sep > 0;
+    rows.add(TxPickerOption<int>(
+      value: e.id,
+      label: grouped ? e.name.substring(sep + 3) : e.name,
+      group: grouped ? e.name.substring(0, sep) : null,
+      hint: effectVisualLabel(effectVisualFor(e)),
+    ));
+  }
+  return rows;
+}
