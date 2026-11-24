@@ -1,5 +1,5 @@
 /*
-  TERRAX RF Bridge — ESP32 firmware
+  TERRAX Wireless Switch (RF bridge) — ESP32 firmware
   ---------------------------------
   Turns Bluetooth LE commands from the TERRAX TECH app into 433 MHz
   EV1527-style codes, so cheap 433 MHz relay modules (the "learning code"
@@ -11,8 +11,9 @@
     17.3 cm straight wire on the FS1000A ANT pad
     On-board LED (GPIO2) blinks while transmitting.
 
-  Needs only the "esp32 by Espressif Systems" board package in the Arduino
-  IDE (Tools > Board > Boards Manager). No extra libraries.
+  Needs only the "esp32 by Espressif Systems" board package, version 4.x,
+  in the Arduino IDE (Tools > Board > Boards Manager). No extra libraries.
+  Uses the 4.x unified BLE API (#include <BLE.h>).
 
   How codes work
   --------------
@@ -46,24 +47,22 @@
 */
 
 #include <Arduino.h>
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
-#include <BLE2902.h>
+#include <BLE.h>
 #include <Preferences.h>
 
 // ---------------- configuration ----------------
 static const char *FW_VERSION = "1.0.0";
+static const char *BLE_NAME = "TERRAX WIRELESS SWITCH";
 static const int TX_PIN = 4;        // D4 -> FS1000A DATA
 static const int LED_PIN = 2;       // on-board blue LED on most ESP32 dev boards
 static const int CHANNELS = 16;
 static const int REPEATS = 12;      // frames per command
 static const uint32_t PAIR_MS = 3000;
 
-#define SERVICE_UUID "54580001-7e2a-4f3c-9b1a-5445525241ff"
-#define CMD_UUID     "54580002-7e2a-4f3c-9b1a-5445525241ff"
-#define STATE_UUID   "54580003-7e2a-4f3c-9b1a-5445525241ff"
-#define INFO_UUID    "54580004-7e2a-4f3c-9b1a-5445525241ff"
+static const BLEUUID SERVICE_UUID("54580001-7e2a-4f3c-9b1a-5445525241ff");
+static const BLEUUID CMD_UUID("54580002-7e2a-4f3c-9b1a-5445525241ff");
+static const BLEUUID STATE_UUID("54580003-7e2a-4f3c-9b1a-5445525241ff");
+static const BLEUUID INFO_UUID("54580004-7e2a-4f3c-9b1a-5445525241ff");
 
 // ---------------- persistent settings ----------------
 Preferences prefs;
@@ -74,8 +73,8 @@ uint8_t chanState[CHANNELS];        // 0 off, 1 on, 0xFF unknown
 uint32_t baseAddress = 0;           // 20-bit, from MAC
 
 // ---------------- BLE objects ----------------
-BLECharacteristic *stateChar = nullptr;
-BLECharacteristic *infoChar = nullptr;
+BLECharacteristic stateChar;
+BLECharacteristic infoChar;
 volatile bool clientConnected = false;
 
 // Commands are queued from the BLE callback (BLE task) and transmitted in
@@ -120,17 +119,17 @@ uint32_t channelCode(uint8_t ch, bool on) {
 // ---------------- state reporting ----------------
 void publishState() {
   if (!stateChar) return;
-  stateChar->setValue(chanState, CHANNELS);
-  if (clientConnected) stateChar->notify();
+  stateChar.setValue(chanState, CHANNELS);
+  if (clientConnected) stateChar.notify();
 }
 
 void publishInfo() {
   if (!infoChar) return;
   char buf[96];
   uint64_t mac = ESP.getEfuseMac();
-  snprintf(buf, sizeof(buf), "TERRAX RF Bridge %s; pulse %u us; mac %04X%08lX",
+  snprintf(buf, sizeof(buf), "TERRAX Wireless Switch %s; pulse %u us; mac %04X%08lX",
            FW_VERSION, pulseUs, (uint16_t)(mac >> 32), (unsigned long)mac);
-  infoChar->setValue((uint8_t *)buf, strlen(buf));
+  infoChar.setValue((const uint8_t *)buf, strlen(buf));
 }
 
 void saveChannel(uint8_t ch) {
@@ -223,23 +222,15 @@ void handle(const Command &c) {
 }
 
 // ---------------- BLE callbacks ----------------
-class ServerCallbacks : public BLEServerCallbacks {
-  void onConnect(BLEServer *) override { clientConnected = true; }
-  void onDisconnect(BLEServer *server) override {
-    clientConnected = false;
-    server->getAdvertising()->start();   // stay discoverable
-  }
-};
-
-class CommandCallbacks : public BLECharacteristicCallbacks {
-  void onWrite(BLECharacteristic *chr) override {
-    auto v = chr->getValue();           // std::string (core 2.x) or String (core 3.x)
-    Command c;
-    c.len = (uint8_t)min((size_t)v.length(), sizeof(c.data));
-    for (uint8_t i = 0; i < c.len; i++) c.data[i] = (uint8_t)v[i];
-    xQueueSend(commandQueue, &c, 0);    // drop if the queue is full
-  }
-};
+// Runs on the BLE task: copy the bytes and queue them for loop().
+void onCommandWrite(BLECharacteristic chr, const BLEConnInfo &) {
+  size_t len = 0;
+  const uint8_t *data = chr.getValue(&len);
+  Command c;
+  c.len = (uint8_t)min(len, sizeof(c.data));
+  for (uint8_t i = 0; i < c.len; i++) c.data[i] = data[i];
+  xQueueSend(commandQueue, &c, 0);    // drop if the queue is full
+}
 
 // ---------------- setup / loop ----------------
 void setup() {
@@ -263,31 +254,37 @@ void setup() {
   uint64_t mac = ESP.getEfuseMac();
   baseAddress = (uint32_t)((mac ^ (mac >> 20) ^ (mac >> 40)) & 0xFFFFFUL);
 
-  char name[24];
-  snprintf(name, sizeof(name), "TERRAX-RF-%04X", (unsigned)(baseAddress & 0xFFFF));
-  BLEDevice::init(name);
-  BLEServer *server = BLEDevice::createServer();
-  server->setCallbacks(new ServerCallbacks());
-  BLEService *service = server->createService(SERVICE_UUID);
+  // Shown when scanning for Bluetooth devices. Several bridges share this
+  // name; the app tells them apart by their Bluetooth address.
+  const char *name = BLE_NAME;
+  if (!BLE.begin(name)) {
+    Serial.println("BLE init failed");
+    while (true) delay(1000);
+  }
+  BLEServer server = BLE.createServer();
+  server.onConnect([](BLEServer, const BLEConnInfo &) { clientConnected = true; });
+  server.onDisconnect([](BLEServer s, const BLEConnInfo &, uint8_t) {
+    clientConnected = false;
+    s.startAdvertising();               // stay discoverable
+  });
 
-  BLECharacteristic *cmdChar = service->createCharacteristic(
-      CMD_UUID, BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
-  cmdChar->setCallbacks(new CommandCallbacks());
+  BLEService service = server.createService(SERVICE_UUID);
+  BLECharacteristic cmdChar = service.createCharacteristic(
+      CMD_UUID, BLEProperty::Write | BLEProperty::WriteNR, BLEPermission::WriteOpen);
+  cmdChar.onWrite(onCommandWrite);
+  stateChar = service.createCharacteristic(
+      STATE_UUID, BLEProperty::Read | BLEProperty::Notify, BLEPermission::ReadOpen);
+  infoChar = service.createCharacteristic(INFO_UUID, BLEProperty::Read, BLEPermission::ReadOpen);
 
-  stateChar = service->createCharacteristic(
-      STATE_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
-  stateChar->addDescriptor(new BLE2902());
-
-  infoChar = service->createCharacteristic(INFO_UUID, BLECharacteristic::PROPERTY_READ);
-
-  service->start();
   publishState();
   publishInfo();
+  server.start();
 
-  BLEAdvertising *adv = BLEDevice::getAdvertising();
-  adv->addServiceUUID(SERVICE_UUID);
-  adv->setScanResponse(true);
-  BLEDevice::startAdvertising();
+  BLEAdvertising adv = BLE.getAdvertising();
+  adv.addServiceUUID(SERVICE_UUID);
+  adv.setName(name);
+  adv.setScanResponse(true);            // name goes in the scan response
+  adv.start();
 
   Serial.printf("%s ready, firmware %s\n", name, FW_VERSION);
 }

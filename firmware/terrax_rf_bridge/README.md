@@ -1,6 +1,6 @@
-# TERRAX RF Bridge firmware
+# TERRAX Wireless Switch firmware (RF bridge)
 
-ESP32 firmware that turns TERRAX TECH Bluetooth commands into 433 MHz codes for
+ESP32 firmware (Bluetooth name **TERRAX WIRELESS SWITCH**) that turns TERRAX TECH Bluetooth commands into 433 MHz codes for
 cheap "learning code" relay modules, so auxiliary lights can be switched from the
 phone. Wiring: see the "RF Aux Light Wiring" page (ESP32 D4 → FS1000A DATA, FS1000A
 on 5 V, 17.3 cm antenna).
@@ -9,6 +9,8 @@ Status: written 2026-11-24, not yet run on hardware. Expect to tune the pulse le
 (command `06`) or key nibbles (command `07`) once tested with the real modules.
 
 ## Flash it (Arduino IDE 2, Windows)
+
+Needs the **esp32 by Espressif Systems 4.x** board package (the 4.x `BLE.h` API).
 
 1. Install **Arduino IDE 2** from arduino.cc.
 2. Install the USB driver for the board's **CP2102** chip (Silicon Labs "CP210x
@@ -21,7 +23,7 @@ Status: written 2026-11-24, not yet run on hardware. Expect to tune the pulse le
    **Tools → Port →** the COM port that appears when the board is plugged in.
 6. Click **Upload**. If it stalls at "Connecting…", hold the board's **BOOT** button
    until the upload starts.
-7. **Tools → Serial Monitor** at 115200 baud should print `TERRAX-RF-xxxx ready`.
+7. **Tools → Serial Monitor** at 115200 baud should print `TERRAX WIRELESS SWITCH ready`.
 
 Flash with the board unplugged from the car wiring.
 
@@ -29,7 +31,7 @@ Flash with the board unplugged from the car wiring.
 
 Use the free **nRF Connect** app (iOS / Android):
 
-1. Scan, connect to `TERRAX-RF-xxxx`.
+1. Scan, connect to `TERRAX WIRELESS SWITCH`.
 2. Open the service `54580001-…`, characteristic `54580002-…` (Command), write as
    **byte array / hex**:
    - Put a switch module in learn mode, then write `0200` → pairs channel 0 (sends its

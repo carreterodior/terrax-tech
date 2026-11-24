@@ -287,12 +287,13 @@ final List<DetectionRule> detectionRules = [
   ),
   DetectionRule(
     driverId: TerraxRfDriver.id,
-    label: 'Auxiliary lights (TERRAX RF Bridge)',
-    // Our own ESP32 firmware (firmware/terrax_rf_bridge): advertises
-    // "TERRAX-RF-xxxx" and a 128-bit service UUID nothing else uses.
-    namePrefixes: const ['TERRAX-RF'],
+    label: 'Auxiliary lights (TERRAX Wireless Switch)',
+    // Our own ESP32 firmware (firmware/terrax_rf_bridge): advertises the name
+    // "TERRAX WIRELESS SWITCH" and a 128-bit service UUID nothing else uses.
+    // "TERRAX-RF" covers prototype firmware flashed before the rename.
+    namePrefixes: const ['TERRAX WIRELESS SWITCH', 'TERRAX-RF'],
     serviceUuids: [TerraxRfUuids.service],
-    defaultProductHint: 'Auxiliary lights',
+    defaultProductHint: 'TERRAX Wireless Switch',
     isLighting: true,
     createDriver: (ble, device, prefs, _) => TerraxRfDriver(ble, device, prefs),
   ),

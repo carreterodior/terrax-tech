@@ -28,8 +28,10 @@ void main() {
   });
 
   group('detection', () {
-    test('TERRAX-RF names and the bridge service go to terrax_rf only', () {
+    test('TERRAX WIRELESS SWITCH and the bridge service go to terrax_rf only', () {
+      expect(detectFor('TERRAX WIRELESS SWITCH', [])!.driverId, 'terrax_rf');
       expect(detectFor('TERRAX-RF-4A21', [])!.driverId, 'terrax_rf');
+      expect(ruleForDriverId('terrax_rf')!.productHint('TERRAX WIRELESS SWITCH'), 'TERRAX Wireless Switch');
       expect(detectFor('', [TerraxRfUuids.service])!.driverId, 'terrax_rf');
       expect(detectFor('whatever', [Guid('fff0')])!.driverId, 'elk_7e');
       expect(ruleForDriverId('terrax_rf')!.isLighting, isTrue);

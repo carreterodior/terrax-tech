@@ -60,7 +60,7 @@ class TerraxRfUuids {
   static final info = Guid('54580004-7e2a-4f3c-9b1a-5445525241ff');
 }
 
-/// Driver for the TERRAX RF Bridge: up to 16 light channels, each an
+/// Driver for the TERRAX Wireless Switch (RF bridge): up to 16 light channels, each an
 /// on/off switch the customer names ("Fog lamps", "Light bar"). The radio
 /// is one-way, so the shown state is the last command the bridge sent.
 ///
@@ -175,7 +175,7 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
       }
     }
     if (_cmd == null) {
-      throw StateError('This device is not a TERRAX RF Bridge (service 54580001 not found).');
+      throw StateError('This device is not a TERRAX Wireless Switch (service 54580001 not found).');
     }
     final st = _stateChar;
     if (st != null) {

@@ -75,7 +75,7 @@ const List<(TerraxDevice, LightingZoneType?)> demoDevices = [
   (
     TerraxDevice(
         id: 'DEMO-RF',
-        advertisedName: 'TERRAX-RF-4A21',
+        advertisedName: 'TERRAX WIRELESS SWITCH',
         name: 'Aux lights',
         driverId: 'terrax_rf',
         category: DeviceCategory.automotive),
