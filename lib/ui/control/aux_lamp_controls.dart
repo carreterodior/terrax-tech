@@ -155,6 +155,8 @@ class _BeamButton extends StatelessWidget {
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
+            // Solid face so the glow only shows around the ring, not through it.
+            color: TerraxBrand.background,
             border: Border.all(color: lowBeam ? glow : TerraxBrand.borderStrong, width: lowBeam ? 2.5 : 1.5),
             boxShadow: lowBeam
                 ? [BoxShadow(color: glow.withValues(alpha: highOn ? 0.6 : 0.45), blurRadius: highOn ? 40 : 30, spreadRadius: highOn ? 6 : 3)]
@@ -162,6 +164,8 @@ class _BeamButton extends StatelessWidget {
           ),
           child: ClipOval(
             child: Column(
+              // Each half spans the full width of the circle.
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (hasHighBeam) ...[
                   Expanded(
