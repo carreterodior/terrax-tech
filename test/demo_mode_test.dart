@@ -46,6 +46,26 @@ void main() {
     expect(c.read(deviceControllerProvider('DEMO-MELK')).deviceState.effectId, 193);
   });
 
+  test('demo wireless switch: high beam only with low beam; low beam off drops high beam', () async {
+    final c = await demoContainer();
+    addTearDown(c.dispose);
+    final ctrl = c.read(deviceControllerProvider('DEMO-RF').notifier);
+    await ctrl.connect();
+    DeviceState st() => c.read(deviceControllerProvider('DEMO-RF')).deviceState;
+    expect(ctrl.driver!.lampModes, ['White', 'Yellow', 'All-Weather']);
+    expect(ctrl.driver!.caps.hasHighBeam, isTrue);
+    expect(st().power, isTrue);
+    await ctrl.setHighBeam(true);
+    expect(st().highBeam, isTrue);
+    await ctrl.setLampMode(1);
+    expect(st().lampMode, 1);
+    await ctrl.setPower(false);
+    expect(st().power, isFalse);
+    expect(st().highBeam, isFalse);
+    await ctrl.setHighBeam(true); // locked while low beam is off
+    expect(st().highBeam, isFalse);
+  });
+
   test('demo settings keep their value without any hardware', () async {
     final c = await demoContainer();
     addTearDown(c.dispose);
