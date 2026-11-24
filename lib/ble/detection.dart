@@ -12,6 +12,7 @@ import 'drivers/ledcar02_driver.dart';
 import 'drivers/ledcar_driver.dart';
 import 'drivers/leddmx_driver.dart';
 import 'drivers/magiclantern_driver.dart';
+import 'drivers/terrax_rf_driver.dart';
 import 'drivers/triones_driver.dart';
 
 /// [advertisedName] is the name the device was scanned with (or the saved
@@ -109,6 +110,7 @@ final List<Guid> driverServiceUuids = [
   Guid('af30'), // JieLi service the rock lights advertise
   LampFrgnUuids.service, // LAMP&FRGN ambient lighting (0xAE30)
   LampFrgnUuids.telinkService, // its Telink fallback
+  TerraxRfUuids.service, // TERRAX RF Bridge (our ESP32 firmware)
 ];
 
 final List<DetectionRule> detectionRules = [
@@ -282,6 +284,17 @@ final List<DetectionRule> detectionRules = [
     defaultProductHint: 'Car ambient lighting',
     isLighting: true,
     createDriver: (ble, device, prefs, _) => AmbientLightDriver(ble, device, prefs),
+  ),
+  DetectionRule(
+    driverId: TerraxRfDriver.id,
+    label: 'Auxiliary lights (TERRAX RF Bridge)',
+    // Our own ESP32 firmware (firmware/terrax_rf_bridge): advertises
+    // "TERRAX-RF-xxxx" and a 128-bit service UUID nothing else uses.
+    namePrefixes: const ['TERRAX-RF'],
+    serviceUuids: [TerraxRfUuids.service],
+    defaultProductHint: 'Auxiliary lights',
+    isLighting: true,
+    createDriver: (ble, device, prefs, _) => TerraxRfDriver(ble, device, prefs),
   ),
   DetectionRule(
     driverId: IntelligoDriver.id,

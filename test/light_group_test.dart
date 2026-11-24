@@ -205,6 +205,7 @@ void main() {
         'leddmx': true,
         'magiclantern': true,
         'ambientlight': true,
+        'terrax_rf': true,
         'intelligo': false,
       });
     });

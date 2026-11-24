@@ -13,6 +13,7 @@ import '../ble/drivers/ledcar02_driver.dart';
 import '../ble/drivers/ledcar_driver.dart';
 import '../ble/drivers/leddmx_driver.dart';
 import '../ble/drivers/magiclantern_driver.dart';
+import '../ble/drivers/terrax_rf_driver.dart';
 import '../ble/drivers/triones_driver.dart';
 import '../models/lighting_zone.dart';
 import '../models/terrax_device.dart';
@@ -31,6 +32,7 @@ import '../state/saved_devices.dart';
 /// a zone. Kept here (not in the drivers) so drivers stay UI-free.
 LightingZoneType defaultZoneTypeFor(String driverId) {
   if (driverId == IntelligoDriver.id) return LightingZoneType.runningBoard;
+  if (driverId == TerraxRfDriver.id) return LightingZoneType.auxiliary;
   if (driverId == TrionesDriver.id || driverId == CarLightsDriver.id) {
     return LightingZoneType.rockLights;
   }

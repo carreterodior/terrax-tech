@@ -38,7 +38,7 @@ Dart null-safety. Material 3, dark-mode friendly.
 lib/ble/ble_service.dart          scan/connect/discover/write/notify wrapper
 lib/ble/device_driver.dart        DeviceDriver + DeviceCapabilities (the contract)
 lib/ble/detection.dart            scanned device -> driver
-lib/ble/drivers/                  elk_7e / triones / lampfrgn / ledcar02 / ledcar / leddmx / carlights / magiclantern / ambientlight / intelligo
+lib/ble/drivers/                  elk_7e / triones / lampfrgn / ledcar02 / ledcar / leddmx / carlights / magiclantern / ambientlight / terrax_rf / intelligo
 lib/audio/mic_bands.dart          phone-mic band sampler for sound-reactive drivers (no BLE, no UI)
 lib/models/                       terrax_device, device_category, rgb, lighting_zone
 lib/state/                        scan / devices / device controllers (riverpod)
@@ -211,6 +211,16 @@ use them) — other units via "Add as…", verified at connect (needs FFE0/FFE2)
   `4C`/`4D0055xx`/`40`/`43`/`41`/`22`. OTA (vendor cloud) not implemented.
 - Replies: status (power, zone colours, brightness, mic, speed, direction, …), `0x13`
   version, `0x26` settings, `0x27` custom tables, `0x56` mirror, `0x2E`/`0x19` alerts.
+
+### terrax_rf — TERRAX RF Bridge (our ESP32 firmware, auxiliary lights)
+
+Our own protocol: `firmware/terrax_rf_bridge/` (ESP32 + FS1000A 433 MHz TX) turns BLE
+commands into EV1527 codes for cheap learning-code relay modules. Advertises
+`TERRAX-RF-xxxx`, service `54580001-7e2a-4f3c-9b1a-5445525241ff`; command `…0002`
+(write), state `…0003` (read/notify, 16 bytes: 0 off / 1 on / FF unknown), info `…0004`.
+Commands: `01 ch st` set · `02 ch` pair ON (3 s) · `03 ch` pair OFF · `04 ch n gap10ms`
+pulse · `05 a2 a1 a0 k` raw code · `06 hi lo` pulse µs · `07 ch on off` keys · `08 ch`
+forget. Change firmware and driver together. Zone default: Auxiliary.
 
 ### intelligo — electric running board / step board
 - Advertises as `DianDongTaBan` (电动踏板; verified on real hardware 2026-08-03, services

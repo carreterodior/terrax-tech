@@ -74,6 +74,15 @@ const List<(TerraxDevice, LightingZoneType?)> demoDevices = [
   ),
   (
     TerraxDevice(
+        id: 'DEMO-RF',
+        advertisedName: 'TERRAX-RF-4A21',
+        name: 'Aux lights',
+        driverId: 'terrax_rf',
+        category: DeviceCategory.automotive),
+    null,
+  ),
+  (
+    TerraxDevice(
         id: 'DEMO-BOARD',
         advertisedName: 'DianDongTaBan',
         name: 'Step boards',
