@@ -16,6 +16,7 @@ import '../theme.dart';
 import '../widgets/tx_components.dart';
 import '../zone_assignment_screen.dart';
 import 'automotive_controls.dart';
+import 'aux_lamp_controls.dart';
 import 'color_wheel.dart';
 import 'driver_sections_view.dart';
 import 'driver_settings_sheet.dart';
@@ -229,7 +230,12 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
   ) {
     final theme = Theme.of(context);
     final caps = driver.caps;
-    final hasLight = caps.hasColor || caps.hasBrightness || caps.hasWhite || caps.hasPower || caps.hasEffects;
+    final ds = controllerState.deviceState;
+    // Auxiliary lamps (power + high beam + colour modes) get their own big
+    // controls instead of the RGB light controls.
+    final isAuxLamp = caps.hasHighBeam || driver.lampModes.isNotEmpty || driver.lampGroups.length > 1;
+    final hasLight = !isAuxLamp &&
+        (caps.hasColor || caps.hasBrightness || caps.hasWhite || caps.hasPower || caps.hasEffects);
     return [
       for (final action in driver.actions)
         Padding(
@@ -238,6 +244,21 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
         ),
       if (caps.isMotorized)
         AutomotiveControls(controller: controller, caps: caps, deviceState: controllerState.deviceState),
+      if (isAuxLamp)
+        AuxLampControls(
+          power: ds.power ?? false,
+          highBeam: ds.highBeam ?? false,
+          hasHighBeam: caps.hasHighBeam,
+          modes: driver.lampModes,
+          modeColors: driver.lampModeColors,
+          mode: ds.lampMode,
+          groups: driver.lampGroups,
+          activeGroup: driver.activeLampGroup,
+          onPower: controller.setPower,
+          onHighBeam: controller.setHighBeam,
+          onMode: controller.setLampMode,
+          onGroup: controller.selectLampGroup,
+        ),
       if (hasLight)
         LightControls(
           controller: controller,
@@ -264,7 +285,7 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
           ),
         )
       else if (driver.sections.isNotEmpty) ...[
-        const TxSectionHeader('Advanced'),
+        TxSectionHeader(isAuxLamp ? 'Setup & pairing' : 'Advanced'),
         TxCard(
           padding: const EdgeInsets.all(TxSpace.s),
           child: DriverSectionsView(sections: driver.sections, presets: driver.colorPresets),
@@ -292,6 +313,17 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
         false => 'Board retracted',
         null => 'Board position unknown',
       };
+    }
+    if (driver != null &&
+        (driver.caps.hasHighBeam || driver.lampModes.isNotEmpty || driver.lampGroups.length > 1)) {
+      final ds = ref.read(deviceControllerProvider(deviceId)).deviceState;
+      final groups = driver.lampGroups;
+      final name = groups.length > 1 ? '${groups[driver.activeLampGroup]} · ' : '';
+      if (ds.power != true) return '${name}Off';
+      final m = ds.lampMode;
+      final colour = (m != null && m < driver.lampModes.length) ? ' · ${driver.lampModes[m]}' : '';
+      final beam = ds.highBeam == true ? ' · High beam' : '';
+      return '${name}On$colour$beam';
     }
     if (!v.power) return 'Off';
     final c = v.color;

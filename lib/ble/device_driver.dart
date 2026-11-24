@@ -30,6 +30,10 @@ class DeviceCapabilities {
   /// driver keeps optimistic state only.
   final bool hasStateFeedback;
 
+  /// Auxiliary lamp with a separately switched high beam (e.g. a laser
+  /// high-beam wire). The UI then shows a high-beam button beside power.
+  final bool hasHighBeam;
+
   const DeviceCapabilities({
     this.hasColor = false,
     this.hasBrightness = false,
@@ -40,6 +44,7 @@ class DeviceCapabilities {
     this.canPause = true,
     this.hasDeviceLight = true,
     this.hasStateFeedback = false,
+    this.hasHighBeam = false,
   });
 }
 
@@ -199,6 +204,11 @@ class DeviceState {
   /// Motorized accessories: true when the device accepts manual commands.
   final bool? manualMode;
 
+  /// Auxiliary lamps: high beam on/off, and the index into
+  /// [DeviceDriver.lampModes] (e.g. 0 White, 1 Yellow, 2 All-Weather).
+  final bool? highBeam;
+  final int? lampMode;
+
   const DeviceState({
     this.power,
     this.color,
@@ -208,6 +218,8 @@ class DeviceState {
     this.effectSpeed,
     this.extended,
     this.manualMode,
+    this.highBeam,
+    this.lampMode,
   });
 
   DeviceState copyWith({
@@ -219,6 +231,8 @@ class DeviceState {
     int? effectSpeed,
     bool? extended,
     bool? manualMode,
+    bool? highBeam,
+    int? lampMode,
   }) =>
       DeviceState(
         power: power ?? this.power,
@@ -229,6 +243,8 @@ class DeviceState {
         effectSpeed: effectSpeed ?? this.effectSpeed,
         extended: extended ?? this.extended,
         manualMode: manualMode ?? this.manualMode,
+        highBeam: highBeam ?? this.highBeam,
+        lampMode: lampMode ?? this.lampMode,
       );
 }
 
@@ -264,6 +280,23 @@ abstract class DeviceDriver {
 
   /// Full-RGB colour presets the UI offers next to a colour wheel.
   List<Rgb> get colorPresets => const [];
+
+  // ---- Auxiliary lamps (power + high beam + colour modes) ----
+
+  /// Named colour modes of an auxiliary lamp, e.g. White / Yellow /
+  /// All-Weather. Non-empty makes the UI show one button per mode.
+  List<String> get lampModes => const [];
+
+  /// Display colour for each of [lampModes] (same length), as RGB.
+  List<Rgb> get lampModeColors => const [];
+
+  /// Separately controlled lamp groups on one device (e.g. "Fog lamps",
+  /// "Grille lights"). Power, high beam and colour act on [activeLampGroup].
+  List<String> get lampGroups => const [];
+  int get activeLampGroup => 0;
+  Future<void> selectLampGroup(int index) async {}
+  Future<void> setHighBeam(bool on) async {}
+  Future<void> setLampMode(int index) async {}
 
   /// True when the **device itself** can enforce a PIN, so setting one really
   /// stops other phones controlling it.

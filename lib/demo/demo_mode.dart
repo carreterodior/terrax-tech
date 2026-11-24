@@ -141,9 +141,22 @@ class DemoDeviceController extends DeviceController {
         state.status == ConnectionStatus.connecting) {
       return;
     }
-    driver; // build the wrapped driver before the screen asks for it
+    final d = driver; // build the wrapped driver before the screen asks for it
     state = const DeviceControllerState(status: ConnectionStatus.connecting);
     await Future<void>.delayed(const Duration(milliseconds: 700));
+    if (d != null && d.lampModes.isNotEmpty) {
+      state = DeviceControllerState(
+        status: ConnectionStatus.connected,
+        deviceState: DeviceState(
+          power: true,
+          highBeam: false,
+          lampMode: 0,
+          color: d.lampModeColors.first,
+          brightness: 75,
+        ),
+      );
+      return;
+    }
     state = const DeviceControllerState(
       status: ConnectionStatus.connected,
       deviceState: DeviceState(
@@ -183,7 +196,37 @@ class DemoDeviceController extends DeviceController {
   void setWhite(int value) => _set(_ds.copyWith(white: value));
 
   @override
-  Future<void> setPower(bool on) async => _set(_ds.copyWith(power: on));
+  Future<void> setPower(bool on) async => _set(on
+      ? _ds.copyWith(power: true)
+      : DeviceState(
+          power: false,
+          highBeam: false,
+          lampMode: _ds.lampMode,
+          color: _ds.color,
+          brightness: _ds.brightness,
+        ));
+
+  @override
+  Future<void> setHighBeam(bool on) async {
+    if (on && _ds.power != true) return; // high beam needs low beam
+    _set(_ds.copyWith(highBeam: on, brightness: on ? 100 : 75));
+  }
+
+  @override
+  Future<void> setLampMode(int index) async {
+    final colors = driver?.lampModeColors ?? const <Rgb>[];
+    _set(_ds.copyWith(
+      lampMode: index,
+      power: true,
+      color: index < colors.length ? colors[index] : null,
+    ));
+  }
+
+  @override
+  Future<void> selectLampGroup(int index) async {
+    await driver?.selectLampGroup(index);
+    _bump();
+  }
 
   @override
   Future<void> setEffect(int id, int speed) async =>
@@ -232,6 +275,26 @@ class DemoDriver extends DeviceDriver with DriverStateMixin {
 
   @override
   List<Rgb> get colorPresets => inner.colorPresets;
+
+  @override
+  List<String> get lampModes => inner.lampModes;
+
+  @override
+  List<Rgb> get lampModeColors => inner.lampModeColors;
+
+  @override
+  List<String> get lampGroups => inner.lampGroups;
+
+  @override
+  int get activeLampGroup => inner.activeLampGroup;
+
+  /// Choosing a group is local in every driver that has groups; forward it.
+  @override
+  Future<void> selectLampGroup(int index) async {
+    try {
+      await inner.selectLampGroup(index);
+    } catch (_) {}
+  }
 
   @override
   List<DriverSetting> get settings => [for (final s in inner.settings) _wrap('settings', s)];

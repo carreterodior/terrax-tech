@@ -27,6 +27,23 @@ void main() {
     });
   });
 
+  group('lamp groups and colour stepping', () {
+    test('group g: power on channel 2g, high beam on 2g+1', () {
+      expect(TerraxRfCommands.powerChannel(0), 0);
+      expect(TerraxRfCommands.highBeamChannel(0), 1);
+      expect(TerraxRfCommands.powerChannel(3), 6);
+      expect(TerraxRfCommands.highBeamChannel(3), 7);
+    });
+    test('colour steps wrap White -> Yellow -> All-Weather -> White', () {
+      expect(TerraxRfCommands.colourSteps(0, 0), 0);
+      expect(TerraxRfCommands.colourSteps(0, 1), 1);
+      expect(TerraxRfCommands.colourSteps(0, 2), 2);
+      expect(TerraxRfCommands.colourSteps(2, 0), 1);
+      expect(TerraxRfCommands.colourSteps(1, 0), 2);
+      expect(TerraxRfDriver.colourNames, ['White', 'Yellow', 'All-Weather']);
+    });
+  });
+
   group('detection', () {
     test('TERRAX WIRELESS SWITCH and the bridge service go to terrax_rf only', () {
       expect(detectFor('TERRAX WIRELESS SWITCH', [])!.driverId, 'terrax_rf');

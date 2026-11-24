@@ -345,6 +345,14 @@ class DeviceController extends FamilyNotifier<DeviceControllerState, String>
 
   Future<void> setDeviceLight(bool on) =>
       _guard(() => _driver!.setDeviceLight(on));
+
+  // ---- Auxiliary lamps ----
+
+  Future<void> setHighBeam(bool on) => _guard(() => _driver!.setHighBeam(on));
+
+  Future<void> setLampMode(int index) => _guard(() => _driver!.setLampMode(index));
+
+  Future<void> selectLampGroup(int index) => _guard(() => _driver!.selectLampGroup(index));
 }
 
 final deviceControllerProvider = NotifierProvider.family<DeviceController,

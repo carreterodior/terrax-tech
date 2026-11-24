@@ -6,10 +6,11 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/device_category.dart';
+import '../../models/rgb.dart';
 import '../ble_service.dart';
 import '../device_driver.dart';
 
-/// Command builders for the TERRAX RF Bridge — our own ESP32 firmware
+/// Command builders for the TERRAX Wireless Switch — our own ESP32 firmware
 /// (`firmware/terrax_rf_bridge/`) that turns BLE commands into 433 MHz
 /// EV1527-style codes for cheap learning-code relay modules on auxiliary
 /// lights. The protocol is ours; keep this in step with the firmware's
@@ -50,6 +51,15 @@ class TerraxRfCommands {
         for (var i = 0; i < channels; i++)
           i < bytes.length ? (bytes[i] == 1 ? true : (bytes[i] == 0 ? false : null)) : null,
       ];
+
+  /// Lamp group g uses channel 2g for power and 2g+1 for high beam.
+  static int powerChannel(int group) => group * 2;
+  static int highBeamChannel(int group) => group * 2 + 1;
+
+  /// Quick power flicks needed to step a tri-colour lamp from [current] to
+  /// [target] when each flick advances one mode in a cycle of [count].
+  static int colourSteps(int current, int target, [int count = 3]) =>
+      ((target - current) % count + count) % count;
 }
 
 /// UUIDs of the bridge's GATT service.
@@ -60,13 +70,27 @@ class TerraxRfUuids {
   static final info = Guid('54580004-7e2a-4f3c-9b1a-5445525241ff');
 }
 
-/// Driver for the TERRAX Wireless Switch (RF bridge): up to 16 light channels, each an
-/// on/off switch the customer names ("Fog lamps", "Light bar"). The radio
-/// is one-way, so the shown state is the last command the bridge sent.
+/// Driver for the TERRAX Wireless Switch.
 ///
-/// The power button (and Light Groups) switch every channel at once.
+/// The customer sets up 1–8 **lamp groups** (e.g. "Fog lamps", "Grille
+/// lights"). Each group has a power channel, an optional high-beam channel
+/// (the laser high-beam wire), and optionally tri-colour stepping: TERRAX
+/// tri-colour lamps change White → Yellow → All-Weather on a quick power
+/// flick, so a colour choice is sent as N quick off-on pulses.
+///
+/// The radio is one-way. Power and high-beam state come from the bridge's
+/// record of the last command; the colour is tracked here and can be
+/// corrected in Setup if a fob was used.
 class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
   static const id = 'terrax_rf';
+  static const int maxGroups = 8;
+
+  static const List<String> colourNames = ['White', 'Yellow', 'All-Weather'];
+  static const List<Rgb> colourRgb = [
+    Rgb(235, 242, 255), // 6000K
+    Rgb(255, 184, 40), // 3000K selective yellow
+    Rgb(255, 224, 160), // 4500K all-weather
+  ];
 
   final BleService _ble;
   final BluetoothDevice _device;
@@ -76,11 +100,16 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
   BluetoothCharacteristic? _stateChar;
   StreamSubscription<List<int>>? _stateSub;
 
-  int _count = 2;
-  final List<String> _names = List.generate(TerraxRfCommands.channels, (i) => 'Light ${i + 1}');
-  List<bool?> _states = List.filled(TerraxRfCommands.channels, null);
+  int _groupCount = 1;
+  int _active = 0;
+  final List<String> _names = List.generate(maxGroups, (i) => i == 0 ? 'Aux lights' : 'Lamp group ${i + 1}');
+  final List<bool> _hasHighBeam = List.filled(maxGroups, true);
+  final List<bool> _triColour = List.filled(maxGroups, true);
+  final List<int> _colour = List.filled(maxGroups, 0);
   final List<bool> _swapped = List.filled(TerraxRfCommands.channels, false);
+  List<bool?> _channels = List.filled(TerraxRfCommands.channels, null);
   int _pulseUs = 350;
+  int _flickMs = 300;
   String _info = 'not connected';
 
   TerraxRfDriver(this._ble, this._device, this._prefs);
@@ -92,72 +121,98 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
   DeviceCategory get defaultCategory => DeviceCategory.automotive;
 
   @override
-  DeviceCapabilities get caps => const DeviceCapabilities(hasPower: true, hasStateFeedback: true);
+  DeviceCapabilities get caps => DeviceCapabilities(
+        hasPower: true,
+        hasHighBeam: _hasHighBeam[_active],
+        hasStateFeedback: true,
+      );
 
-  int get channelCount => _count;
-  List<bool?> get channelStates => List.unmodifiable(_states);
-  String channelName(int ch) => _names[ch];
+  @override
+  List<String> get lampModes => _triColour[_active] ? colourNames : const [];
+
+  @override
+  List<Rgb> get lampModeColors => _triColour[_active] ? colourRgb : const [];
+
+  @override
+  List<String> get lampGroups => [for (var g = 0; g < _groupCount; g++) _names[g]];
+
+  @override
+  int get activeLampGroup => _active;
+
+  bool? _powerOf(int g) => _channels[TerraxRfCommands.powerChannel(g)];
+  bool? _beamOf(int g) => _channels[TerraxRfCommands.highBeamChannel(g)];
 
   String _key(String k) => 'terraxrf.$k.${_device.remoteId.str}';
 
   @override
   List<DriverSection> get sections => [
-        DriverSection('Lights', [
-          for (var ch = 0; ch < _count; ch++)
-            DriverToggleSetting(
-              _names[ch],
-              description: _states[ch] == null ? 'State unknown until switched from the app.' : null,
-              value: _states[ch] ?? false,
-              onChanged: (v) => setChannel(ch, v),
-            ),
-          DriverInfoSetting(
-            'How it works',
-            value: 'The bridge sends a radio code to each light\'s switch module. It cannot see '
-                'the light itself, so a remote fob press will not show here.',
-          ),
-        ], icon: DriverSectionIcon.lights),
         DriverSection('Pair', [
           DriverInfoSetting(
-            'Pairing a light',
-            value: 'Put that light\'s switch module in learn mode (press its learn button, LED on), '
-                'then tap Pair. The bridge sends the code for 3 seconds. If the module learns ON and '
-                'OFF separately, tap the OFF button next.',
+            'Pairing',
+            value: 'Put the switch module in learn mode (press its learn button until the LED '
+                'lights), then tap its Pair button. The switch sends the code for 3 seconds. If '
+                'the module learns ON and OFF separately, also tap the OFF-code button.',
           ),
-          for (var ch = 0; ch < _count; ch++) ...[
-            DriverButtonSetting('Pair ${_names[ch]}', run: () => _send(TerraxRfCommands.pairOn(ch))),
-            DriverButtonSetting('Pair ${_names[ch]} (OFF code)',
-                run: () => _send(TerraxRfCommands.pairOff(ch))),
+          for (var g = 0; g < _groupCount; g++) ...[
+            DriverButtonSetting('Pair ${_names[g]}: power',
+                run: () => _send(TerraxRfCommands.pairOn(TerraxRfCommands.powerChannel(g)))),
+            DriverButtonSetting('Pair ${_names[g]}: power (OFF code)',
+                run: () => _send(TerraxRfCommands.pairOff(TerraxRfCommands.powerChannel(g)))),
+            if (_hasHighBeam[g]) ...[
+              DriverButtonSetting('Pair ${_names[g]}: high beam',
+                  run: () => _send(TerraxRfCommands.pairOn(TerraxRfCommands.highBeamChannel(g)))),
+              DriverButtonSetting('Pair ${_names[g]}: high beam (OFF code)',
+                  run: () => _send(TerraxRfCommands.pairOff(TerraxRfCommands.highBeamChannel(g)))),
+            ],
           ],
         ]),
         DriverSection('Setup', [
-          DriverSliderSetting('Number of lights',
-              description: 'One per switch module you installed.',
-              value: _count, min: 1, max: TerraxRfCommands.channels, onChanged: setChannelCount),
-          for (var ch = 0; ch < _count; ch++)
-            DriverTextSetting('Name of light ${ch + 1}', value: _names[ch], onChanged: (v) => rename(ch, v)),
-          for (var ch = 0; ch < _count; ch++)
-            DriverButtonSetting('Next colour: ${_names[ch]}',
-                description: 'Quick off-on, for lamps that change colour on a power flick.',
-                run: () => nextColour(ch)),
-          for (var ch = 0; ch < _count; ch++)
-            DriverToggleSetting('Swap ON / OFF: ${_names[ch]}',
-                description: 'If this light turns off when switched on.',
-                value: _swapped[ch], onChanged: (v) => setSwapped(ch, v)),
+          DriverSliderSetting('Lamp groups',
+              description: 'One group per light set, e.g. fog lamps and grille lights.',
+              value: _groupCount, min: 1, max: maxGroups, onChanged: setGroupCount),
+          for (var g = 0; g < _groupCount; g++) ...[
+            DriverTextSetting('Group ${g + 1} name', value: _names[g], onChanged: (v) => rename(g, v)),
+            DriverToggleSetting('${_names[g]}: has high beam',
+                description: 'A second switch module on the high-beam wire.',
+                value: _hasHighBeam[g], onChanged: (v) => setHasHighBeam(g, v)),
+            DriverToggleSetting('${_names[g]}: tri-colour',
+                description: 'White / Yellow / All-Weather, changed by a quick power flick.',
+                value: _triColour[g], onChanged: (v) => setTriColour(g, v)),
+            if (_triColour[g])
+              DriverOptionSetting<int>('${_names[g]}: lamp is showing now',
+                  description: 'Correct this if the colour in the app and on the car differ '
+                      '(for example after using the remote).',
+                  value: _colour[g],
+                  options: [for (var i = 0; i < colourNames.length; i++) (value: i, label: colourNames[i])],
+                  onChanged: (v) => correctColour(g, v)),
+            DriverToggleSetting('${_names[g]}: swap ON / OFF',
+                description: 'If this lamp turns off when switched on.',
+                value: _swapped[TerraxRfCommands.powerChannel(g)],
+                onChanged: (v) => setSwapped(TerraxRfCommands.powerChannel(g), v)),
+          ],
+          DriverSliderSetting('Colour flick off-time (ms)',
+              description: 'How long the lamp is off for each colour step. Default 300.',
+              value: _flickMs, min: 100, max: 1000, onChanged: setFlickMs),
           DriverSliderSetting('Radio pulse length (µs)',
               description: 'Only change if a module will not learn. Default 350.',
               value: _pulseUs, min: 150, max: 1000, onChanged: setPulseLength),
-        ]),
-        DriverSection('Bridge', [
           DriverInfoSetting('Firmware', value: _info),
-        ], icon: DriverSectionIcon.info),
+        ]),
       ];
 
   @override
   Future<void> connect() async {
-    _count = _prefs.getInt(_key('count')) ?? 2;
+    _groupCount = (_prefs.getInt(_key('groups')) ?? 1).clamp(1, maxGroups);
+    _active = (_prefs.getInt(_key('active')) ?? 0).clamp(0, _groupCount - 1);
     _pulseUs = _prefs.getInt(_key('pulse')) ?? 350;
+    _flickMs = _prefs.getInt(_key('flick')) ?? 300;
+    for (var g = 0; g < maxGroups; g++) {
+      _names[g] = _prefs.getString(_key('name$g')) ?? _names[g];
+      _hasHighBeam[g] = _prefs.getBool(_key('beam$g')) ?? true;
+      _triColour[g] = _prefs.getBool(_key('tri$g')) ?? true;
+      _colour[g] = (_prefs.getInt(_key('colour$g')) ?? 0).clamp(0, colourNames.length - 1);
+    }
     for (var ch = 0; ch < TerraxRfCommands.channels; ch++) {
-      _names[ch] = _prefs.getString(_key('name$ch')) ?? 'Light ${ch + 1}';
       _swapped[ch] = _prefs.getBool(_key('swap$ch')) ?? false;
     }
 
@@ -192,14 +247,22 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
 
   void _applyState(List<int> bytes) {
     if (bytes.isEmpty) return;
-    _states = TerraxRfCommands.parseState(bytes);
+    _channels = TerraxRfCommands.parseState(bytes);
     _emit();
   }
 
+  /// The UI shows the active group; colour and brightness drive the glow.
   void _emit() {
-    final shown = _states.take(_count);
-    final anyOn = shown.any((s) => s == true);
-    emitState(currentState.copyWith(power: anyOn));
+    final g = _active;
+    final on = _powerOf(g) == true;
+    final beam = _hasHighBeam[g] && _beamOf(g) == true;
+    emitState(DeviceState(
+      power: on,
+      highBeam: beam,
+      lampMode: _triColour[g] ? _colour[g] : null,
+      color: _triColour[g] ? colourRgb[_colour[g]] : colourRgb[0],
+      brightness: beam ? 100 : 75,
+    ));
   }
 
   @override
@@ -217,50 +280,114 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
     return _ble.write(c, bytes, withoutResponse: !c.properties.write);
   }
 
-  Future<void> setChannel(int ch, bool on) async {
+  Future<void> _setChannel(int ch, bool on) async {
     await _send(TerraxRfCommands.set(ch, _swapped[ch] ? !on : on));
-    _states = [..._states]..[ch] = on;
-    _emit();
+    _channels = [..._channels]..[ch] = on;
   }
 
-  /// Power button / Light Groups: every configured channel together.
+  // ---- Contract ----
+
+  /// Power for the active lamp group. Switching off also drops high beam.
   @override
   Future<void> setPower(bool on) async {
-    for (var ch = 0; ch < _count; ch++) {
-      await setChannel(ch, on);
+    final g = _active;
+    if (!on && _hasHighBeam[g] && _beamOf(g) != false) {
+      await _setChannel(TerraxRfCommands.highBeamChannel(g), false);
     }
-  }
-
-  Future<void> nextColour(int ch) async {
-    await _send(TerraxRfCommands.pulse(ch));
-    _states = [..._states]..[ch] = true;
+    await _setChannel(TerraxRfCommands.powerChannel(g), on);
     _emit();
   }
 
-  Future<void> setChannelCount(int n) async {
-    _count = n.clamp(1, TerraxRfCommands.channels);
-    await _prefs.setInt(_key('count'), _count);
+  /// High beam works only while low beam (the lamp's power) is on; a
+  /// request with low beam off is ignored. Switching low beam off also
+  /// switches high beam off (see [setPower]).
+  @override
+  Future<void> setHighBeam(bool on) async {
+    final g = _active;
+    if (!_hasHighBeam[g]) return;
+    if (on && _powerOf(g) != true) return;
+    await _setChannel(TerraxRfCommands.highBeamChannel(g), on);
     _emit();
   }
 
-  Future<void> rename(int ch, String name) async {
+  /// Steps the lamp to [index] with quick power flicks. A lamp that is off
+  /// is switched on first (it shows its current colour when it comes on).
+  @override
+  Future<void> setLampMode(int index) async {
+    final g = _active;
+    if (!_triColour[g]) return;
+    final target = index.clamp(0, colourNames.length - 1);
+    final ch = TerraxRfCommands.powerChannel(g);
+    if (_powerOf(g) != true) await _setChannel(ch, true);
+    final steps = TerraxRfCommands.colourSteps(_colour[g], target, colourNames.length);
+    if (steps > 0) {
+      await _send(TerraxRfCommands.pulse(ch, count: steps, gapMs: _flickMs));
+      _channels = [..._channels]..[ch] = true;
+    }
+    _colour[g] = target;
+    await _prefs.setInt(_key('colour$g'), target);
+    _emit();
+  }
+
+  @override
+  Future<void> selectLampGroup(int index) async {
+    _active = index.clamp(0, _groupCount - 1);
+    await _prefs.setInt(_key('active'), _active);
+    _emit();
+  }
+
+  // ---- Setup ----
+
+  Future<void> setGroupCount(int n) async {
+    _groupCount = n.clamp(1, maxGroups);
+    if (_active >= _groupCount) _active = _groupCount - 1;
+    await _prefs.setInt(_key('groups'), _groupCount);
+    _emit();
+  }
+
+  Future<void> rename(int g, String name) async {
     final n = name.trim();
     if (n.isEmpty) return;
-    _names[ch] = n;
-    await _prefs.setString(_key('name$ch'), n);
-    emitState(currentState);
+    _names[g] = n;
+    await _prefs.setString(_key('name$g'), n);
+    _emit();
+  }
+
+  Future<void> setHasHighBeam(int g, bool v) async {
+    _hasHighBeam[g] = v;
+    await _prefs.setBool(_key('beam$g'), v);
+    _emit();
+  }
+
+  Future<void> setTriColour(int g, bool v) async {
+    _triColour[g] = v;
+    await _prefs.setBool(_key('tri$g'), v);
+    _emit();
+  }
+
+  /// Records what the lamp actually shows, without sending anything.
+  Future<void> correctColour(int g, int index) async {
+    _colour[g] = index.clamp(0, colourNames.length - 1);
+    await _prefs.setInt(_key('colour$g'), _colour[g]);
+    _emit();
   }
 
   Future<void> setSwapped(int ch, bool swapped) async {
     _swapped[ch] = swapped;
     await _prefs.setBool(_key('swap$ch'), swapped);
-    emitState(currentState);
+    _emit();
+  }
+
+  Future<void> setFlickMs(int ms) async {
+    _flickMs = ms.clamp(100, 1000);
+    await _prefs.setInt(_key('flick'), _flickMs);
+    _emit();
   }
 
   Future<void> setPulseLength(int us) async {
     _pulseUs = us.clamp(150, 1000);
     await _prefs.setInt(_key('pulse'), _pulseUs);
     await _send(TerraxRfCommands.pulseLength(_pulseUs));
-    emitState(currentState);
+    _emit();
   }
 }
