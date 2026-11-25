@@ -235,7 +235,7 @@ class _LightControlsState extends State<LightControls> {
           const TxSectionHeader('White'),
           TxCard(
             child: TxSlider(
-              label: 'White channel',
+              label: 'White light',
               icon: Icons.wb_sunny_outlined,
               value: _white,
               max: 255,
@@ -255,7 +255,7 @@ class _LightControlsState extends State<LightControls> {
         // ---- Effects: one scrollable, searchable list of every pattern the
         // hardware offers (213 on some families), opened from a dropdown field.
         if (caps.hasEffects && widget.effects.isNotEmpty) ...[
-          const TxSectionHeader('Effects'),
+          const TxSectionHeader('Light patterns'),
           if (!widget.isPro)
             TxCard(
               child: Row(
@@ -264,7 +264,7 @@ class _LightControlsState extends State<LightControls> {
                   const SizedBox(width: TxSpace.m),
                   Expanded(
                     child: Text(
-                        '${widget.effects.length} animations with speed control are a Pro feature.',
+                        '${widget.effects.length} moving light patterns (with speed control) come with TERRAX Pro.',
                         style: theme.textTheme.bodyMedium),
                   ),
                   TxButton('Unlock', onPressed: widget.onUpgrade),
@@ -328,12 +328,12 @@ String zoneControlTitle(LightingZoneType type) => type.label;
 /// Picker id for "no pattern, solid colour" — effect ids are never negative.
 const int staticEffectId = -1;
 
-/// Every effect as picker rows: "Static" first, then the driver's list in its
+/// Every effect as picker rows: "Steady colour" first, then the driver's list in its
 /// own order. Names of the form "Group · Name" (the Magic Lantern tabs) become
 /// group headers; the hint is the look the vehicle animates for it.
 List<TxPickerOption<int>> effectPickerOptions(List<EffectPreset> effects) {
   final rows = <TxPickerOption<int>>[
-    const TxPickerOption(value: staticEffectId, label: 'Static', hint: 'Solid colour'),
+    const TxPickerOption(value: staticEffectId, label: 'Steady colour', hint: 'No pattern'),
   ];
   for (final e in effects) {
     final sep = e.name.indexOf(' · ');

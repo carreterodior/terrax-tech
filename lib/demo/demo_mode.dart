@@ -58,7 +58,7 @@ const List<(TerraxDevice, LightingZoneType?)> demoDevices = [
     TerraxDevice(
         id: 'DEMO-LEDCAR',
         advertisedName: 'LEDCAR-02-9930',
-        name: 'Interior ambient',
+        name: 'Interior mood lights',
         driverId: 'ledcar02',
         category: DeviceCategory.lightStrips),
     null,
@@ -67,7 +67,7 @@ const List<(TerraxDevice, LightingZoneType?)> demoDevices = [
     TerraxDevice(
         id: 'DEMO-AMB',
         advertisedName: 'ATW-5A21',
-        name: 'Cabin ambient',
+        name: 'Cabin mood lights',
         driverId: 'ambientlight',
         category: DeviceCategory.lightStrips),
     null,
@@ -76,7 +76,7 @@ const List<(TerraxDevice, LightingZoneType?)> demoDevices = [
     TerraxDevice(
         id: 'DEMO-CMM',
         advertisedName: 'CMM-LED',
-        name: 'Dynamic ambient',
+        name: 'Moving mood lights',
         driverId: 'dynamic_ambient',
         category: DeviceCategory.lightStrips),
     null,
@@ -85,7 +85,7 @@ const List<(TerraxDevice, LightingZoneType?)> demoDevices = [
     TerraxDevice(
         id: 'DEMO-RF',
         advertisedName: 'TERRAX WIRELESS SWITCH',
-        name: 'Aux lights',
+        name: 'Extra lights',
         driverId: 'terrax_rf',
         category: DeviceCategory.automotive),
     null,
@@ -94,7 +94,7 @@ const List<(TerraxDevice, LightingZoneType?)> demoDevices = [
     TerraxDevice(
         id: 'DEMO-BOARD',
         advertisedName: 'DianDongTaBan',
-        name: 'Step boards',
+        name: 'Side steps',
         driverId: 'intelligo',
         category: DeviceCategory.automotive),
     null,

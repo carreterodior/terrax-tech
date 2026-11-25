@@ -76,8 +76,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(driver.changedNext, isNull);
-    expect(find.textContaining('Both PINs are required'), findsOneWidget);
-    expect(find.text('Protect this device?'), findsOneWidget); // still open
+    expect(find.textContaining('Please fill in both PINs'), findsOneWidget);
+    expect(find.text('Protect this light with a PIN?'), findsOneWidget); // still open
   });
 
   testWidgets('passes current + new PIN to the driver and closes',
@@ -93,7 +93,7 @@ void main() {
 
     expect(driver.changedCurrent, '1234');
     expect(driver.changedNext, '4321');
-    expect(find.text('Protect this device?'), findsNothing);
+    expect(find.text('Protect this light with a PIN?'), findsNothing);
     expect(find.textContaining('PIN set'), findsOneWidget); // snackbar
   });
 
@@ -110,7 +110,7 @@ void main() {
 
     expect(driver.changedNext, isNull);
     expect(find.textContaining('4 digits'), findsOneWidget);
-    expect(find.text('Protect this device?'), findsOneWidget);
+    expect(find.text('Protect this light with a PIN?'), findsOneWidget);
   });
 
   testWidgets('"Don\'t ask again" declines and closes without changes',
@@ -124,6 +124,6 @@ void main() {
 
     expect(declined, isTrue);
     expect(driver.changedNext, isNull);
-    expect(find.text('Protect this device?'), findsNothing);
+    expect(find.text('Protect this light with a PIN?'), findsNothing);
   });
 }

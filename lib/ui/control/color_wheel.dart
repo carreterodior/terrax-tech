@@ -97,13 +97,38 @@ class _ColorWheelState extends State<ColorWheel> {
               ),
             ),
             const SizedBox(width: 10),
-            Text('RGB ${c.r}, ${c.g}, ${c.b}',
+            Text(colourName(c),
                 style: Theme.of(context).textTheme.bodyMedium),
           ],
         ),
       ],
     );
   }
+}
+
+/// Everyday name for a colour ("Blue", "Soft pink", "White"), shown instead
+/// of raw RGB numbers.
+String colourName(Rgb c) {
+  final hsv = HSVColor.fromColor(Color.fromARGB(255, c.r, c.g, c.b));
+  if (hsv.value < 0.08) return 'Off';
+  if (hsv.saturation < 0.12) return 'White';
+  final h = hsv.hue;
+  final base = h < 15 || h >= 345
+      ? 'Red'
+      : h < 40
+          ? 'Orange'
+          : h < 70
+              ? 'Yellow'
+              : h < 160
+                  ? 'Green'
+                  : h < 195
+                      ? 'Aqua'
+                      : h < 250
+                          ? 'Blue'
+                          : h < 290
+                              ? 'Purple'
+                              : 'Pink';
+  return hsv.saturation < 0.45 ? 'Soft ${base.toLowerCase()}' : base;
 }
 
 class _WheelPainter extends CustomPainter {

@@ -13,22 +13,24 @@ EffectVisual effectVisualFor(EffectPreset? effect) {
   bool has(List<String> words) => words.any(n.contains);
 
   if (has(['music', 'sound', 'voice', 'mic'])) return EffectVisual.music;
-  if (has(['strobe', 'stroboflash'])) return EffectVisual.strobe;
-  if (has(['flash', 'blink', 'jump'])) return EffectVisual.flash;
+  // Plain-English renames ("Strobe" -> "Fast flash") keep their look.
+  if (has(['strobe', 'stroboflash', 'fast flash'])) return EffectVisual.strobe;
+  if (has(['flash', 'blink', 'jump', 'switching'])) return EffectVisual.flash;
   if (has(['breath', 'pulse', 'breathing'])) return EffectVisual.breathing;
   if (has(['chas', 'running', 'run ', 'run back', 'meteor', 'wave', 'flow',
         'sequen', 'scan', 'dripping', 'wheeling', 'curtain', 'marquee', 'race',
-        'flush', 'water', 'tail', 'trans', ' open', ' close'])) {
+        'flush', 'water', 'tail', 'trans', ' open', ' close', 'fill', 'trail', 'stream', 'wipe', 'spotlight'])) {
     return EffectVisual.chase;
   }
   if (has(['rainbow', 'seven color', '7 color', '7-color', 'auto cycle',
-        'auto play', 'magic', 'energy', 'cycle', 'dreaming', 'mixed'])) {
+        'auto play', 'magic', 'energy', 'cycle', 'dreaming', 'mixed',
+        'seven colour', '7 colour', '7-colour', 'multicolour', 'multi-colour'])) {
     return EffectVisual.rainbow;
   }
-  if (has(['fade', 'gradient', 'gradual', 'smooth', 'transition'])) {
+  if (has(['fade', 'gradient', 'gradual', 'smooth', 'transition', 'fading'])) {
     return EffectVisual.fade;
   }
-  if (has(['static'])) return EffectVisual.static;
+  if (has(['static', 'solid', 'steady'])) return EffectVisual.static;
   // Unknown animated pattern: a gentle colour cycle reads as "something is
   // playing" without pretending to know the pattern.
   return EffectVisual.cycle;
@@ -36,7 +38,7 @@ EffectVisual effectVisualFor(EffectPreset? effect) {
 
 /// A short, curated set of effects worth surfacing as quick picks, chosen
 /// from the driver's own list by look. Each visual appears once, in a stable
-/// order; the full list stays reachable behind "All effects".
+/// order; the full list stays reachable behind "All patterns".
 List<EffectPreset> signatureEffects(List<EffectPreset> all) {
   const order = [
     EffectVisual.breathing,
@@ -59,13 +61,13 @@ List<EffectPreset> signatureEffects(List<EffectPreset> all) {
 /// Display name for a quick-pick chip: the visual's plain word rather than the
 /// vendor's "26:Rotative gradient red blue colors".
 String effectVisualLabel(EffectVisual v) => switch (v) {
-      EffectVisual.static => 'Static',
+      EffectVisual.static => 'Steady',
       EffectVisual.breathing => 'Breathing',
       EffectVisual.fade => 'Fade',
       EffectVisual.strobe => 'Strobe',
       EffectVisual.flash => 'Flash',
       EffectVisual.rainbow => 'Rainbow',
-      EffectVisual.cycle => 'Cycle',
-      EffectVisual.chase => 'Sequential',
+      EffectVisual.cycle => 'Colour cycle',
+      EffectVisual.chase => 'Running',
       EffectVisual.music => 'Music',
     };

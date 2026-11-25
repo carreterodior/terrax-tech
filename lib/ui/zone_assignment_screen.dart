@@ -37,7 +37,7 @@ class _ZoneAssignmentScreenState extends ConsumerState<ZoneAssignmentScreen> {
     final device =
         ref.watch(savedDevicesProvider).where((d) => d.id == widget.deviceId).firstOrNull;
     if (device == null) {
-      return Scaffold(appBar: AppBar(), body: const Center(child: Text('Device was removed.')));
+      return Scaffold(appBar: AppBar(), body: const Center(child: Text('This device has been removed.')));
     }
     final current = ref.watch(deviceZoneTypeProvider(device.id));
     final choice = _choice ?? current;
@@ -56,7 +56,7 @@ class _ZoneAssignmentScreenState extends ConsumerState<ZoneAssignmentScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.fromPairing ? 'Assign lighting zone' : 'Lighting zone'),
+        title: Text(widget.fromPairing ? 'Where is it fitted?' : 'Where it is fitted'),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(TxSpace.l, TxSpace.s, TxSpace.l, 120),
@@ -73,11 +73,17 @@ class _ZoneAssignmentScreenState extends ConsumerState<ZoneAssignmentScreen> {
           Text(device.name, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w500)),
           const SizedBox(height: TxSpace.xs),
           Text(
-            'This controller drives: ${channelSummary(device.driverId, null)}.',
+            'What it controls: ${channelSummary(device.driverId, null)}.',
             style: theme.textTheme.bodyMedium?.copyWith(color: TerraxBrand.textSecondary),
           ),
           const SizedBox(height: TxSpace.xl),
           const TxLabel('Where is it installed?'),
+          const SizedBox(height: TxSpace.xs),
+          Text(
+            'Pick the part of the car where this light is fitted. The car picture '
+            'above shows where it will glow.',
+            style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textMuted),
+          ),
           const SizedBox(height: TxSpace.m),
           if (options.length == 1)
             TxCard(
@@ -88,7 +94,7 @@ class _ZoneAssignmentScreenState extends ConsumerState<ZoneAssignmentScreen> {
                   Expanded(
                     child: Text(
                       '${options.first.label} — ${options.first.description}. '
-                      'This product has a fixed place on the vehicle.',
+                      'This product always goes in this spot on the car.',
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
@@ -109,18 +115,18 @@ class _ZoneAssignmentScreenState extends ConsumerState<ZoneAssignmentScreen> {
               ],
             ),
           const SizedBox(height: TxSpace.xl),
-          const TxLabel('Controls this zone will show'),
+          const TxLabel('Buttons you will get'),
           const SizedBox(height: TxSpace.m),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              if (controls.motor) const _CapTag(Icons.swap_vert, 'Deploy / retract'),
-              if (controls.power) const _CapTag(Icons.power_settings_new, 'Power'),
+              if (controls.motor) const _CapTag(Icons.swap_vert, 'Step out / in'),
+              if (controls.power) const _CapTag(Icons.power_settings_new, 'On / off'),
               if (controls.color) const _CapTag(Icons.palette_outlined, 'Colour'),
               if (controls.brightness) const _CapTag(Icons.light_mode_outlined, 'Brightness'),
-              if (controls.white) const _CapTag(Icons.wb_sunny_outlined, 'White'),
-              if (controls.effects) const _CapTag(Icons.auto_awesome, 'Effects'),
+              if (controls.white) const _CapTag(Icons.wb_sunny_outlined, 'White light'),
+              if (controls.effects) const _CapTag(Icons.auto_awesome, 'Light patterns'),
             ],
           ),
         ],
@@ -129,7 +135,7 @@ class _ZoneAssignmentScreenState extends ConsumerState<ZoneAssignmentScreen> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(TxSpace.l, TxSpace.s, TxSpace.l, TxSpace.l),
           child: TxButton(
-            widget.fromPairing ? 'Ready' : 'Save',
+            widget.fromPairing ? 'Done' : 'Save',
             icon: widget.fromPairing ? Icons.check : null,
             onPressed: () {
               ref.read(zoneAssignmentsProvider.notifier).assign(device.id, choice);

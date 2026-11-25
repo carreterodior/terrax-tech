@@ -222,7 +222,7 @@ void main() {
       expect(b.chipConfig(pixels: 200, rgbOrder: 3),
           [0x7B, 0x05, 3, 0x00, 200, 0xFF, 0xFF, 0xFF, 0xBF]);
       expect(LedDmxCommands.rgbOrders.length, 12);
-      expect(LedDmxCommands.rgbOrders[2], (value: 3, label: 'GRB'));
+      expect(LedDmxCommands.rgbOrders[2], (value: 3, label: 'Green-Red-Blue'));
     });
     test('graffiti (NCB:940): 7C mode R G B pixHi pixLo FF CF', () {
       expect(LedDmxCommands.graffiti(0, 1, 2, 3, 0x0102),
@@ -266,8 +266,8 @@ void main() {
   group('mode tables', () {
     test('DMX-03 list is 211 entries, AUTO first, ids 1..210, ASCII names', () {
       expect(ledDmx03Modes.length, 211);
-      expect(ledDmx03Modes.first, (id: 255, name: 'AUTO'));
-      expect(ledDmx03Modes[1], (id: 1, name: 'Forward Dreaming'));
+      expect(ledDmx03Modes.first, (id: 255, name: 'Auto (cycle all)'));
+      expect(ledDmx03Modes[1], (id: 1, name: 'Forward Rainbow'));
       final ids = ledDmx03Modes.map((m) => m.id).toSet();
       for (var i = 1; i <= 210; i++) {
         expect(ids.contains(i), isTrue, reason: 'missing mode $i');

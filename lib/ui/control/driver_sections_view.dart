@@ -118,7 +118,7 @@ class _SettingTile extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${setting.label} failed: $e')));
+            SnackBar(content: Text(txFailedMessage(setting.label, e))));
       }
     }
   }
@@ -265,7 +265,7 @@ class _ToggleTileState extends State<_ToggleTile> {
           if (!mounted) return;
           setState(() => _pending = null);
           messenger
-              .showSnackBar(SnackBar(content: Text('${s.label} failed: $e')));
+              .showSnackBar(SnackBar(content: Text(txFailedMessage(s.label, e))));
         }
       },
     );
@@ -336,7 +336,7 @@ class _OptionTileState extends State<_OptionTile> {
                 if (!mounted) return;
                 setState(() => _pending = null);
                 messenger
-                    .showSnackBar(SnackBar(content: Text('${s.label} failed: $e')));
+                    .showSnackBar(SnackBar(content: Text(txFailedMessage(s.label, e))));
               }
             },
           ),
@@ -371,7 +371,7 @@ class _SliderTileState extends State<_SliderTile> {
     final s = widget.setting;
     final value = (_dragging ?? s.value.toDouble())
         .clamp(s.min.toDouble(), s.max.toDouble());
-    return Padding(
+    final row = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
@@ -397,6 +397,22 @@ class _SliderTileState extends State<_SliderTile> {
               child: Text('${value.round()}', textAlign: TextAlign.end)),
         ],
       ),
+    );
+    if (s.description == null) return row;
+    // Show what the slider does in plain words under it.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        row,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+          child: Text(s.description!,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: TerraxBrand.textMuted)),
+        ),
+      ],
     );
   }
 }

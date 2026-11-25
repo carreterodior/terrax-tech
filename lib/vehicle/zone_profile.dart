@@ -172,16 +172,16 @@ String channelSummary(String driverId, DeviceCapabilities? caps,
     {int effectCount = 0}) {
   final c = zoneControlsFor(driverId, caps);
   final parts = <String>[
-    if (c.motor) 'extend / retract',
-    if (c.power && !c.motor) 'power',
-    if (c.color) 'RGB colour',
-    if (c.white) 'white channel',
+    if (c.motor) 'step out / step in',
+    if (c.power && !c.motor) 'on / off',
+    if (c.color) 'any colour',
+    if (c.white) 'white light',
     if (c.brightness) 'brightness',
-    if (c.effects) effectCount > 0 ? '$effectCount patterns' : 'patterns',
+    if (c.effects) effectCount > 0 ? '$effectCount light patterns' : 'light patterns',
   ];
   if (parts.isEmpty) {
     final rule = ruleForDriverId(driverId);
-    return rule?.label ?? 'controls';
+    return rule?.label ?? 'basic controls';
   }
   return parts.join(' · ');
 }

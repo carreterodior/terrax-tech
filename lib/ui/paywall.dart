@@ -27,10 +27,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   static final _privacyUrl = TerraxLinks.privacyPolicyUri;
 
   static const _proFeatures = [
-    ('Animation effects', 'Every lighting effect and scene, with speed control'),
-    ('Ambient light extras',
-        'Welcome lighting, climate reminders, and per zone LED setup'),
-    ('Running board setup', 'Learning mode, board light, and safety options'),
+    ('Moving light patterns', 'Every light pattern and scene, with speed control'),
+    ('Interior mood light extras',
+        'Welcome lighting, climate reminders, and light setup for each part of the car'),
+    ('Side step setup', 'Setup mode, step light, and safety options'),
   ];
 
   Future<void> _run(Future<void> Function() action) async {
@@ -41,7 +41,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     try {
       await action();
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      debugPrint('TERRAX: purchase action failed: $e');
+      if (mounted) {
+        setState(() => _error = "That didn't go through. Check your internet "
+            'connection and try again.');
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -88,7 +92,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             Text('Unlock everything', style: theme.textTheme.headlineSmall),
             const SizedBox(height: 8),
             Text(
-              'Power, color, and brightness are always free for every device '
+              'On/off, colour, and brightness are always free for every device '
               'you own. Pro adds the extras:',
               style: theme.textTheme.bodyMedium,
             ),

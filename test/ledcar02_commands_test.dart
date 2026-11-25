@@ -71,9 +71,9 @@ void main() {
     test('is the app\'s 211 dmx_model entries, AUTO first', () {
       expect(ledCar02Modes.length, 211);
       expect(ledCar02Modes.first.id, 255);
-      expect(ledCar02Modes.first.name, 'AUTO');
+      expect(ledCar02Modes.first.name, 'Auto (cycle all)');
       expect(ledCar02Modes[1].id, 1);
-      expect(ledCar02Modes[1].name, 'Forward Dreaming');
+      expect(ledCar02Modes[1].name, 'Forward Rainbow');
       // Named modes run 1..210 (plus AUTO=255).
       final ids = ledCar02Modes.map((m) => m.id).toSet();
       for (var i = 1; i <= 210; i++) {

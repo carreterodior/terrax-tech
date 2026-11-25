@@ -166,22 +166,39 @@ class _GroupControlScreenState extends ConsumerState<GroupControlScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Light Groups'),
+        title: const Text('Light groups'),
         actions: [
           if (_armed &&
               selected.any((d) => statuses[d.id] != ConnectionStatus.connected))
             IconButton(
               icon: const Icon(Icons.sync),
-              tooltip: 'Retry the lights that are not connected',
+              tooltip: 'Try again for lights that are not connected',
               onPressed: _checking ? null : _connectSelected,
             ),
         ],
       ),
       body: devices.isEmpty
-          ? const Center(child: Text('No lights saved yet.'))
+          ? const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Text(
+                  'No lights added yet.\n\nAdd your lights from the home screen first, '
+                  'then come back here to control several at once.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
           : ListView(
               padding: const EdgeInsets.fromLTRB(TxSpace.l, TxSpace.s, TxSpace.l, TxSpace.xl),
               children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(TxSpace.xs, TxSpace.s, TxSpace.xs, 0),
+                  child: Text(
+                    'Control several lights at once - for example, make the whole car red '
+                    'in one go. Tick the lights you want, then tap the button below.',
+                    style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textSecondary),
+                  ),
+                ),
                 TxSectionHeader(
                   'Choose lights',
                   trailing: Row(
@@ -251,7 +268,7 @@ class _GroupControlScreenState extends ConsumerState<GroupControlScreen>
                 if (selected.isEmpty) ...[
                   const SizedBox(height: TxSpace.m),
                   Text(
-                    'Tick the lights you want to drive together, or tap a zone above. '
+                    'Tick the lights you want to control together, or tap a part of the car above. '
                     'Lights you leave out are not touched.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textMuted),
@@ -261,8 +278,8 @@ class _GroupControlScreenState extends ConsumerState<GroupControlScreen>
                   const SizedBox(height: TxSpace.m),
                   Text(
                     '${_notInRange.length} selected light${_notInRange.length == 1 ? ' is' : 's are'} '
-                    'not in range (off, too far, or connected to another phone). '
-                    'The others are controlled normally; tap the sync icon to retry.',
+                    'not reachable (switched off, too far away, or connected to another phone). '
+                    'The others work as normal. Tap the arrows at the top to try again.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textSecondary),
                   ),
@@ -279,7 +296,7 @@ class _GroupControlScreenState extends ConsumerState<GroupControlScreen>
                 ],
                 if (showControls) ...[
                   const SizedBox(height: TxSpace.l),
-                  const TxSectionHeader('Group controls'),
+                  const TxSectionHeader('Control them together'),
                   LightControls(
                     controller: _group,
                     deviceState: _groupState,
@@ -292,15 +309,15 @@ class _GroupControlScreenState extends ConsumerState<GroupControlScreen>
                   const SizedBox(height: TxSpace.l),
                   Text(
                     driverIds.length > 1
-                        ? 'These lights speak different protocols, so effects are set '
-                            'per light; colour, brightness and power work for all.\n'
+                        ? 'These lights are different kinds, so light patterns have to be set '
+                            'on each light. Colour, brightness and on/off work for all of them.\n'
                         : '',
                     style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textMuted),
                     textAlign: TextAlign.center,
                   ),
                   Text(
-                    'Group controls show the last command sent to the group, '
-                    'not each light\'s own state.',
+                    'These controls show the last thing you set for the group, '
+                    'not what each light is doing on its own.',
                     style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textMuted),
                     textAlign: TextAlign.center,
                   ),
@@ -360,11 +377,11 @@ class _MemberRow extends StatelessWidget {
     final (String label, Color color) = switch (status) {
       ConnectionStatus.connected => ('Connected', TerraxBrand.success),
       ConnectionStatus.connecting => ('Connecting…', Colors.amber),
-      ConnectionStatus.error => ('Connection failed', TerraxBrand.danger),
+      ConnectionStatus.error => ("Couldn't connect", TerraxBrand.danger),
       ConnectionStatus.disconnected => checking && selected
           ? ('Checking…', Colors.amber)
           : notInRange
-              ? ('Not in range', TerraxBrand.danger)
+              ? ('Not reachable', TerraxBrand.danger)
               : (armed && selected ? 'Not connected' : 'Ready', TerraxBrand.textMuted),
     };
     return TxCard(

@@ -69,9 +69,9 @@ void main() {
     });
     test('pattern table: 122 entries, ids 1–122, auto cycle first', () {
       expect(carLightsModes, hasLength(122));
-      expect(carLightsModes.first, (id: 1, name: 'Auto cycle color changing'));
-      expect(carLightsModes[1].name, '1:Static red');
-      expect(carLightsModes.last, (id: 122, name: '121:White wheeling mode'));
+      expect(carLightsModes.first, (id: 1, name: 'Cycles through all colours'));
+      expect(carLightsModes[1].name, '1:Solid red');
+      expect(carLightsModes.last, (id: 122, name: '121:White chasing round'));
       for (var i = 0; i < carLightsModes.length; i++) {
         expect(carLightsModes[i].id, i + 1);
       }

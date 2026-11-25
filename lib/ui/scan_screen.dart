@@ -58,6 +58,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     try {
       await ref.read(bleServiceProvider).startScan();
     } catch (e) {
+      debugPrint('TERRAX: scan failed: $e');
       if (mounted) setState(() => _scanError = e.toString());
     }
   }
@@ -110,7 +111,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     return showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Name this device'),
+        title: const Text('Give it a name'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,15 +128,15 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                   Navigator.of(dialogContext).pop(v.trim().isEmpty ? null : v.trim()),
             ),
             const SizedBox(height: 12),
-            Text('Detected as $productHint',
+            Text('Type of light: $productHint',
                 style: theme.textTheme.bodySmall),
             Text(
-              'Bluetooth name: ${advertisedName.isEmpty ? "unnamed" : advertisedName}',
+              'Shows on Bluetooth as: ${advertisedName.isEmpty ? "no name" : advertisedName}',
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 8),
-            Text('You can rename it any time by long-pressing it on the home '
-                'screen.', style: theme.textTheme.bodySmall),
+            Text('You can change the name any time from the ••• button next to '
+                'it on the home screen.', style: theme.textTheme.bodySmall),
           ],
         ),
         actions: [
@@ -164,7 +165,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     final name = await _promptName(
       suggested: rule.suggestedName(advName),
       advertisedName: advName,
-      productHint: '${rule.productHint(advName)} (chosen manually)',
+      productHint: '${rule.productHint(advName)} (you picked this)',
     );
     if (name == null) return;
 
@@ -211,7 +212,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Add device', style: theme.textTheme.titleMedium),
-            Text(isScanning ? 'SCANNING' : 'SCAN PAUSED',
+            Text(isScanning ? 'LOOKING FOR LIGHTS…' : 'PAUSED',
                 style: theme.textTheme.labelSmall
                     ?.copyWith(letterSpacing: 2, color: TerraxBrand.textMuted)),
           ],
@@ -225,7 +226,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
           else
             IconButton(
               icon: const Icon(Icons.refresh),
-              tooltip: 'Scan again',
+              tooltip: 'Look again',
               onPressed: _startScan,
             ),
         ],
@@ -236,7 +237,8 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
           if (_permissionDenied)
             MaterialBanner(
               content: const Text(
-                  'Bluetooth permissions are required to scan for devices.'),
+                  'TERRAX needs Bluetooth permission to find your lights. '
+                  'Tap Try again and choose Allow.'),
               leading: const Icon(Icons.bluetooth_disabled),
               actions: [
                 TextButton(
@@ -245,11 +247,12 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
             ),
           if (_scanError != null)
             MaterialBanner(
-              content: Text('Scan failed: $_scanError'),
+              content: const Text("Couldn't look for lights. Make sure "
+                  'Bluetooth is turned on, then try again.'),
               leading: Icon(Icons.error_outline,
                   color: theme.colorScheme.error),
               actions: [
-                TextButton(onPressed: _startScan, child: const Text('Retry')),
+                TextButton(onPressed: _startScan, child: const Text('Try again')),
               ],
             ),
           Expanded(
@@ -259,14 +262,17 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                       padding: const EdgeInsets.all(32),
                       child: Text(
                         isScanning
-                            ? 'Looking for TERRAX products nearby…\n\n'
-                              'Power the accessory on and keep it out of its vendor app.'
-                            : 'No supported devices found.\n\n'
-                              'Make sure the accessory is powered on, in '
-                              'range, and NOT connected to its vendor app '
-                              '(devices stop broadcasting while connected). '
-                              'On Android 11 and below, the Location '
-                              'permission must be granted for scanning.',
+                            ? 'Looking for TERRAX lights near you…\n\n'
+                              'Switch your light on, stay close to it, and close '
+                              'any other app that controls it.'
+                            : 'No lights found yet.\n\n'
+                              'Make sure the light is switched on and close by. '
+                              'Close any other app or phone that is connected to '
+                              'it - a light stays hidden while something else is '
+                              'connected. On older Android phones (Android 11 and '
+                              'below), also allow Location so the app can find '
+                              'nearby lights.\n\nTap the refresh button at the top '
+                              'to look again.',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium,
                       ),
@@ -299,15 +305,15 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                       if (unsupported.isNotEmpty) ...[
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-                          child: Text('Other nearby devices (unsupported)',
+                          child: Text('Other Bluetooth devices nearby',
                               style: theme.textTheme.titleSmall),
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                           child: Text(
-                            'If your accessory is listed here, its advertised '
-                            'name is not recognized yet — you can add it '
-                            'manually by choosing its type.',
+                            "If your light is in this list, we didn't "
+                            'recognise it by itself. Tap "This is a…" next to '
+                            'it and pick what kind of light it is.',
                             style: theme.textTheme.bodySmall,
                           ),
                         ),
@@ -374,13 +380,13 @@ class _DetectedTile extends ConsumerWidget {
                 Text(hint, style: theme.textTheme.titleSmall),
                 const SizedBox(height: 2),
                 Text(
-                  detected.advertisedName.isEmpty ? 'unnamed' : detected.advertisedName,
+                  detected.advertisedName.isEmpty ? 'No name' : detected.advertisedName,
                   style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textSecondary),
                 ),
                 Row(children: [
                   Icon(_signalIcon(rssi), size: 12, color: TerraxBrand.textMuted),
                   const SizedBox(width: 4),
-                  Text('${_signalLabel(rssi).toUpperCase()} · ${detected.rule.driverId.toUpperCase()}',
+                  Text(_signalLabel(rssi).toUpperCase(),
                       style: theme.textTheme.labelSmall
                           ?.copyWith(letterSpacing: 1.2, color: TerraxBrand.textMuted)),
                 ]),
@@ -390,7 +396,7 @@ class _DetectedTile extends ConsumerWidget {
           const SizedBox(width: 8),
           alreadySaved
               ? _AddedChip(deviceId: detected.id)
-              : TxButton('Pair', onPressed: onAdd),
+              : TxButton('Connect', onPressed: onAdd),
         ],
       ),
     );
@@ -402,12 +408,15 @@ class _DetectedTile extends ConsumerWidget {
           ? Icons.signal_cellular_alt_2_bar
           : Icons.signal_cellular_alt_1_bar;
 
-  static String _signalLabel(int rssi) => rssi >= -60
-      ? 'Close'
-      : rssi >= -80
-          ? 'Nearby'
-          : 'Far';
+  static String _signalLabel(int rssi) => _plainSignal(rssi);
 }
+
+/// Signal strength in everyday words instead of dBm.
+String _plainSignal(int rssi) => rssi >= -60
+    ? 'Very close'
+    : rssi >= -80
+        ? 'Nearby'
+        : 'Far away';
 
 class _UnsupportedTile extends StatelessWidget {
   final ScanResult result;
@@ -425,22 +434,43 @@ class _UnsupportedTile extends StatelessWidget {
     final name = result.advertisementData.advName.isNotEmpty
         ? result.advertisementData.advName
         : result.device.platformName;
-    final services = result.advertisementData.serviceUuids;
     return ListTile(
       leading: const CircleAvatar(child: Icon(Icons.bluetooth)),
-      title: Text(name.isEmpty ? 'Unnamed device' : name),
+      title: Text(name.isEmpty ? 'No name' : name),
       subtitle: Text(
-        '${result.rssi} dBm'
-        '${services.isNotEmpty ? ' · svc ${services.map((s) => s.str).join(', ')}' : ''}',
+        _plainSignal(result.rssi),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       ),
+      // The technical details only matter to TERRAX support.
+      onTap: () => _showSupportDetails(context, name),
       trailing: alreadySaved
           ? _AddedChip(deviceId: result.device.remoteId.str)
           : OutlinedButton(
               onPressed: () => _pickDriver(context),
-              child: const Text('Add as…'),
+              child: const Text('This is a…'),
             ),
+    );
+  }
+
+  void _showSupportDetails(BuildContext context, String name) {
+    final services = result.advertisementData.serviceUuids;
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Details for TERRAX support'),
+        content: SelectableText(
+          'Bluetooth name: ${name.isEmpty ? "no name" : name}\n'
+          'Signal: ${result.rssi} dBm\n'
+          'Services: ${services.isEmpty ? "none shown" : services.map((s) => s.str).join(', ')}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -448,7 +478,7 @@ class _UnsupportedTile extends StatelessWidget {
     final rule = await showDialog<DetectionRule>(
       context: context,
       builder: (dialogContext) => SimpleDialog(
-        title: const Text('What kind of device is this?'),
+        title: const Text('What kind of light is this?'),
         children: [
           for (final r in detectionRules)
             SimpleDialogOption(
@@ -495,9 +525,9 @@ class _AddedChip extends ConsumerWidget {
           builder: (dialogContext) => AlertDialog(
             title: const Text('Already added'),
             content: Text(
-              'This accessory is already saved'
+              'This is already in your app'
               '${saved != null ? ' as "${saved.name}"' : ''}. '
-              'If it is missing from the home screen or will not connect, '
+              "If it is missing from the home screen or won't connect, "
               'remove it here and then add it again.',
             ),
             actions: [

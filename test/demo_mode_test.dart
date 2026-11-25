@@ -74,7 +74,7 @@ void main() {
     DriverOptionSetting<dynamic> eq() => ctrl.driver!.sections
         .expand((s) => s.settings)
         .whereType<DriverOptionSetting<dynamic>>()
-        .firstWhere((s) => s.label == 'EQ style');
+        .firstWhere((s) => s.label == 'Music style');
     await eq().apply(6);
     expect(eq().value, 6);
 

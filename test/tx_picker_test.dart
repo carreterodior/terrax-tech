@@ -71,7 +71,7 @@ void main() {
       expect(rows.first.value, staticEffectId);
       expect(rows[1].group, 'Run');
       expect(rows[1].label, 'Red Running');
-      expect(rows[1].hint, 'Sequential');
+      expect(rows[1].hint, 'Running');
       expect(rows[2].group, isNull);
       expect(rows[2].label, 'Rainbow seven color');
       expect(rows[2].hint, 'Rainbow');
@@ -98,7 +98,7 @@ void main() {
           ),
         ),
       ));
-      expect(find.text('Static'), findsOneWidget);
+      expect(find.text('Steady colour'), findsOneWidget);
       await tester.tap(find.byType(TxPicker<int>));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Forward chasing'));
@@ -109,7 +109,7 @@ void main() {
 
       await tester.tap(find.byType(TxPicker<int>));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Static').last);
+      await tester.tap(find.text('Steady colour').last);
       await tester.pumpAndSettle();
       expect(light.calls, ['effect 2 16', 'color']);
       expect(find.text('SPEED'), findsNothing);

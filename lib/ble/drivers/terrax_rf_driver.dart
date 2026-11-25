@@ -102,7 +102,7 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
 
   int _groupCount = 1;
   int _active = 0;
-  final List<String> _names = List.generate(maxGroups, (i) => i == 0 ? 'Aux lights' : 'Lamp group ${i + 1}');
+  final List<String> _names = List.generate(maxGroups, (i) => i == 0 ? 'Extra lights' : 'Light set ${i + 1}');
   final List<bool> _hasHighBeam = List.filled(maxGroups, true);
   final List<bool> _triColour = List.filled(maxGroups, true);
   final List<int> _colour = List.filled(maxGroups, 0);
@@ -110,7 +110,7 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
   List<bool?> _channels = List.filled(TerraxRfCommands.channels, null);
   int _pulseUs = 350;
   int _flickMs = 300;
-  String _info = 'not connected';
+  String _info = 'Not connected';
 
   TerraxRfDriver(this._ble, this._device, this._prefs);
 
@@ -146,57 +146,62 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
 
   @override
   List<DriverSection> get sections => [
-        DriverSection('Pair', [
+        DriverSection('Connect remote lights', [
           DriverInfoSetting(
-            'Pairing',
-            value: 'Put the switch module in learn mode (press its learn button until the LED '
-                'lights), then tap its Pair button. The switch sends the code for 3 seconds. If '
-                'the module learns ON and OFF separately, also tap the OFF-code button.',
+            'How to connect',
+            value: "Put the light's switch box into learning mode (hold its learn button until "
+                'its small light comes on), then tap the matching "Connect" button below. The '
+                'app sends the signal for 3 seconds. If the box needs separate ON and OFF '
+                'signals, also tap the "OFF signal" button.',
           ),
           for (var g = 0; g < _groupCount; g++) ...[
-            DriverButtonSetting('Pair ${_names[g]}: power',
+            DriverButtonSetting('Connect ${_names[g]}: on / off',
                 run: () => _send(TerraxRfCommands.pairOn(TerraxRfCommands.powerChannel(g)))),
-            DriverButtonSetting('Pair ${_names[g]}: power (OFF code)',
+            DriverButtonSetting('Connect ${_names[g]}: on / off (OFF signal)',
                 run: () => _send(TerraxRfCommands.pairOff(TerraxRfCommands.powerChannel(g)))),
             if (_hasHighBeam[g]) ...[
-              DriverButtonSetting('Pair ${_names[g]}: high beam',
+              DriverButtonSetting('Connect ${_names[g]}: high beam',
                   run: () => _send(TerraxRfCommands.pairOn(TerraxRfCommands.highBeamChannel(g)))),
-              DriverButtonSetting('Pair ${_names[g]}: high beam (OFF code)',
+              DriverButtonSetting('Connect ${_names[g]}: high beam (OFF signal)',
                   run: () => _send(TerraxRfCommands.pairOff(TerraxRfCommands.highBeamChannel(g)))),
             ],
           ],
         ]),
         DriverSection('Setup', [
-          DriverSliderSetting('Lamp groups',
-              description: 'One group per light set, e.g. fog lamps and grille lights.',
+          DriverSliderSetting('Number of light sets',
+              description: 'One for each set of lights you want to switch separately, '
+                  'e.g. fog lights and grille lights.',
               value: _groupCount, min: 1, max: maxGroups, onChanged: setGroupCount),
           for (var g = 0; g < _groupCount; g++) ...[
-            DriverTextSetting('Group ${g + 1} name', value: _names[g], onChanged: (v) => rename(g, v)),
+            DriverTextSetting('Light set ${g + 1} name', value: _names[g], onChanged: (v) => rename(g, v)),
             DriverToggleSetting('${_names[g]}: has high beam',
-                description: 'A second switch module on the high-beam wire.',
+                description: 'Turn on if this light set has a second switch box for the high beam.',
                 value: _hasHighBeam[g], onChanged: (v) => setHasHighBeam(g, v)),
-            DriverToggleSetting('${_names[g]}: tri-colour',
-                description: 'White / Yellow / All-Weather, changed by a quick power flick.',
+            DriverToggleSetting('${_names[g]}: 3 colours',
+                description: 'For lights that change White → Yellow → All-Weather when '
+                    'quickly switched off and on.',
                 value: _triColour[g], onChanged: (v) => setTriColour(g, v)),
             if (_triColour[g])
-              DriverOptionSetting<int>('${_names[g]}: lamp is showing now',
-                  description: 'Correct this if the colour in the app and on the car differ '
+              DriverOptionSetting<int>('${_names[g]}: colour it shows right now',
+                  description: 'Fix this if the colour in the app and on the car are different '
                       '(for example after using the remote).',
                   value: _colour[g],
                   options: [for (var i = 0; i < colourNames.length; i++) (value: i, label: colourNames[i])],
                   onChanged: (v) => correctColour(g, v)),
-            DriverToggleSetting('${_names[g]}: swap ON / OFF',
-                description: 'If this lamp turns off when switched on.',
+            DriverToggleSetting('${_names[g]}: on and off are reversed',
+                description: 'Turn on if this light switches off when you tap On.',
                 value: _swapped[TerraxRfCommands.powerChannel(g)],
                 onChanged: (v) => setSwapped(TerraxRfCommands.powerChannel(g), v)),
           ],
-          DriverSliderSetting('Colour flick off-time (ms)',
-              description: 'How long the lamp is off for each colour step. Default 300.',
+          DriverSliderSetting('Colour switch speed',
+              description: 'How long the light blinks off each time it changes colour, in '
+                  'thousandths of a second. Normal is 300. Raise it if colours get skipped.',
               value: _flickMs, min: 100, max: 1000, onChanged: setFlickMs),
-          DriverSliderSetting('Radio pulse length (µs)',
-              description: 'Only change if a module will not learn. Default 350.',
+          DriverSliderSetting('Signal timing (for installers)',
+              description: 'Only change this if a switch box will not learn the signal. '
+                  'Normal is 350.',
               value: _pulseUs, min: 150, max: 1000, onChanged: setPulseLength),
-          DriverInfoSetting('Firmware', value: _info),
+          DriverInfoSetting('Software version', value: _info),
         ]),
       ];
 
@@ -271,7 +276,7 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
     _stateSub = null;
     _cmd = null;
     _stateChar = null;
-    _info = 'not connected';
+    _info = 'Not connected';
   }
 
   Future<void> _send(Uint8List bytes) {

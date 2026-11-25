@@ -49,7 +49,8 @@ class TrionesCommands {
   static List<int> _digits(String pin) {
     final n = int.tryParse(pin);
     if (n == null || pin.length != 4 || n < 0) {
-      throw ArgumentError('triones: password must be exactly 4 digits');
+      throw ArgumentError('The PIN code must be exactly 4 digits (numbers '
+          'only).');
     }
     return [n ~/ 1000, (n % 1000) ~/ 100, (n % 100) ~/ 10, n % 10];
   }
@@ -177,8 +178,8 @@ class TrionesDriver extends DeviceDriver with DriverStateMixin {
   List<EffectPreset> get effects => const [
         // Not a protocol mode: re-sends the current colour, which is how this
         // family exits an animation (there is no dedicated "stop" frame).
-        EffectPreset(staticEffectId, 'Static — solid color'),
-        EffectPreset(0x25, 'Seven-color cross fade'),
+        EffectPreset(staticEffectId, 'Solid colour (no effect)'),
+        EffectPreset(0x25, 'Seven colours fade into each other'),
         EffectPreset(0x26, 'Red fade'),
         EffectPreset(0x27, 'Green fade'),
         EffectPreset(0x28, 'Blue fade'),
@@ -186,18 +187,18 @@ class TrionesDriver extends DeviceDriver with DriverStateMixin {
         EffectPreset(0x2A, 'Cyan fade'),
         EffectPreset(0x2B, 'Purple fade'),
         EffectPreset(0x2C, 'White fade'),
-        EffectPreset(0x2D, 'Red-green cross fade'),
-        EffectPreset(0x2E, 'Red-blue cross fade'),
-        EffectPreset(0x2F, 'Green-blue cross fade'),
-        EffectPreset(0x30, 'Seven-color strobe'),
-        EffectPreset(0x31, 'Red strobe'),
-        EffectPreset(0x32, 'Green strobe'),
-        EffectPreset(0x33, 'Blue strobe'),
-        EffectPreset(0x34, 'Yellow strobe'),
-        EffectPreset(0x35, 'Cyan strobe'),
-        EffectPreset(0x36, 'Purple strobe'),
-        EffectPreset(0x37, 'White strobe'),
-        EffectPreset(0x38, 'Seven-color jump'),
+        EffectPreset(0x2D, 'Red and green fade into each other'),
+        EffectPreset(0x2E, 'Red and blue fade into each other'),
+        EffectPreset(0x2F, 'Green and blue fade into each other'),
+        EffectPreset(0x30, 'Fast flashing seven colours'),
+        EffectPreset(0x31, 'Fast flashing red'),
+        EffectPreset(0x32, 'Fast flashing green'),
+        EffectPreset(0x33, 'Fast flashing blue'),
+        EffectPreset(0x34, 'Fast flashing yellow'),
+        EffectPreset(0x35, 'Fast flashing cyan'),
+        EffectPreset(0x36, 'Fast flashing purple'),
+        EffectPreset(0x37, 'Fast flashing white'),
+        EffectPreset(0x38, 'Seven colours blinking in turn'),
       ];
 
   /// Password controls. This family enforces the PIN in the controller, so it
@@ -209,11 +210,11 @@ class TrionesDriver extends DeviceDriver with DriverStateMixin {
   @override
   List<DriverSetting> get settings => [
         DriverTextSetting(
-          'Device PIN',
+          'Light\'s PIN code',
           description: devicePin.isEmpty
-              ? 'Enter the PIN this device already has, if any. It is sent '
-                  'automatically when connecting.'
-              : 'Sent automatically when connecting.',
+              ? 'If these lights already have a 4-digit PIN code, type it '
+                  'here. The app enters it for you each time it connects.'
+              : 'The app enters this code for you each time it connects.',
           value: devicePin,
           obscure: true,
           onChanged: setDevicePin,

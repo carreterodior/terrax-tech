@@ -49,8 +49,8 @@ class _PinSetupDialogState extends State<_PinSetupDialog> {
     final current = _current.text.trim();
     final next = _next.text.trim();
     if (current.isEmpty || next.isEmpty) {
-      setState(() => _error = 'Both PINs are required. If you never set one, '
-          'use the factory PIN from the device\'s manual.');
+      setState(() => _error = 'Please fill in both PINs. If you never set one, '
+          'the current PIN is the factory PIN printed in the light\'s manual.');
       return;
     }
     setState(() {
@@ -64,8 +64,8 @@ class _PinSetupDialogState extends State<_PinSetupDialog> {
       final messenger = ScaffoldMessenger.of(context);
       Navigator.of(context).pop();
       messenger.showSnackBar(const SnackBar(
-          content: Text('PIN set. Keep it safe — it cannot be recovered '
-              'from the device.')));
+          content: Text('PIN set. Write it down somewhere safe — there is no '
+              'way to get it back from the light.')));
     } on ArgumentError catch (e) {
       setState(() {
         _busy = false;
@@ -74,7 +74,9 @@ class _PinSetupDialogState extends State<_PinSetupDialog> {
     } catch (e) {
       setState(() {
         _busy = false;
-        _error = 'Could not set the PIN: $e';
+        debugPrint('TERRAX: PIN change failed: $e');
+        _error = "Couldn't set the PIN. Check that the current PIN is right "
+            'and the light is switched on and close by, then try again.';
       });
     }
   }
@@ -83,14 +85,14 @@ class _PinSetupDialogState extends State<_PinSetupDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
-      title: const Text('Protect this device?'),
+      title: const Text('Protect this light with a PIN?'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'This device accepts commands from any phone in range. Set a '
-            'PIN so only you can control it.',
+            'Right now any phone nearby can control this light. Set a '
+            '4-digit PIN (a number code) so only you can.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -101,8 +103,8 @@ class _PinSetupDialogState extends State<_PinSetupDialog> {
             enabled: !_busy,
             decoration: const InputDecoration(
               labelText: 'Current PIN',
-              helperText: 'Required — check the device\'s manual for the '
-                  'factory PIN if you never set one.',
+              helperText: 'The PIN the light uses now. If you never changed '
+                  'it, look in the light\'s manual for the factory PIN.',
               helperMaxLines: 3,
             ),
           ),
@@ -111,7 +113,11 @@ class _PinSetupDialogState extends State<_PinSetupDialog> {
             controller: _next,
             obscureText: true,
             enabled: !_busy,
-            decoration: const InputDecoration(labelText: 'New PIN'),
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'New PIN',
+              helperText: '4 numbers you will remember, e.g. 2580',
+            ),
             onSubmitted: (_) => _submit(),
           ),
           if (_error != null)

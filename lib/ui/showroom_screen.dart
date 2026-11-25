@@ -76,7 +76,7 @@ class _ShowroomScreenState extends State<ShowroomScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Showroom', style: theme.textTheme.titleMedium),
-            Text('NO HARDWARE · DEMO',
+            Text('DEMO · NO LIGHTS NEEDED',
                 style: theme.textTheme.labelSmall
                     ?.copyWith(letterSpacing: 2, color: TerraxBrand.textMuted)),
           ],
@@ -88,12 +88,20 @@ class _ShowroomScreenState extends State<ShowroomScreen> {
           VehicleHero(
             zones: zones,
             focusZone: _selected,
-            statusLabel: 'Showroom',
+            statusLabel: 'Demo',
             statusColor: Colors.white,
             caption: '${_selected.label} · ${_selected.description}',
             glowScale: 1.05,
           ),
-          const TxSectionHeader('Zones'),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(TxSpace.xs, TxSpace.l, TxSpace.xs, 0),
+            child: Text(
+              'Try the app without lights. Tap a part of the car, then play with '
+              'the controls - nothing is sent to any real light.',
+              style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textSecondary),
+            ),
+          ),
+          const TxSectionHeader('Parts of the car'),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -137,22 +145,22 @@ class _ShowroomScreenState extends State<ShowroomScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const TxLabel('TERRAX Glide step board'),
+                  const TxLabel('TERRAX Glide side step'),
                   const SizedBox(height: 4),
-                  Text(_z.extended == true ? 'Deployed' : 'Retracted',
+                  Text(_z.extended == true ? 'Step is out' : 'Step is in',
                       style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w300)),
                   const SizedBox(height: TxSpace.l),
                   Row(
                     children: [
                       Expanded(
-                        child: TxButton('Deploy',
+                        child: TxButton('Step out',
                             icon: Icons.keyboard_double_arrow_down_rounded,
                             filled: _z.extended != true,
                             onPressed: () => _update((z) => z.copyWith(extended: true, power: true))),
                       ),
                       const SizedBox(width: TxSpace.m),
                       Expanded(
-                        child: TxButton('Retract',
+                        child: TxButton('Step in',
                             icon: Icons.keyboard_double_arrow_up_rounded,
                             filled: _z.extended == true,
                             onPressed: () => _update((z) => z.copyWith(extended: false, power: false))),
@@ -219,7 +227,7 @@ class _ShowroomScreenState extends State<ShowroomScreen> {
                 ],
               ),
             ),
-            const TxSectionHeader('Effects'),
+            const TxSectionHeader('Light patterns'),
             TxCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -100,14 +100,14 @@ void main() {
       expect(ruleOf(TrionesDriver.id).productHint('RZ-Slave-C224THB'),
           'Rock lights');
       expect(ruleOf(IntelligoDriver.id).productHint('DianDongTaBan'),
-          'Running board');
+          'Electric side steps');
       expect(ruleOf(LampFrgnDriver.id).productHint('LAMP&FRGN-1234'),
-          'Car ambient lighting');
+          'Interior mood lights');
       expect(ruleOf(Elk7eDriver.id).productHint('ELK-BLEDOM'),
-          'RGB light strip');
+          'LED light strip');
       // A Triones device that is not a rock light falls back to the generic.
       expect(ruleOf(TrionesDriver.id).productHint('Triones:120511000086'),
-          'RGB light strip or bulb');
+          'LED light strip or bulb');
       // Every rule must offer a hint, so the scan list never shows a blank.
       for (final rule in detectionRules) {
         expect(rule.defaultProductHint, isNotEmpty, reason: rule.driverId);

@@ -229,16 +229,17 @@ void main() {
       expect(IntelligoCommands.lampEffectNames[4], 'Turn signal');
       expect(IntelligoCommands.lampEffectNames[5], 'Reverse');
       expect(IntelligoCommands.lampEffectNames[6], 'Brake');
-      // "Colour pure" is 15, not 10 — the value seen in the captured frame.
-      expect(IntelligoCommands.lightModeNames[15], 'Colour pure');
-      expect(IntelligoCommands.lightModeNames[7], 'Strobe');
+      // "Solid colour" (vendor "Colour pure") is 15, not 10 — the value seen
+      // in the captured frame.
+      expect(IntelligoCommands.lightModeNames[15], 'Solid colour');
+      expect(IntelligoCommands.lightModeNames[7], 'Flashing');
       expect(IntelligoCommands.lightModeNames.containsKey(10), isFalse);
       // Channel order, not colour: the captured index 2 is BRG.
-      expect(IntelligoCommands.colourOrderNames[2], 'BRG');
+      expect(IntelligoCommands.colourOrderNames[2], 'Blue-Red-Green');
       expect(IntelligoCommands.colourOrderNames.length, 6);
       expect(IntelligoCommands.lightDirectionNames.length, 4);
       // Anti-pinch 0 disables; 1-6 are L1-L6.
-      expect(IntelligoCommands.antiPinchNames.first, 'Disabled');
+      expect(IntelligoCommands.antiPinchNames.first, 'Off');
       expect(IntelligoCommands.antiPinchNames.length, 7);
       expect(IntelligoCommands.colourPresets.length, 16);
       // No user-facing label should carry non-ASCII text.
@@ -263,9 +264,9 @@ void main() {
       expect(s.faults, 0x32);
       // Matches what the vendor app displayed for the same board.
       expect(s.activeFaults, [
-        'Left Hall sensor error',
-        'Right Hall sensor error',
-        'CAN bus data error',
+        "Problem with the left step's position sensor",
+        "Problem with the right step's position sensor",
+        "Can't read signals from the car",
       ]);
       expect(s.canBusFault, isTrue);
       // A clean board reports nothing and no CAN fault.
@@ -281,7 +282,7 @@ void main() {
             0xFE, 0x3B, 0xC0, 0x0F, 0x09, 0x66, 0x0A, 0xEA, 0x7D, 0xC0,
             0x00, 0x10, 0x00, 0x08, 0x7D, 0x00, 0x00, 0x00, 0x00, 0x00,
           ])!.activeFaults,
-          ['Undervoltage', 'Overvoltage']);
+          ['Car voltage too low', 'Car voltage too high']);
       expect(
           IntelligoCommands.parseDeviceStatus([0xFE, 0x3B, 0xC0, 0x0F, 0x09]),
           isNull);

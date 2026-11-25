@@ -7,19 +7,19 @@ import 'rgb.dart';
 /// Adding a TERRAX product = add a value here + a painter mapping in
 /// `lib/vehicle/vehicle_view.dart`. Nothing else needs to change.
 enum LightingZoneType {
-  drl('DRL', 'Daytime running lights', VehicleAngle.q34Front),
-  devilEyes('Devil Eyes', 'Projector halo rings', VehicleAngle.q34Front),
-  headlights('Headlights', 'Main beam projectors', VehicleAngle.q34Front),
-  fogLamps('Fog Lamps', 'Bumper fog lights', VehicleAngle.q34Front),
-  grilleLights('Grille Lights', 'Front grille accents', VehicleAngle.q34Front),
-  rockLights('Rock Lights', 'Under-body rock lights', VehicleAngle.q34Front),
-  underglow('Underglow', 'Ground-effect underglow', VehicleAngle.q34Front),
-  interiorAmbient('Interior', 'Cabin ambient lighting', VehicleAngle.q34Front),
-  wheelLights('Wheel Lights', 'Wheel-well and rim lights', VehicleAngle.side),
-  tailLights('Tail Lights', 'Rear light bars', VehicleAngle.q34Rear),
-  auxiliary('Auxiliary', 'Light bar / aux lamps', VehicleAngle.q34Front),
-  lightStrip('Light Strip', 'Accent light strip', VehicleAngle.q34Front),
-  runningBoard('Step Board', 'Electric running board', VehicleAngle.side);
+  drl('Daytime Lights', 'Daytime running lights (DRL) at the front', VehicleAngle.q34Front),
+  devilEyes('Devil Eyes', 'Coloured rings inside the headlights', VehicleAngle.q34Front),
+  headlights('Headlights', 'Your main headlights', VehicleAngle.q34Front),
+  fogLamps('Fog Lights', 'Fog lights in the bumper', VehicleAngle.q34Front),
+  grilleLights('Grille Lights', 'Lights in the front grille', VehicleAngle.q34Front),
+  rockLights('Rock Lights', 'Lights under the car that shine on the ground', VehicleAngle.q34Front),
+  underglow('Underglow', 'Coloured glow under the car', VehicleAngle.q34Front),
+  interiorAmbient('Interior', 'Mood lights inside the cabin', VehicleAngle.q34Front),
+  wheelLights('Wheel Lights', 'Lights around the wheels', VehicleAngle.side),
+  tailLights('Tail Lights', 'Lights at the back of the car', VehicleAngle.q34Rear),
+  auxiliary('Extra Lights', 'Light bars and extra driving lamps', VehicleAngle.q34Front),
+  lightStrip('Light Strip', 'LED strip for decoration', VehicleAngle.q34Front),
+  runningBoard('Side Steps', 'Electric side steps that fold out', VehicleAngle.side);
 
   final String label;
   final String description;
@@ -46,11 +46,11 @@ enum LightingZoneType {
 /// (walking around the car, 45° apart): index × 45 = orbit angle, which the
 /// camera rig relies on.
 enum VehicleAngle {
-  front('Front', 'F'),
-  q34Front('3/4 Front', '¾ F'),
-  side('Side', 'S'),
-  q34Rear('3/4 Rear', '¾ R'),
-  rear('Rear', 'R');
+  front('Front view', 'F'),
+  q34Front('Front corner view', '¾ F'),
+  side('Side view', 'S'),
+  q34Rear('Back corner view', '¾ R'),
+  rear('Back view', 'R');
 
   final String label;
 

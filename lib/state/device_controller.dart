@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,6 +12,36 @@ import 'light_group.dart';
 import 'saved_devices.dart';
 
 enum ConnectionStatus { disconnected, connecting, connected, error }
+
+/// Shown when the light connects but does not answer the way its saved
+/// settings expect - usually it was added as the wrong type. The control
+/// screen offers "Find the right settings for this light" when it sees this.
+const kWrongSettingsError =
+    "The light connected but didn't answer the way we expected. "
+    'Tap "Find the right settings for this light" to fix it.';
+
+/// True when a raw BLE/driver error means the saved entry is bound to the
+/// wrong protocol family (a characteristic or service it expects is missing).
+bool looksLikeWrongSettings(String raw) {
+  final e = raw.toLowerCase();
+  return e.contains('characteristic') && e.contains('found') ||
+      e.contains('service') && e.contains('not found');
+}
+
+/// Turns a raw exception into words a car owner understands. The technical
+/// text goes to the debug log only.
+String friendlyDeviceError(Object error, {bool whileConnecting = false}) {
+  final raw = error.toString();
+  debugPrint('TERRAX device error: $raw');
+  if (looksLikeWrongSettings(raw)) return kWrongSettingsError;
+  // Input the user typed that the light rejected: its message is the help.
+  if (error is ArgumentError && error.message is String) return error.message as String;
+  return whileConnecting
+      ? "Couldn't connect to the light. Make sure it is switched on, close by, "
+          'and not connected to another phone or app.'
+      : "That didn't work. Make sure the light is switched on and close by, "
+          'then try again.';
+}
 
 class DeviceControllerState {
   final ConnectionStatus status;
@@ -125,14 +156,15 @@ class DeviceController extends FamilyNotifier<DeviceControllerState, String>
     final saved = ref.read(savedDevicesProvider.notifier).byId(arg);
     if (saved == null) {
       state = state.copyWith(
-          status: ConnectionStatus.error, error: 'Device is not saved');
+          status: ConnectionStatus.error, error: 'This device is no longer saved. Add it again from the home screen.');
       return;
     }
     _rule = ruleForDriverId(saved.driverId);
     if (_rule == null) {
       state = state.copyWith(
           status: ConnectionStatus.error,
-          error: 'No driver for "${saved.driverId}"');
+          error: "This app version can't control this type of light yet. "
+              'Please update the TERRAX TECH app.');
       return;
     }
     _wantConnected = true;
@@ -194,7 +226,8 @@ class DeviceController extends FamilyNotifier<DeviceControllerState, String>
           status: ConnectionStatus.connected, offerPinSetup: offerPin);
     } catch (e) {
       state = state.copyWith(
-          status: ConnectionStatus.error, error: e.toString());
+          status: ConnectionStatus.error,
+          error: friendlyDeviceError(e, whileConnecting: true));
     }
   }
 
@@ -239,8 +272,8 @@ class DeviceController extends FamilyNotifier<DeviceControllerState, String>
     if (rule == null) {
       state = state.copyWith(
         status: ConnectionStatus.error,
-        error: 'Could not find this device while scanning. Make sure it is '
-            'powered on, in range, and not connected to another app.',
+        error: "Couldn't find this light nearby. Make sure it is switched on, "
+            'close by, and not connected to another phone or app.',
       );
       return;
     }
@@ -266,7 +299,8 @@ class DeviceController extends FamilyNotifier<DeviceControllerState, String>
       _wantConnected = false;
       state = state.copyWith(
           status: ConnectionStatus.error,
-          error: 'Connection lost (reconnect failed)');
+          error: 'Lost the connection to the light and could not reconnect. '
+              'Move closer and tap Try again.');
       return;
     }
     _reconnectAttempts++;
@@ -310,7 +344,7 @@ class DeviceController extends FamilyNotifier<DeviceControllerState, String>
       await command();
       if (state.error != null) state = state.copyWith(clearError: true);
     } catch (e) {
-      state = state.copyWith(error: 'Command failed: $e');
+      state = state.copyWith(error: friendlyDeviceError(e));
     }
   }
 

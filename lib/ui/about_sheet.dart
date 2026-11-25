@@ -23,7 +23,8 @@ class AboutSheet extends StatelessWidget {
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open ${uri.toString()}')),
+        const SnackBar(
+            content: Text("Couldn't open the link. Check your internet connection and try again.")),
       );
     }
   }
@@ -43,8 +44,9 @@ class AboutSheet extends StatelessWidget {
                 style: theme.textTheme.labelSmall?.copyWith(letterSpacing: 4)),
             const SizedBox(height: 8),
             Text(
-              'Controls TERRAX Bluetooth accessories directly from your phone. '
-              'The app works offline and collects no personal data.',
+              'Control your TERRAX lights and accessories straight from your '
+              'phone over Bluetooth. Works without internet and collects no '
+              'personal data.',
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
@@ -52,7 +54,7 @@ class AboutSheet extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.auto_awesome_outlined),
               title: const Text('Showroom'),
-              subtitle: const Text('Explore every TERRAX lighting zone on a demo vehicle'),
+              subtitle: const Text('Try the app without lights - see every TERRAX light on a demo car'),
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).push(MaterialPageRoute<void>(

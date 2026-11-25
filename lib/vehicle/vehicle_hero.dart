@@ -205,7 +205,9 @@ class _AngleSwitch extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           for (final a in VehicleAngle.values)
-            GestureDetector(
+            Tooltip(
+              message: a.label,
+              child: GestureDetector(
               onTap: () => onChanged(a),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -224,9 +226,12 @@ class _AngleSwitch extends StatelessWidget {
                 ),
               ),
             ),
+            ),
           // Cabin indicator: lit while the camera is inside; tapping any
           // angle above steps back out.
-          AnimatedContainer(
+          Tooltip(
+            message: 'Inside view',
+            child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
             decoration: BoxDecoration(
@@ -241,6 +246,7 @@ class _AngleSwitch extends StatelessWidget {
                 color: inside ? TerraxBrand.background : TerraxBrand.textMuted,
               ),
             ),
+          ),
           ),
         ],
       ),

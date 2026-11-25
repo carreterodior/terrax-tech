@@ -478,6 +478,26 @@ class TxButton extends StatelessWidget {
   }
 }
 
+/// Friendly wording for a control that could not be applied. The raw error is
+/// kept out of the message (it means nothing to a car owner) and goes to the
+/// debug log instead.
+String txFailedMessage(String what, [Object? error]) {
+  if (error != null) debugPrint('TERRAX: "$what" failed: $error');
+  // Something the user typed was rejected: that message is the useful help.
+  if (error is ArgumentError && error.message is String) return error.message as String;
+  final thing = what.trim().isEmpty ? 'that setting' : what.trim();
+  return "Couldn't change $thing. Make sure the light is switched on and "
+      'close by, then try again.';
+}
+
+/// Friendly wording for a one-tap command that could not be sent.
+String txSendFailedMessage(String what, [Object? error]) {
+  if (error != null) debugPrint('TERRAX: "$what" failed: $error');
+  final thing = what.trim().isEmpty ? 'that command' : '"${what.trim()}"';
+  return "Couldn't send $thing. Make sure the light is switched on and "
+      'close by, then try again.';
+}
+
 /// Colour helpers shared by the control screens.
 extension RgbColorX on Rgb {
   Color get asColor => Color.fromARGB(255, r, g, b);
@@ -738,7 +758,7 @@ class _TxPickerSheetState<T> extends State<_TxPickerSheet<T>> {
                             fontWeight: FontWeight.w700,
                             color: TerraxBrand.textSecondary)),
                   ),
-                  Text('${widget.options.length}',
+                  Text('${widget.options.length} ${widget.options.length == 1 ? 'choice' : 'choices'}',
                       style: theme.textTheme.labelSmall?.copyWith(color: TerraxBrand.textMuted)),
                   IconButton(
                     icon: const Icon(Icons.close, color: TerraxBrand.textSecondary),
@@ -774,7 +794,7 @@ class _TxPickerSheetState<T> extends State<_TxPickerSheet<T>> {
             Expanded(
               child: rows.isEmpty
                   ? Center(
-                      child: Text('Nothing matches "$_query"',
+                      child: Text('Nothing found for "$_query"',
                           style: theme.textTheme.bodyMedium
                               ?.copyWith(color: TerraxBrand.textMuted)),
                     )

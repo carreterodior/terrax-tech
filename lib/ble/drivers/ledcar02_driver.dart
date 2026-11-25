@@ -117,25 +117,27 @@ class LedCar02Driver extends DeviceDriver with DriverStateMixin {
   /// gear menu) so it is visible next to the colour controls.
   @override
   List<DriverSection> get sections => [
-        DriverSection('Zones', [
+        DriverSection('Which lights', [
           DriverInfoSetting(
-            'LED 1 / LED 2',
-            value: 'Pick which output the colour, brightness, pattern and '
-                'power controls drive: both together, or one channel alone.',
+            'Two light outputs',
+            value: 'This box has two light outputs. Choose whether colour, '
+                'brightness, pattern and on/off change both, or just one.',
           ),
           DriverOptionSetting<int>(
-            'Zone',
+            'Apply changes to',
             value: _zone,
             options: const [
-              (value: LedCar02Commands.zoneAll, label: 'All'),
-              (value: LedCar02Commands.zoneLed1, label: 'LED 1'),
-              (value: LedCar02Commands.zoneLed2, label: 'LED 2'),
+              (value: LedCar02Commands.zoneAll, label: 'Both'),
+              (value: LedCar02Commands.zoneLed1, label: 'Output 1 only'),
+              (value: LedCar02Commands.zoneLed2, label: 'Output 2 only'),
             ],
             onChanged: setZone,
           ),
           DriverButtonSetting('Pause pattern',
+              description: 'Freezes the moving pattern where it is.',
               run: () => _send(LedCar02Commands.playStop(false))),
           DriverButtonSetting('Resume pattern',
+              description: 'Starts the moving pattern again.',
               run: () => _send(LedCar02Commands.playStop(true))),
         ], icon: DriverSectionIcon.lights),
       ];
@@ -166,7 +168,10 @@ class LedCar02Driver extends DeviceDriver with DriverStateMixin {
     // Some units expose FFE1 only outside the advertised FFE0 grouping.
     write ??= _findChar(services, _writeChar);
     if (write == null) {
-      throw StateError('ledcar02: no write characteristic (0xFFE1) found');
+      // Shown to the user; the technical cause is "no FFE1 write
+      // characteristic".
+      throw StateError('This light did not accept control. Turn it off and '
+          'on, then connect again.');
     }
     _write = write;
 
@@ -205,7 +210,9 @@ class LedCar02Driver extends DeviceDriver with DriverStateMixin {
 
   Future<void> _send(Uint8List bytes) {
     final write = _write;
-    if (write == null) throw StateError('ledcar02: not connected');
+    if (write == null) {
+      throw StateError('The light is not connected. Connect it and try again.');
+    }
     return _ble.write(write, bytes,
         withoutResponse: write.properties.writeWithoutResponse);
   }

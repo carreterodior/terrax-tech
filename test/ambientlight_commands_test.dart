@@ -117,7 +117,7 @@ void main() {
       expect(d.currentState.power, isTrue);
       expect(d.currentState.color!.g, 0xFF);
       expect(d.currentState.brightness, 67); // level 6 of 9
-      expect(d.effects.any((e) => e.name == 'Piled Up · Stack'), isTrue);
+      expect(d.effects.any((e) => e.name == 'Stacking · Stack'), isTrue);
     });
   });
 
@@ -125,12 +125,12 @@ void main() {
     test('legacy has 12 flat modes; 0x5A adds Water Ripple; ids are tab-tagged', () {
       expect(ambientLightEffects(AmbientLightVariant.legacy).length, 12);
       final v3 = ambientLightEffects(AmbientLightVariant.v3);
-      expect(v3.any((e) => e.$2 == 'Water Ripple · Phantom' && e.$1 == ambientSymphonyBase | 0x1D), isTrue);
-      expect(v3.any((e) => e.$2 == 'Streamer · Table Tennis'), isTrue);
+      expect(v3.any((e) => e.$2 == 'Water ripple · Ghost' && e.$1 == ambientSymphonyBase | 0x1D), isTrue);
+      expect(v3.any((e) => e.$2 == 'Streaming · Ping-pong'), isTrue);
       final v1 = ambientLightEffects(AmbientLightVariant.v1);
-      expect(v1.any((e) => e.$2 == 'Streamer · Piled Up'), isTrue);
-      expect(v1.any((e) => e.$2.startsWith('Water Ripple')), isFalse);
-      expect(v1.first, (ambientRgbBase | 0, 'RGB Single · Single'));
+      expect(v1.any((e) => e.$2 == 'Streaming · Pile up'), isTrue);
+      expect(v1.any((e) => e.$2.startsWith('Water ripple')), isFalse);
+      expect(v1.first, (ambientRgbBase | 0, 'Whole strip · One colour'));
       expect({for (final e in v3) e.$1}.length, v3.length, reason: 'ids unique');
     });
   });

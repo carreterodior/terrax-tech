@@ -172,7 +172,7 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
   /// quickest way to learn a unit's GATT layout from a customer's phone
   /// without a sniffer.
   List<String> _gattRows = const [];
-  String _writeTarget = 'not connected';
+  String _writeTarget = 'Not connected';
 
   BandSource? _bandSource;
   StreamSubscription<List<int>>? _bandSub;
@@ -215,12 +215,12 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
   List<DriverSection> get sections => [
         DriverSection('Pattern', [
           DriverInfoSetting(
-            'Pattern controls',
-            value: 'The two sliders from the app\'s Mode screen. They apply to '
-                'the pattern that is currently selected.',
+            'About these sliders',
+            value: 'These change the light effect that is playing right now.',
           ),
           DriverSliderSetting(
             'Pattern speed',
+            description: 'How fast the effect moves.',
             value: _speed,
             min: 1,
             max: 255,
@@ -228,6 +228,7 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
           ),
           DriverSliderSetting(
             'Pattern brightness',
+            description: 'How bright the effect is.',
             value: _light,
             min: 1,
             max: 255,
@@ -236,64 +237,71 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
         ], icon: DriverSectionIcon.lights),
         DriverSection('Music', [
           DriverInfoSetting(
-            'Sound reactive',
+            'Lights move to music',
             value: _soundError ??
-                'Uses this phone\'s microphone to drive the lights to the '
-                    'music (the app\'s Player and Mic tabs).',
+                'Uses this phone\'s microphone so the lights move to the '
+                    'music playing in your car.',
             isAlert: _soundError != null,
           ),
           DriverToggleSetting(
             'Phone microphone',
+            description: 'Turn on to make the lights react to sound.',
             value: _soundOn,
             onChanged: setSoundReactive,
           ),
           DriverOptionSetting<CarLightsSoundFrame>(
-            'Sound mode',
+            'Music style',
+            description: 'Two ways the lights can react. Both listen through '
+                'the phone microphone.',
             value: _soundFrame,
             options: const [
-              (value: CarLightsSoundFrame.mic, label: 'Microphone'),
-              (value: CarLightsSoundFrame.music, label: 'Music player'),
+              (value: CarLightsSoundFrame.mic, label: 'Simple'),
+              (value: CarLightsSoundFrame.music, label: 'With colour sets'),
             ],
             onChanged: setSoundFrame,
           ),
           if (_soundFrame == CarLightsSoundFrame.music)
             DriverOptionSetting<int>(
-              'Colour scheme',
-              description: 'The spinning disc on the Player tab (1–5).',
+              'Colour set',
+              description: 'Which colours the lights use with the music.',
               value: _scheme,
               options: const [
-                (value: 1, label: 'Scheme 1'),
-                (value: 2, label: 'Scheme 2'),
-                (value: 3, label: 'Scheme 3'),
-                (value: 4, label: 'Scheme 4'),
-                (value: 5, label: 'Scheme 5'),
+                (value: 1, label: 'Colour set 1'),
+                (value: 2, label: 'Colour set 2'),
+                (value: 3, label: 'Colour set 3'),
+                (value: 4, label: 'Colour set 4'),
+                (value: 5, label: 'Colour set 5'),
               ],
               onChanged: setMusicScheme,
             ),
           DriverButtonSetting(
-            'Stop sound mode',
-            description: 'Sends the app\'s stop command (twice, as it does).',
+            'Stop music mode',
+            description: 'Makes the lights stop reacting to sound.',
             run: stopSound,
           ),
         ]),
         DriverSection('Connection', [
-          DriverInfoSetting('Write target', value: _writeTarget),
           DriverInfoSetting(
-            'Services found',
-            value: _gattRows.isEmpty ? 'none yet' : _gattRows.join('\n'),
+            'Connection details (for TERRAX support)',
+            value: _writeTarget,
+          ),
+          DriverInfoSetting(
+            'Technical details (for TERRAX support)',
+            value: _gattRows.isEmpty ? 'Nothing yet' : _gattRows.join('\n'),
           ),
           DriverButtonSetting(
-            'Resend hello burst',
-            description: 'The wake-up frames the CAR-LIGHTS app sends right '
-                'after connecting.',
+            'Wake up the lights',
+            description: 'Sends the start-up signal again. Try this if the '
+                'lights stop responding.',
             run: _helloBurst,
           ),
         ], icon: DriverSectionIcon.info),
         DriverSection('Setup', [
           DriverInfoSetting(
-            'Chip setting',
-            value: 'LED ring sizes, as on the app\'s Chip Setting screen. '
-                'Only change these to match the hardware.',
+            'Light ring size',
+            value: 'Pick the size code that matches your light rings (for '
+                'example SMT66). Only change this if the rings were '
+                'changed. Ask TERRAX if you are not sure.',
           ),
           DriverOptionSetting<int>(
             'Big ring',
@@ -328,7 +336,7 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
     _gattRows = describeGatt(services);
     final write = pickWriteCharacteristic(services);
     if (write == null) {
-      _writeTarget = 'none (no writable characteristic)';
+      _writeTarget = 'Not found: the lights did not accept commands';
       throw StateError('carlights: no writable characteristic found '
           '(services: ${_gattRows.join('; ')})');
     }
@@ -421,7 +429,7 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
     await _notifySub?.cancel();
     _notifySub = null;
     _write = null;
-    _writeTarget = 'not connected';
+    _writeTarget = 'Not connected';
   }
 
   /// Write type as Android picks it for the vendor (`setValue` +
@@ -549,13 +557,15 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
       final stream = await source.start();
       _bandSource = source;
       _bandSub = stream.listen(onBands, onError: (Object e) {
-        _soundError = 'Microphone stopped: $e';
+        _soundError = 'The phone microphone stopped. Turn it off and on '
+            'again to retry.';
         unawaited(_stopBands(sendStop: true));
         emitState(currentState);
       });
       _soundOn = true;
     } catch (e) {
-      _soundError = 'Microphone unavailable: $e';
+      _soundError = 'Could not use the phone microphone. Check that this '
+          'app is allowed to use it in your phone settings.';
       await source.stop();
       rethrow;
     }

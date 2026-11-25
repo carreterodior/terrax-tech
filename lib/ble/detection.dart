@@ -129,7 +129,7 @@ final List<Guid> driverServiceUuids = [
 final List<DetectionRule> detectionRules = [
   DetectionRule(
     driverId: Elk7eDriver.id,
-    label: 'Light strip (7E family: ELK-BLEDOM, duoCo, LED BLE)',
+    label: 'LED light strip (shows as ELK-BLEDOM, duoCo or LED BLE)',
     namePrefixes: const [
       'ELK-BLE',
       'ELK-BLEDOM',
@@ -142,13 +142,13 @@ final List<DetectionRule> detectionRules = [
       // its own driver.
     ],
     serviceUuids: [Elk7eUuids.service],
-    defaultProductHint: 'RGB light strip',
+    defaultProductHint: 'LED light strip',
     isLighting: true,
     createDriver: (ble, device, prefs, _) => Elk7eDriver(ble, device, prefs),
   ),
   DetectionRule(
     driverId: TrionesDriver.id,
-    label: 'Light strip / bulb / rock lights (Triones, Happy Lighting)',
+    label: 'LED strip, bulb or rock lights (Happy Lighting app)',
     namePrefixes: const [
       'Triones',
       'Happy Lighting',
@@ -173,13 +173,13 @@ final List<DetectionRule> detectionRules = [
       'RZ-Slave': 'Rock lights',
       'RZ': 'Rock lights',
     },
-    defaultProductHint: 'RGB light strip or bulb',
+    defaultProductHint: 'LED light strip or bulb',
     isLighting: true,
     createDriver: (ble, device, prefs, _) => TrionesDriver(ble, device, prefs),
   ),
   DetectionRule(
     driverId: CarLightsDriver.id,
-    label: 'Rock lights (CAR-LIGHTS)',
+    label: 'Rock lights (CAR-LIGHTS app)',
     // The CAR-LIGHTS app (ysn.com.app.lights 1.2.9) strips whitespace from
     // the advertised name and accepts it if it *contains* "CL-" or "CL_"
     // (`Constant.BLE_NAME_PREFIX1/2`, `MainPresenter.onLeScanCallback`), so
@@ -193,7 +193,7 @@ final List<DetectionRule> detectionRules = [
   ),
   DetectionRule(
     driverId: MagicLanternDriver.id,
-    label: 'Underglow (Magic Lantern, MELK)',
+    label: 'Underglow (Magic Lantern app)',
     // Magic Lantern (wl.smartled.rgb 6.11.10) lists a unit only if its name
     // starts with "MELK-" (`Global.NAME_FILTER`) — and, on Android, if its MAC
     // starts with "BE"; iOS has no MAC, so the name alone is the rule here.
@@ -209,7 +209,7 @@ final List<DetectionRule> detectionRules = [
   ),
   DetectionRule(
     driverId: DynamicAmbientDriver.id,
-    label: 'Car ambient lighting (Dynamic ambient lighting app)',
+    label: 'Interior mood lights (Dynamic ambient lighting app)',
     // Dynamic ambient lighting (com.lenzetech.htxlight 1.0.9) shows a device
     // only if its name contains "CMM" (case-sensitive) — no scan filter, no
     // service or manufacturer-data check. "CMM…XF" is the vendor's fragrance
@@ -218,13 +218,13 @@ final List<DetectionRule> detectionRules = [
     namePrefixes: const [],
     nameContainsCaseSensitive: const ['CMM'],
     nameExcludes: const ['XF'],
-    defaultProductHint: 'Car ambient lighting',
+    defaultProductHint: 'Interior mood lights',
     isLighting: true,
     createDriver: (ble, device, prefs, _) => DynamicAmbientDriver(ble, device, prefs),
   ),
   DetectionRule(
     driverId: LampFrgnDriver.id,
-    label: 'Car ambient lighting (LAMP&FRGN)',
+    label: 'Interior mood lights (shows as LAMP&FRGN or Pocket Link)',
     // 'Pocket Link' is what a real unit advertises ("Pocket Link CZH2-10",
     // field-verified 2026-08-05: its GATT is ae30/ae01/ae02 exactly per
     // docs/lampfrgn_findings.md, while its *advertised* service is JieLi af30).
@@ -239,13 +239,13 @@ final List<DetectionRule> detectionRules = [
     // Some units expose only the Telink fallback service in their
     // advertisement (docs/lampfrgn_findings.md), and often no name at all.
     serviceUuids: [LampFrgnUuids.service, LampFrgnUuids.telinkService],
-    defaultProductHint: 'Car ambient lighting',
+    defaultProductHint: 'Interior mood lights',
     isLighting: true,
     createDriver: (ble, device, prefs, _) => LampFrgnDriver(ble, device, prefs),
   ),
   DetectionRule(
     driverId: LedCar02Driver.id,
-    label: 'RGB car lighting (LEDCAR-02)',
+    label: 'Colour car lights (shows as LEDCAR-02)',
     // The LED+LAMP app keys purely off the advertised name prefix; a real unit
     // advertises e.g. "LEDCAR-02-9930" (verified on hardware 2026-08-31). Only
     // the -02 variant speaks this command set; -00/-01 differ and are not
@@ -255,22 +255,22 @@ final List<DetectionRule> detectionRules = [
     // advertises its "LEDCAR-02-*" name (the vendor app itself filters on it),
     // so the name is the reliable, unambiguous signal.
     namePrefixes: const ['LEDCAR-02'],
-    defaultProductHint: 'RGB car lighting',
+    defaultProductHint: 'Colour car lights',
     isLighting: true,
     createDriver: (ble, device, prefs, _) => LedCar02Driver(ble, device, prefs),
   ),
   DetectionRule(
     driverId: LedCarDriver.id,
-    label: 'RGB car lighting (LEDCAR-00 / LEDCAR-01)',
+    label: 'Colour car lights (shows as LEDCAR-00 or LEDCAR-01)',
     // The other two car variants of the LED+LAMP app. -00 speaks the classic
     // 7E dialect, -01 mixes 7E and 7B frames behind an RGB / LED / DMX switch
     // (docs/ledlamp_4.3.7_findings.md §3). Name only, like LEDCAR-02.
     namePrefixes: const ['LEDCAR-00', 'LEDCAR-01'],
     productHints: const {
-      'ledcar-00': 'RGB car lighting (LEDCAR-00)',
-      'ledcar-01': 'RGB car lighting (LEDCAR-01)',
+      'ledcar-00': 'Colour car lights (model 00)',
+      'ledcar-01': 'Colour car lights (model 01)',
     },
-    defaultProductHint: 'RGB car lighting',
+    defaultProductHint: 'Colour car lights',
     isLighting: true,
     createDriver: (ble, device, prefs, advName) => LedCarDriver(
         ble, device, prefs,
@@ -278,20 +278,20 @@ final List<DetectionRule> detectionRules = [
   ),
   DetectionRule(
     driverId: LedDmxDriver.id,
-    label: 'Addressable LED controller (LEDDMX)',
+    label: 'LED strip with moving effects (shows as LEDDMX)',
     // Same LED+LAMP app, DMX branch: five sub-variants "LEDDMX-00-" … "-04-"
     // that the vendor tells apart by name alone (docs/leddmx_findings.md).
     // Name only for the same reason as LEDCAR-02: it advertises 0xFFE0, which
     // IntelliGo boards advertise too.
     namePrefixes: const ['LEDDMX'],
     productHints: const {
-      'leddmx-00': 'LED strip controller (DMX-00)',
-      'leddmx-01': 'LED strip controller (DMX-01)',
-      'leddmx-02': 'LED strip controller (DMX-02)',
-      'leddmx-03': 'LED strip controller (DMX-03)',
-      'leddmx-04': 'LED strip controller (DMX-04, RGBW/CT)',
+      'leddmx-00': 'LED strip with moving effects (model 00)',
+      'leddmx-01': 'LED strip with moving effects (model 01)',
+      'leddmx-02': 'LED strip with moving effects (model 02)',
+      'leddmx-03': 'LED strip with moving effects (model 03)',
+      'leddmx-04': 'LED strip with moving effects (model 04, with white)',
     },
-    defaultProductHint: 'Addressable LED controller',
+    defaultProductHint: 'LED strip with moving effects',
     isLighting: true,
     createDriver: (ble, device, prefs, advName) => LedDmxDriver(
         ble, device, prefs,
@@ -299,7 +299,7 @@ final List<DetectionRule> detectionRules = [
   ),
   DetectionRule(
     driverId: AmbientLightDriver.id,
-    label: 'Car ambient lighting (AmbientLight app)',
+    label: 'Interior mood lights (AmbientLight app)',
     // AmbientLight (com.lomo.ambientlight 1.81.10) has no name rule of its
     // own: it lists anything advertising AF30, FFF0 or FEE7 (minus names
     // starting ZYCL- / CAL-TK4 / BLE-LIGHT). None of those can be claimed
@@ -309,13 +309,13 @@ final List<DetectionRule> detectionRules = [
     // "Add as…" and verified at connect (it must expose FFE0/FFE2).
     // docs/ambientlight_findings.md.
     namePrefixes: const ['ATW'],
-    defaultProductHint: 'Car ambient lighting',
+    defaultProductHint: 'Interior mood lights',
     isLighting: true,
     createDriver: (ble, device, prefs, _) => AmbientLightDriver(ble, device, prefs),
   ),
   DetectionRule(
     driverId: TerraxRfDriver.id,
-    label: 'Auxiliary lights (TERRAX Wireless Switch)',
+    label: 'TERRAX extra lights (TERRAX Wireless Switch)',
     // Our own ESP32 firmware (firmware/terrax_rf_bridge): advertises the name
     // "TERRAX WIRELESS SWITCH" and a 128-bit service UUID nothing else uses.
     // "TERRAX-RF" covers prototype firmware flashed before the rename.
@@ -327,12 +327,12 @@ final List<DetectionRule> detectionRules = [
   ),
   DetectionRule(
     driverId: IntelligoDriver.id,
-    label: 'Running board (IntelliGo)',
+    label: 'Electric side steps (IntelliGo)',
     // No fixed advertised service — transport is discovered at runtime, so
     // detection is by name prefix only. 'DianDongTaBan' ("electric step board")
     // is the name real boards advertise (verified 2026-08-03).
     namePrefixes: const ['IntelliGo', 'INTELLIGO', 'IntelliGO', 'DianDongTaBan'],
-    defaultProductHint: 'Running board',
+    defaultProductHint: 'Electric side steps',
     createDriver: (ble, device, prefs, _) => IntelligoDriver(ble, device, prefs),
   ),
 ];

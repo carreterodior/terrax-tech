@@ -162,10 +162,13 @@ void main() {
       expect(Elk7eCommands.effectNames.length, 29);
       expect(Elk7eCommands.effectIdBase, 0x80);
       // Spot-checks against the app's `modes` array order.
-      expect(Elk7eCommands.effectNames.first, 'Static red');
-      expect(Elk7eCommands.effectNames[7], 'Three-colour jumping change');
-      expect(Elk7eCommands.effectNames[17], 'White gradual change');
-      expect(Elk7eCommands.effectNames.last, 'White strobe flash');
+      // Names are the app's modes reworded in plain words (the vendor's
+      // "Static red", "Three-colour jumping change", "White gradual change",
+      // "White strobe flash").
+      expect(Elk7eCommands.effectNames.first, 'Solid red');
+      expect(Elk7eCommands.effectNames[7], 'Three colours blinking in turn');
+      expect(Elk7eCommands.effectNames[17], 'White fade in and out');
+      expect(Elk7eCommands.effectNames.last, 'Fast flashing white');
       // So the highest id is 0x9C.
       expect(
           Elk7eCommands.effectIdBase + Elk7eCommands.effectNames.length - 1,

@@ -108,8 +108,8 @@ class AuxLampControls extends StatelessWidget {
         if (modes.isNotEmpty) ...[
           const SizedBox(height: TxSpace.m),
           Text(
-            'Colour changes with a quick off-on flick of the lamp. If the lamp shows a different '
-            'colour than selected, correct it under Setup.',
+            'The light blinks off for a moment when it changes colour. That is normal. If it shows '
+            'a different colour than you picked, fix it in the settings below.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textMuted),
           ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../ble/device_driver.dart';
+import '../widgets/tx_components.dart';
 
 /// Renders a driver's [DriverSetting]s generically — the UI never knows what
 /// protocol detail a setting maps to.
@@ -20,7 +21,7 @@ void showDriverSettingsSheet(BuildContext context, DeviceDriver driver) {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Text('Device settings',
+                child: Text('Settings',
                     style: Theme.of(builderContext).textTheme.titleLarge),
               ),
               for (final setting in driver.settings)
@@ -68,7 +69,7 @@ void showDriverSettingsSheet(BuildContext context, DeviceDriver driver) {
                             ScaffoldMessenger.of(builderContext).showSnackBar(
                                 SnackBar(
                                     content:
-                                        Text('${setting.label} failed: $e')));
+                                        Text(txSendFailedMessage(setting.label, e))));
                           }
                         }
                       },

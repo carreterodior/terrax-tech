@@ -6,7 +6,7 @@ import '../../state/device_controller.dart';
 import '../theme.dart';
 import '../widgets/tx_components.dart';
 
-/// Motorized-accessory controls: deploy / pause / retract + courtesy light.
+/// Motorized-accessory controls: step out / stop / step in + step light.
 /// The vehicle above animates the board; this card is the physical switch.
 class AutomotiveControls extends StatelessWidget {
   final DeviceController controller;
@@ -42,8 +42,8 @@ class AutomotiveControls extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           switch (extended) {
-                            true => 'Deployed',
-                            false => 'Retracted',
+                            true => 'Step is out',
+                            false => 'Step is in',
                             null => 'Position unknown',
                           },
                           style: theme.textTheme.headlineSmall
@@ -63,7 +63,7 @@ class AutomotiveControls extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: TxSpace.s),
                   child: Text(
-                    'Manual mode is off — enable it under Functions to drive the board from the app.',
+                    'Manual mode is off. Turn on "Manual mode" in the Functions tab below to move the step from your phone.',
                     style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textMuted),
                   ),
                 ),
@@ -73,7 +73,7 @@ class AutomotiveControls extends StatelessWidget {
                   Expanded(
                     child: _MotionButton(
                       icon: Icons.keyboard_double_arrow_down_rounded,
-                      label: 'Deploy',
+                      label: 'Step out',
                       active: extended == true,
                       onPressed: controller.extend,
                     ),
@@ -83,7 +83,7 @@ class AutomotiveControls extends StatelessWidget {
                     Expanded(
                       child: _MotionButton(
                         icon: Icons.pause_rounded,
-                        label: 'Pause',
+                        label: 'Stop',
                         active: false,
                         onPressed: controller.stop,
                       ),
@@ -93,7 +93,7 @@ class AutomotiveControls extends StatelessWidget {
                   Expanded(
                     child: _MotionButton(
                       icon: Icons.keyboard_double_arrow_up_rounded,
-                      label: 'Retract',
+                      label: 'Step in',
                       active: extended == false,
                       onPressed: controller.retract,
                     ),
@@ -102,7 +102,7 @@ class AutomotiveControls extends StatelessWidget {
               ),
               if (caps.hasDeviceLight) ...[
                 const SizedBox(height: TxSpace.m),
-                TxButton('Courtesy light',
+                TxButton('Step light',
                     icon: Icons.light_mode_outlined,
                     filled: false,
                     onPressed: () => controller.setDeviceLight(true)),
@@ -118,7 +118,7 @@ class AutomotiveControls extends StatelessWidget {
               const SizedBox(width: TxSpace.s),
               Expanded(
                 child: Text(
-                  'Keep the area around the board clear before operating.',
+                  'Make sure no one is standing near the step before moving it.',
                   style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textMuted),
                 ),
               ),

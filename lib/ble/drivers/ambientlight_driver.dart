@@ -229,9 +229,9 @@ class AmbientLightCommands {
 /// Grammar chosen from the status reply code.
 enum AmbientLightVariant {
   legacy(0x12, 'Classic'),
-  v1(0x1F, 'Grouped'),
-  v2(0x4E, 'Grouped + Piled Up'),
-  v3(0x5A, 'Grouped + Water Ripple');
+  v1(0x1F, 'Standard'),
+  v2(0x4E, 'Standard + stacking effects'),
+  v3(0x5A, 'Standard + water ripple effects');
 
   final int statusCode;
   final String label;
@@ -254,14 +254,14 @@ const List<(String, Rgb)> ambientLightPalette = [
   ('Light cyan', Rgb(0x46, 0xFF, 0xFF)),
   ('Blue', Rgb(0x00, 0x00, 0xFF)),
   ('Purple', Rgb(0x8B, 0x00, 0xFF)),
-  ('Crimson', Rgb(0xFF, 0x00, 0x20)),
+  ('Deep red', Rgb(0xFF, 0x00, 0x20)),
   ('Magenta', Rgb(0xFF, 0x00, 0xFF)),
   ('White', Rgb(0xFF, 0xFF, 0xFF)),
   ('Spring green', Rgb(0x00, 0xFF, 0x80)),
   ('Mint', Rgb(0x51, 0xFF, 0xAE)),
   ('Coral', Rgb(0xFF, 0x2C, 0x40)),
   ('Pale green', Rgb(0xC1, 0xFF, 0x98)),
-  ('Periwinkle', Rgb(0x59, 0x6E, 0xFF)),
+  ('Soft blue', Rgb(0x59, 0x6E, 0xFF)),
 ];
 
 /// Effect ids exposed through the driver contract: RGB-tab modes are
@@ -284,37 +284,40 @@ List<(int, String)> ambientLightEffects(AmbientLightVariant v) {
     }
   }
 
+  // Names are plain-English rewrites of the vendor's (RGB tab → "Whole strip …",
+  // "Breathe" → "pulse", "Gradient" → "fade", "Strobe" → "flash",
+  // "Rhythm" → music, "R&B" → "Red & blue", "Sync RGB" → "Same as main colour").
   if (v == AmbientLightVariant.legacy) {
-    rgb('RGB', const [(0x00, 'Single'), (0x01, 'Rhythm'), (0x02, 'Breathe'), (0x03, 'Gradient'), (0x04, 'Automatic'), (0x06, 'Strobe')]);
-    sym('Colour', const [(0x00, 'Sync RGB'), (0x01, 'Illusion'), (0x02, 'Rhythm'), (0x03, 'Colorful'), (0x04, 'Dazzle'), (0x05, 'Light')]);
+    rgb('Whole strip', const [(0x00, 'One colour'), (0x01, 'Music beat'), (0x02, 'Gentle pulse'), (0x03, 'Colour fade'), (0x04, 'Automatic'), (0x06, 'Fast flash')]);
+    sym('Moving effects', const [(0x00, 'Same as main colour'), (0x01, 'Illusion'), (0x02, 'Music beat'), (0x03, 'Colourful'), (0x04, 'Dazzle'), (0x05, 'Light')]);
     return out;
   }
-  rgb('RGB Single', const [(0x00, 'Single'), (0x01, 'Colorful'), (0x02, 'Random')]);
-  rgb('RGB Breathe', const [(0x03, 'Single'), (0x04, 'Colorful'), (0x05, 'Random')]);
-  rgb('RGB Gradient', const [(0x06, 'Colorful'), (0x07, 'C&Y&Pe'), (0x08, 'R&Y&P'), (0x09, 'R&B'), (0x0A, 'G&B'), (0x0B, 'Random')]);
-  rgb('RGB Strobe', const [(0x0C, 'Colorful'), (0x0D, 'R&G&B'), (0x0E, 'C&Y&Pe')]);
-  rgb('RGB Rhythm', const [(0x0F, 'Colorful'), (0x10, 'R&Y&P'), (0x11, 'C&Y&Pe')]);
-  rgb('RGB Motion', const [(0x12, 'B&R'), (0x13, 'R&G'), (0x14, 'R&C')]);
+  rgb('Whole strip', const [(0x00, 'One colour'), (0x01, 'Colourful'), (0x02, 'Random')]);
+  rgb('Whole strip pulse', const [(0x03, 'One colour'), (0x04, 'Colourful'), (0x05, 'Random')]);
+  rgb('Whole strip fade', const [(0x06, 'Colourful'), (0x07, 'Cyan, yellow & pink'), (0x08, 'Red, yellow & purple'), (0x09, 'Red & blue'), (0x0A, 'Green & blue'), (0x0B, 'Random')]);
+  rgb('Whole strip flash', const [(0x0C, 'Colourful'), (0x0D, 'Red, green & blue'), (0x0E, 'Cyan, yellow & pink')]);
+  rgb('Whole strip music', const [(0x0F, 'Colourful'), (0x10, 'Red, yellow & purple'), (0x11, 'Cyan, yellow & pink')]);
+  rgb('Whole strip motion', const [(0x12, 'Blue & red'), (0x13, 'Red & green'), (0x14, 'Red & cyan')]);
 
   final extended = v == AmbientLightVariant.v2 || v == AmbientLightVariant.v3;
-  sym('Illusion', const [(0x00, 'Illusion'), (0x01, 'Light'), (0x02, 'Breathe')]);
-  sym('Streamer', [
-    (0x03, 'Streamer'),
+  sym('Illusion', const [(0x00, 'Illusion'), (0x01, 'Light'), (0x02, 'Gentle pulse')]);
+  sym('Streaming', [
+    (0x03, 'Streaming'),
     (0x04, 'Closing'),
     (0x05, 'Optical'),
-    (0x06, 'Pull Curtain'),
+    (0x06, 'Curtain pull'),
     (0x07, 'Closing 2'),
-    extended ? (0x19, 'Table Tennis') : (0x08, 'Piled Up'),
-    (0x09, 'CTL'),
+    extended ? (0x19, 'Ping-pong') : (0x08, 'Pile up'),
+    (0x09, 'Combo'),
     (0x0A, 'Magic'),
     (0x0B, 'Meteor'),
   ]);
-  sym('Tailing', const [(0x0C, 'Colorful'), (0x0D, 'Colorful 2'), (0x0E, 'Single')]);
-  if (extended) sym('Piled Up', const [(0x08, 'Piled Up'), (0x1A, 'Stack'), (0x1B, 'Group')]);
-  sym('Rhythm', const [(0x0F, 'Spectrum'), (0x10, 'Stretch'), (0x11, 'Optical'), (0x12, 'Snap-in'), (0x13, 'Beam'), (0x14, 'Single')]);
-  sym('Motion', const [(0x15, 'Stretch'), (0x16, 'Snap-in'), (0x17, 'R&B')]);
-  if (v == AmbientLightVariant.v3) sym('Water Ripple', const [(0x1C, 'Follow'), (0x1D, 'Phantom'), (0x1E, 'Colorful')]);
-  sym('Single', const [(0x18, 'Sync RGB')]);
+  sym('Comet tail', const [(0x0C, 'Colourful'), (0x0D, 'Colourful 2'), (0x0E, 'One colour')]);
+  if (extended) sym('Stacking', const [(0x08, 'Pile up'), (0x1A, 'Stack'), (0x1B, 'Groups')]);
+  sym('To the music', const [(0x0F, 'Spectrum'), (0x10, 'Stretch'), (0x11, 'Optical'), (0x12, 'Snap-in'), (0x13, 'Beam'), (0x14, 'One colour')]);
+  sym('Motion', const [(0x15, 'Stretch'), (0x16, 'Snap-in'), (0x17, 'Red & blue')]);
+  if (v == AmbientLightVariant.v3) sym('Water ripple', const [(0x1C, 'Follow'), (0x1D, 'Ghost'), (0x1E, 'Colourful')]);
+  sym('Steady', const [(0x18, 'Same as main colour')]);
   return out;
 }
 
@@ -452,12 +455,12 @@ class AmbientLightDriver extends DeviceDriver with DriverStateMixin {
   List<DriverSection> get sections => [
         DriverSection('Zones', [
           DriverOptionSetting<int>('Colour applies to',
-              description: 'Which zone the colour wheel paints (the app\'s All / Zone1 / Zone2).',
+              description: 'Which lights the colour wheel changes.',
               value: _zone,
               options: const [(value: 0, label: 'All zones'), (value: 1, label: 'Zone 1'), (value: 2, label: 'Zone 2')],
               onChanged: setColorZone),
           DriverOptionSetting<int>('Power mode',
-              description: 'Auto follows the car (needs the original-car wiring).',
+              description: 'Auto turns the lights on and off with the car (needs the kit wired to the car).',
               value: _powerMode,
               options: const [(value: 0, label: 'Off'), (value: 1, label: 'On'), (value: 2, label: 'Auto')],
               onChanged: setPowerMode),
@@ -465,113 +468,130 @@ class AmbientLightDriver extends DeviceDriver with DriverStateMixin {
               value: _zone1Level, min: 0, max: 9, onChanged: setZone1Brightness),
           DriverSliderSetting(_partition == 0 ? 'Zone 2 brightness' : 'Footwell brightness',
               value: _zone2Level, min: 0, max: 9, onChanged: setZone2Brightness),
-          DriverOptionSetting<int>('Brightness partition',
+          DriverOptionSetting<int>('Brightness split',
+              description: 'How the lights are split between the two brightness sliders above.',
               value: _partition,
               options: const [(value: 0, label: 'Up and down'), (value: 1, label: 'Front and back')],
               onChanged: setPartition),
-          DriverToggleSetting('Night dimming', value: _night, onChanged: (v) => setNightReduction(v, _nightLevel)),
+          DriverToggleSetting('Night dimming',
+              description: 'Makes the lights dimmer at night.',
+              value: _night, onChanged: (v) => setNightReduction(v, _nightLevel)),
           DriverSliderSetting('Night dimming level',
               value: _nightLevel.clamp(1, 5), min: 1, max: 5, onChanged: (v) => setNightReduction(_night, v)),
-          DriverOptionSetting<int>('Control method',
+          DriverOptionSetting<int>('Who controls the lights',
+              description: 'Choose whether the car\'s own buttons can also change the lights.',
               value: _controlMethod,
-              options: const [(value: 0, label: 'Original car + phone'), (value: 1, label: 'Phone only')],
+              options: const [(value: 0, label: 'Car buttons + phone'), (value: 1, label: 'Phone only')],
               onChanged: setControlMethod),
         ], icon: DriverSectionIcon.lights),
         DriverSection('Effects', [
-          DriverSliderSetting('Colour effect speed',
-              description: 'Speed of the Colour-tab (addressable) effects.',
+          DriverSliderSetting('Effect speed',
+              description: 'How fast the moving effects play.',
               value: _symSpeed, min: 1, max: 5, onChanged: setSymphonySpeed),
-          DriverOptionSetting<int>('Flow direction',
+          DriverOptionSetting<int>('Direction',
+              description: 'Which way the moving effects travel.',
               value: _direction,
               options: const [(value: 0, label: 'Forward'), (value: 1, label: 'Reverse')],
               onChanged: setDirection),
           if (!isLegacy) ...[
-            DriverOptionSetting<int>('Common effects',
+            DriverOptionSetting<int>('Quick effects',
+                description: 'Ready-made effects stored in the light box.',
                 value: _commonEffect,
                 options: const [
-                  (value: 0, label: 'Ambilight'),
-                  (value: 1, label: 'R&B Ambilight'),
-                  (value: 2, label: 'R&P Ambilight'),
-                  (value: 3, label: 'Colorful Tail'),
-                  (value: 4, label: 'Color Water'),
-                  (value: 5, label: 'Sport Bar'),
-                  (value: 6, label: 'Colorful Music'),
-                  (value: 7, label: 'Sport Music'),
+                  (value: 0, label: 'Soft glow'),
+                  (value: 1, label: 'Red & blue glow'),
+                  (value: 2, label: 'Red & purple glow'),
+                  (value: 3, label: 'Colourful tail'),
+                  (value: 4, label: 'Colour water'),
+                  (value: 5, label: 'Sport bar'),
+                  (value: 6, label: 'Colourful music'),
+                  (value: 7, label: 'Sport music'),
                 ],
                 onChanged: setCommonEffect),
-            DriverOptionSetting<int>('Effect toggle',
+            DriverOptionSetting<int>('Effect set',
+                description: 'Switches between the light box\'s six built-in effect sets.',
                 value: _effectToggle,
-                options: [for (var i = 1; i <= 6; i++) (value: i, label: '0$i')],
+                options: [for (var i = 1; i <= 6; i++) (value: i, label: 'Set $i')],
                 onChanged: setEffectToggle),
           ],
         ], icon: DriverSectionIcon.lights),
         if (_customSupported || !_variantKnown) ...[
-          DriverSection('Custom RGB', [
-            DriverToggleSetting('Custom colour sequence', value: _rgbCustomOn, onChanged: setRgbCustomEnabled),
+          DriverSection('My colour mix', [
+            DriverToggleSetting('Use my colour mix',
+                description: 'The whole strip steps through the colours you pick below.',
+                value: _rgbCustomOn, onChanged: setRgbCustomEnabled),
             for (var i = 0; i < 8; i++)
               DriverOptionSetting<int>('Colour ${i + 1}',
                   value: _rgbCustom[i], options: _slotOptions, onChanged: (v) => setRgbCustomSlot(i, v)),
-            DriverSliderSetting('Sequence speed',
+            DriverSliderSetting('Mix speed',
                 value: _rgbCustomSpeed, min: 1, max: 10, onChanged: setRgbCustomSpeed),
-            DriverButtonSetting('Clear sequence', run: clearRgbCustom),
+            DriverButtonSetting('Clear my colours', run: clearRgbCustom),
           ]),
-          DriverSection('Custom effect', [
-            DriverToggleSetting('Custom effect colours', value: _symCustomOn, onChanged: setSymphonyCustomEnabled),
+          DriverSection('My moving effect', [
+            DriverToggleSetting('Use my effect colours',
+                description: 'The moving effect uses the colours you pick below.',
+                value: _symCustomOn, onChanged: setSymphonyCustomEnabled),
             for (var i = 0; i < 8; i++)
               DriverOptionSetting<int>('Colour ${i + 1}',
                   value: _symCustom[i], options: _slotOptions, onChanged: (v) => setSymphonyCustomSlot(i, v)),
-            DriverSliderSetting('Length', value: _symCustomLength, min: 1, max: 10, onChanged: setSymphonyCustomLength),
-            DriverSliderSetting('Interval', value: _symCustomInterval, min: 0, max: 9, onChanged: setSymphonyCustomInterval),
-            DriverButtonSetting('Clear effect colours', run: clearSymphonyCustom),
+            DriverSliderSetting('Colour length', value: _symCustomLength, min: 1, max: 10, onChanged: setSymphonyCustomLength),
+            DriverSliderSetting('Gap between colours', value: _symCustomInterval, min: 0, max: 9, onChanged: setSymphonyCustomInterval),
+            DriverButtonSetting('Clear my effect colours', run: clearSymphonyCustom),
           ]),
         ],
         DriverSection('Music', [
-          DriverInfoSetting('Sound reactive',
-              value: 'Pick a Rhythm effect (or Colorful / Sport Music). The controller '
-                  'listens itself; the phone microphone is not used.'),
-          DriverOptionSetting<int>('Sound source',
+          DriverInfoSetting('Lights to music',
+              value: 'Pick a music effect (or Colourful music / Sport music under Quick '
+                  'effects). The light box listens with its own microphone; your '
+                  'phone\'s microphone is not used.'),
+          DriverOptionSetting<int>('Listen to',
               value: _soundSource,
-              options: const [(value: 0, label: 'Built-in microphone'), (value: 1, label: 'Original car horn')],
+              options: const [(value: 0, label: 'Light box microphone'), (value: 1, label: 'Car horn')],
               onChanged: setSoundSource),
-          DriverSliderSetting('Microphone sensitivity', value: _micLevel, min: 0, max: 9, onChanged: setMicSensitivity),
+          DriverSliderSetting('Microphone sensitivity',
+              description: 'Higher reacts to quieter sounds.',
+              value: _micLevel, min: 0, max: 9, onChanged: setMicSensitivity),
         ]),
         DriverSection('Welcome', [
-          DriverToggleSetting('Welcome lighting', value: _welcome, onChanged: setWelcome),
-          DriverOptionSetting<int>('Welcome mode',
+          DriverToggleSetting('Welcome lighting',
+              description: 'A light show to greet you when you get in the car.',
+              value: _welcome, onChanged: setWelcome),
+          DriverOptionSetting<int>('Welcome style',
               value: _welcomeMode,
               options: const [
-                (value: 0, label: 'Center'),
+                (value: 0, label: 'Centre'),
                 (value: 1, label: 'Door'),
                 (value: 2, label: 'Door & colour'),
-                (value: 3, label: 'Four-door sync 1'),
-                (value: 4, label: 'Four-door sync 2'),
-                (value: 5, label: 'Four-door sync 3'),
+                (value: 3, label: 'All four doors 1'),
+                (value: 4, label: 'All four doors 2'),
+                (value: 5, label: 'All four doors 3'),
               ],
               onChanged: setWelcomeMode),
           DriverOptionSetting<int>('Welcome colour',
               value: _welcomeColor,
-              options: [..._paletteOptions, if (_syncRgbSupported || !_variantKnown) (value: 15, label: 'Sync RGB')],
+              options: [..._paletteOptions, if (_syncRgbSupported || !_variantKnown) (value: 15, label: 'Same as main colour')],
               onChanged: setWelcomeColor),
         ]),
-        DriverSection('Linkage', [
-          DriverInfoSetting('Car signals',
-              value: 'Light reacts to the car. Some need the CAN or small-light '
-                  'wiring; the controller says so if it is missing.'),
-          DriverToggleSetting('Door', value: _links[AmbientLightCommands.linkDoor] ?? false,
+        DriverSection('React to the car', [
+          DriverInfoSetting('How it works',
+              value: 'The lights react to what the car is doing. Some of these need an '
+                  'extra wire to the car (car data or parking-light wire); the light '
+                  'box will tell you if one is missing.'),
+          DriverToggleSetting('Door opens', value: _links[AmbientLightCommands.linkDoor] ?? false,
               onChanged: (v) => setLinkage(AmbientLightCommands.linkDoor, v)),
-          DriverToggleSetting('Radar', value: _links[AmbientLightCommands.linkRadar] ?? false,
+          DriverToggleSetting('Parking sensors', value: _links[AmbientLightCommands.linkRadar] ?? false,
               onChanged: (v) => setLinkage(AmbientLightCommands.linkRadar, v)),
-          DriverToggleSetting('Speed', value: _links[AmbientLightCommands.linkSpeed] ?? false,
+          DriverToggleSetting('Driving speed', value: _links[AmbientLightCommands.linkSpeed] ?? false,
               onChanged: (v) => setLinkage(AmbientLightCommands.linkSpeed, v)),
           DriverToggleSetting('Turn signal', value: _links[AmbientLightCommands.linkSteering] ?? false,
               onChanged: (v) => setLinkage(AmbientLightCommands.linkSteering, v)),
-          DriverToggleSetting('Air conditioning', value: _links[AmbientLightCommands.linkAir] ?? false,
+          DriverToggleSetting('Aircon', value: _links[AmbientLightCommands.linkAir] ?? false,
               onChanged: (v) => setLinkage(AmbientLightCommands.linkAir, v)),
           if (_blindSupported || !_variantKnown)
-            DriverToggleSetting('Blind spot', value: _links[AmbientLightCommands.linkBlindSpot] ?? false,
+            DriverToggleSetting('Blind-spot warning', value: _links[AmbientLightCommands.linkBlindSpot] ?? false,
                 onChanged: (v) => setLinkage(AmbientLightCommands.linkBlindSpot, v)),
-          DriverOptionSetting<int>('Door colour', value: _doorColor, options: _signalColors, onChanged: setDoorColor),
-          DriverOptionSetting<int>('Turn colour', value: _turnColor, options: _signalColors, onChanged: setTurnColor),
+          DriverOptionSetting<int>('Door-open colour', value: _doorColor, options: _signalColors, onChanged: setDoorColor),
+          DriverOptionSetting<int>('Turn-signal colour', value: _turnColor, options: _signalColors, onChanged: setTurnColor),
           if (_blindSupported || !_variantKnown)
             DriverOptionSetting<int>('Blind-spot colour',
                 value: _blindColor,
@@ -584,63 +604,77 @@ class AmbientLightDriver extends DeviceDriver with DriverStateMixin {
                 value: _mirrorMode,
                 options: const [(value: 0, label: 'Off'), (value: 1, label: 'On'), (value: 2, label: 'Auto')],
                 onChanged: setMirrorMode),
-            DriverInfoSetting('Delays', value: 'Seconds the light stays on (0 = off). Forced off above 15 km/h.'),
-            DriverSliderSetting('After unlock', value: _mirrorDelays[AmbientLightCommands.mirrorUnlock]!, min: 0, max: 60,
+            DriverInfoSetting('How long it stays on',
+                value: 'Seconds the mirror light stays on (0 = off). It always turns off above 15 km/h.'),
+            DriverSliderSetting('After unlocking', value: _mirrorDelays[AmbientLightCommands.mirrorUnlock]!, min: 0, max: 60,
                 onChanged: (v) => setMirrorDelay(AmbientLightCommands.mirrorUnlock, v)),
-            DriverSliderSetting('After door', value: _mirrorDelays[AmbientLightCommands.mirrorDoor]!, min: 0, max: 60,
+            DriverSliderSetting('After a door opens', value: _mirrorDelays[AmbientLightCommands.mirrorDoor]!, min: 0, max: 60,
                 onChanged: (v) => setMirrorDelay(AmbientLightCommands.mirrorDoor, v)),
             DriverSliderSetting('After turn signal', value: _mirrorDelays[AmbientLightCommands.mirrorTurn]!, min: 0, max: 60,
                 onChanged: (v) => setMirrorDelay(AmbientLightCommands.mirrorTurn, v)),
-            DriverSliderSetting('After reverse', value: _mirrorDelays[AmbientLightCommands.mirrorReverse]!, min: 0, max: 60,
+            DriverSliderSetting('After reversing', value: _mirrorDelays[AmbientLightCommands.mirrorReverse]!, min: 0, max: 60,
                 onChanged: (v) => setMirrorDelay(AmbientLightCommands.mirrorReverse, v)),
           ]),
-        DriverSection('Installer', [
+        DriverSection('Installer only', [
           DriverInfoSetting('Installer setup',
-              value: 'The app\'s hidden Factory screen. Only change these while '
-                  'installing; wrong values make the kit light the wrong LEDs.',
+              value: 'For the installer only. Change these only while fitting the kit; '
+                  'wrong values make the wrong lights turn on.',
               isAlert: true),
-          DriverToggleSetting('Factory mode', value: _factoryMode, onChanged: setFactoryMode),
-          DriverSliderSetting('Driver side LEDs', value: _ledCounts[AmbientLightCommands.ledHost]!, min: 30, max: 200,
+          DriverToggleSetting('Setup mode',
+              description: 'Turn on while installing the kit.',
+              value: _factoryMode, onChanged: setFactoryMode),
+          DriverSliderSetting('Number of lights: driver side', value: _ledCounts[AmbientLightCommands.ledHost]!, min: 30, max: 200,
               onChanged: (v) => setLedCount(AmbientLightCommands.ledHost, v)),
-          DriverSliderSetting('Passenger side LEDs', value: _ledCounts[AmbientLightCommands.ledCopilot]!, min: 30, max: 200,
+          DriverSliderSetting('Number of lights: passenger side', value: _ledCounts[AmbientLightCommands.ledCopilot]!, min: 30, max: 200,
               onChanged: (v) => setLedCount(AmbientLightCommands.ledCopilot, v)),
-          DriverSliderSetting('Front LEDs', value: _ledCounts[AmbientLightCommands.ledFront]!, min: 30, max: 200,
+          DriverSliderSetting('Number of lights: front', value: _ledCounts[AmbientLightCommands.ledFront]!, min: 30, max: 200,
               onChanged: (v) => setLedCount(AmbientLightCommands.ledFront, v)),
-          DriverSliderSetting('Rear LEDs', value: _ledCounts[AmbientLightCommands.ledRear]!, min: 30, max: 200,
+          DriverSliderSetting('Number of lights: back', value: _ledCounts[AmbientLightCommands.ledRear]!, min: 30, max: 200,
               onChanged: (v) => setLedCount(AmbientLightCommands.ledRear, v)),
-          DriverSliderSetting('Third-row LEDs', value: _ledCounts[AmbientLightCommands.ledThirdRow]!, min: 0, max: 200,
+          DriverSliderSetting('Number of lights: third row', value: _ledCounts[AmbientLightCommands.ledThirdRow]!, min: 0, max: 200,
               onChanged: (v) => setLedCount(AmbientLightCommands.ledThirdRow, v)),
           for (final (code, label, a, b) in _directionRows)
             DriverOptionSetting<int>(label,
                 value: _directions[code],
                 options: [(value: 0, label: a), (value: 1, label: b)],
                 onChanged: (v) => setLedDirection(code, v)),
-          DriverButtonSetting('Show result', description: 'Lights the strips with the settings above.',
+          DriverButtonSetting('Test the lights', description: 'Lights up the strips with the settings above.',
               run: () => _send(AmbientLightCommands.showResult(true))),
-          DriverButtonSetting('Stop showing result', run: () => _send(AmbientLightCommands.showResult(false))),
-          DriverButtonSetting('Door swap: swap', run: () => _send(AmbientLightCommands.doorSwap(1))),
-          DriverButtonSetting('Door swap: activate', run: () => _send(AmbientLightCommands.doorSwap(0))),
-          DriverButtonSetting('Door swap: confirm', run: () => _send(AmbientLightCommands.doorSwap(2))),
-          DriverButtonSetting('Door swap: reset', run: () => _send(AmbientLightCommands.doorSwap(3))),
-          DriverTextSetting('DIP switches: model (8 × 0/1)', value: _dipModel, onChanged: (v) => setDip(model: v)),
-          DriverTextSetting('DIP switches: functions (8 × 0/1)', value: _dipFunction, onChanged: (v) => setDip(function: v)),
-          DriverSliderSetting('Light parameter number', value: _lightParameter, min: 0, max: 999, onChanged: setLightParameter),
+          DriverButtonSetting('Stop the test', run: () => _send(AmbientLightCommands.showResult(false))),
+          DriverButtonSetting('Swap doors: swap',
+              description: 'Use these if the left and right doors are mixed up.',
+              run: () => _send(AmbientLightCommands.doorSwap(1))),
+          DriverButtonSetting('Swap doors: activate', run: () => _send(AmbientLightCommands.doorSwap(0))),
+          DriverButtonSetting('Swap doors: confirm', run: () => _send(AmbientLightCommands.doorSwap(2))),
+          DriverButtonSetting('Swap doors: undo', run: () => _send(AmbientLightCommands.doorSwap(3))),
+          DriverTextSetting('Model code (8 digits of 0 or 1)',
+              description: 'From the kit\'s setup sheet, e.g. 01000000.',
+              value: _dipModel, onChanged: (v) => setDip(model: v)),
+          DriverTextSetting('Feature code (8 digits of 0 or 1)',
+              description: 'From the kit\'s setup sheet, e.g. 01000000.',
+              value: _dipFunction, onChanged: (v) => setDip(function: v)),
+          DriverSliderSetting('Light setting number',
+              description: 'From the kit\'s setup sheet.',
+              value: _lightParameter, min: 0, max: 999, onChanged: setLightParameter),
           DriverTextSetting('Customer code', value: _customerCode, onChanged: setCustomerCode),
-          DriverButtonSetting('Flash original car lights', run: () => _send(AmbientLightCommands.flashOriginalLights())),
-          DriverButtonSetting('Learn key: wake button', run: () => _send(AmbientLightCommands.keyLearning(1))),
-          DriverButtonSetting('Learn key: flow mode', run: () => _send(AmbientLightCommands.keyLearning(2))),
-          DriverButtonSetting('Learn key: mode / colour +', run: () => _send(AmbientLightCommands.keyLearning(4))),
-          DriverButtonSetting('Learn key: brightness / colour −', run: () => _send(AmbientLightCommands.keyLearning(5))),
+          DriverButtonSetting('Flash the car\'s own lights', run: () => _send(AmbientLightCommands.flashOriginalLights())),
+          DriverButtonSetting('Pair button: wake',
+              description: 'Tap, then press the matching button on the kit\'s switch.',
+              run: () => _send(AmbientLightCommands.keyLearning(1))),
+          DriverButtonSetting('Pair button: effects', run: () => _send(AmbientLightCommands.keyLearning(2))),
+          DriverButtonSetting('Pair button: mode / colour +', run: () => _send(AmbientLightCommands.keyLearning(4))),
+          DriverButtonSetting('Pair button: brightness / colour −', run: () => _send(AmbientLightCommands.keyLearning(5))),
         ]),
-        DriverSection('Device', [
-          if (_lastNotice != null) DriverInfoSetting('Controller says', value: _lastNotice!, isAlert: true),
-          DriverInfoSetting('Firmware', value: 'Hardware $_hardware · software $_software'),
-          DriverInfoSetting('Car / company', value: _company),
-          DriverInfoSetting('Protocol', value: _variantKnown ? variant.label : 'Waiting for status…'),
-          DriverInfoSetting('Services found', value: _gattRows.isEmpty ? 'none yet' : _gattRows.join('\n')),
-          DriverButtonSetting('Refresh from controller', run: () => _send(AmbientLightCommands.query())),
-          DriverButtonSetting('Factory reset',
-              description: 'Restores the controller\'s own defaults (colours, modes, welcome, linkage).',
+        DriverSection('About this light', [
+          if (_lastNotice != null) DriverInfoSetting('Message from the light', value: _lastNotice!, isAlert: true),
+          DriverInfoSetting('Software version', value: 'Hardware $_hardware · software $_software'),
+          DriverInfoSetting('Car / brand code', value: _company),
+          DriverInfoSetting('Kit type', value: _variantKnown ? variant.label : 'Checking…'),
+          DriverInfoSetting('Bluetooth details (for TERRAX support)',
+              value: _gattRows.isEmpty ? 'None yet' : _gattRows.join('\n')),
+          DriverButtonSetting('Refresh from the light', run: () => _send(AmbientLightCommands.query())),
+          DriverButtonSetting('Reset to factory settings',
+              description: 'Puts the light box back the way it came (colours, effects, welcome and car signals).',
               run: () => _send(AmbientLightCommands.factoryReset())),
         ], icon: DriverSectionIcon.info),
       ];
@@ -653,16 +687,16 @@ class AmbientLightDriver extends DeviceDriver with DriverStateMixin {
   ];
 
   static const List<(String, String, String, String)> _directionRows = [
-    ('2C', 'Driver strip direction', 'Left out', 'Right out'),
-    ('2F', 'Passenger strip direction', 'Left out', 'Right out'),
-    ('23', 'Front strip direction (old layout)', 'Front/back out', 'Front out'),
-    ('2D', 'Rear strip direction (old layout)', 'Front/back out', 'Front out'),
-    ('48', 'Left-front door', 'Back out', 'Front out'),
-    ('49', 'Right-front door', 'Back out', 'Front out'),
-    ('4A', 'Left-rear door', 'Back out', 'Front out'),
-    ('4B', 'Right-rear door', 'Back out', 'Front out'),
-    ('53', 'Third row left', 'Back out', 'Front out'),
-    ('54', 'Third row right', 'Back out', 'Front out'),
+    ('2C', 'Driver strip direction', 'Starts left', 'Starts right'),
+    ('2F', 'Passenger strip direction', 'Starts left', 'Starts right'),
+    ('23', 'Front strip direction (older kits)', 'Front and back', 'Front only'),
+    ('2D', 'Back strip direction (older kits)', 'Front and back', 'Front only'),
+    ('48', 'Left-front door direction', 'Starts at back', 'Starts at front'),
+    ('49', 'Right-front door direction', 'Starts at back', 'Starts at front'),
+    ('4A', 'Left-rear door direction', 'Starts at back', 'Starts at front'),
+    ('4B', 'Right-rear door direction', 'Starts at back', 'Starts at front'),
+    ('53', 'Third row left direction', 'Starts at back', 'Starts at front'),
+    ('54', 'Third row right direction', 'Starts at back', 'Starts at front'),
   ];
 
   // ---- Connection ----
@@ -681,9 +715,9 @@ class AmbientLightDriver extends DeviceDriver with DriverStateMixin {
       }
     }
     if (write == null) {
-      throw StateError('This device has no AmbientLight service (FFE0/FFE2). '
-          'If it is a different product, remove it and use "Add as…" to pick its type. '
-          '(services: ${_gattRows.join('; ')})');
+      throw StateError('This doesn\'t look like an AmbientLight kit, so the app can\'t control it. '
+          'If it is a different product, remove it and use "This is a…" to pick its type. '
+          '(For TERRAX support: no FFE0/FFE2; services: ${_gattRows.join('; ')})');
     }
     _write = write;
     _connected = true;
@@ -715,7 +749,7 @@ class AmbientLightDriver extends DeviceDriver with DriverStateMixin {
 
   Future<void> _send(Uint8List bytes) {
     final w = _write;
-    if (w == null) throw StateError('ambientlight: not connected');
+    if (w == null) throw StateError('The light is not connected.');
     return _ble.write(w, bytes, withoutResponse: true);
   }
 
@@ -982,7 +1016,7 @@ class AmbientLightDriver extends DeviceDriver with DriverStateMixin {
     final m = (model ?? _dipModel).trim();
     final f = (function ?? _dipFunction).trim();
     if (!_bits8.hasMatch(m) || !_bits8.hasMatch(f)) {
-      throw ArgumentError('DIP switches are 8 digits of 0 or 1, e.g. 01000000');
+      throw ArgumentError('Codes must be 8 digits of 0 or 1, e.g. 01000000');
     }
     _dipModel = m;
     _dipFunction = f;
@@ -998,7 +1032,7 @@ class AmbientLightDriver extends DeviceDriver with DriverStateMixin {
 
   Future<void> setCustomerCode(String digits) async {
     final d = digits.trim();
-    if (!RegExp(r'^\d+$').hasMatch(d)) throw ArgumentError('Customer code is digits only');
+    if (!RegExp(r'^\d+$').hasMatch(d)) throw ArgumentError('Customer code must be numbers only');
     _customerCode = d;
     await _send(AmbientLightCommands.customerCode(d));
     emitState(currentState);
@@ -1104,15 +1138,15 @@ class AmbientLightDriver extends DeviceDriver with DriverStateMixin {
         }
       case 0x2E:
         _lastNotice = switch (b.length > 1 ? b[1] : -1) {
-          0 => 'Not supported by this controller.',
+          0 => 'This light doesn\'t support that.',
           1 => 'Done.',
-          2 => 'The controller reported a failure.',
-          3 => 'Needs the small-light wire or the light-sensor kit.',
-          4 => 'Needs the CAN connection or the light-sensor kit.',
-          _ => 'Unknown alert.',
+          2 => 'That didn\'t work. Please try again.',
+          3 => 'This needs the parking-light wire or the light-sensor kit.',
+          4 => 'This needs the car data connection or the light-sensor kit.',
+          _ => 'The light sent a message the app doesn\'t recognise.',
         };
       case 0x19:
-        _lastNotice = 'That function is not supported by this controller.';
+        _lastNotice = 'This light doesn\'t support that feature.';
       case 0x23:
         if (b.length >= 17) {
           _dipModel = b.sublist(1, 9).map((x) => x == 0 ? '0' : '1').join();
@@ -1137,15 +1171,15 @@ class AmbientLightDriver extends DeviceDriver with DriverStateMixin {
         if (b.length > 6) _soundSource = b[6].clamp(0, 1);
       case 0x17:
         _lastNotice = switch (b.length > 1 ? b[1] : -1) {
-          0 => 'Key learned.',
-          1 => 'Key learning failed.',
-          _ => 'Key learning is not supported.',
+          0 => 'Button paired.',
+          1 => 'Button pairing didn\'t work. Please try again.',
+          _ => 'This light can\'t pair buttons.',
         };
       case 0x18:
         _lastNotice = switch (b.length > 1 ? b[1] : -1) {
-          1 => 'Original car lights flashed.',
-          2 => 'Flashing the original car lights failed.',
-          _ => 'Flashing the original car lights is not supported.',
+          1 => 'The car\'s own lights flashed.',
+          2 => 'Couldn\'t flash the car\'s own lights.',
+          _ => 'This light can\'t flash the car\'s own lights.',
         };
       default:
         return;

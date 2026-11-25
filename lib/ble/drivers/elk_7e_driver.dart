@@ -159,37 +159,38 @@ class Elk7eCommands {
   /// Mode ids are the app's `modes` array index + `0x80`.
   static const int effectIdBase = 0x80;
 
-  /// The app's full `modes` array, in order, so index 0 is id `0x80`.
+  /// The app's full `modes` array, in order, so index 0 is id `0x80`. Names
+  /// are the vendor's modes reworded in everyday words; the order is fixed.
   static const List<String> effectNames = [
-    'Static red',
-    'Static blue',
-    'Static green',
-    'Static cyan',
-    'Static yellow',
-    'Static purple',
-    'Static white',
-    'Three-colour jumping change',
-    'Seven-colour jumping change',
-    'Three-colour cross fade',
-    'Seven-colour cross fade',
-    'Red gradual change',
-    'Green gradual change',
-    'Blue gradual change',
-    'Yellow gradual change',
-    'Cyan gradual change',
-    'Purple gradual change',
-    'White gradual change',
-    'Red-green cross fade',
-    'Red-blue cross fade',
-    'Green-blue cross fade',
-    'Seven-colour strobe flash',
-    'Red strobe flash',
-    'Green strobe flash',
-    'Blue strobe flash',
-    'Yellow strobe flash',
-    'Cyan strobe flash',
-    'Purple strobe flash',
-    'White strobe flash',
+    'Solid red',
+    'Solid blue',
+    'Solid green',
+    'Solid cyan',
+    'Solid yellow',
+    'Solid purple',
+    'Solid white',
+    'Three colours blinking in turn',
+    'Seven colours blinking in turn',
+    'Three colours fade into each other',
+    'Seven colours fade into each other',
+    'Red fade in and out',
+    'Green fade in and out',
+    'Blue fade in and out',
+    'Yellow fade in and out',
+    'Cyan fade in and out',
+    'Purple fade in and out',
+    'White fade in and out',
+    'Red and green fade into each other',
+    'Red and blue fade into each other',
+    'Green and blue fade into each other',
+    'Fast flashing seven colours',
+    'Fast flashing red',
+    'Fast flashing green',
+    'Fast flashing blue',
+    'Fast flashing yellow',
+    'Fast flashing cyan',
+    'Fast flashing purple',
+    'Fast flashing white',
   ];
 }
 
@@ -241,12 +242,14 @@ class Elk7eDriver extends DeviceDriver with DriverStateMixin {
   List<DriverSetting> get settings => [
         DriverSliderSetting(
           'Warm white',
-          description: 'Colour temperature; pairs with Cool white.',
+          description: 'Yellowish white light. Mix with Cool white to get '
+              'the shade you like.',
           value: _warm,
           onChanged: (v) => setColorTemperature(warm: v),
         ),
         DriverSliderSetting(
           'Cool white',
+          description: 'Bluish white light.',
           value: _cold,
           onChanged: (v) => setColorTemperature(cold: v),
         ),
@@ -266,18 +269,19 @@ class Elk7eDriver extends DeviceDriver with DriverStateMixin {
           'Music',
           [
             DriverOptionSetting<int>(
-              'Beat pattern',
-              description: 'Reacts to sound on the strip\'s own microphone.',
+              'Music style',
+              description: 'The lights move to sound picked up by the light '
+                  'strip\'s own built-in microphone.',
               value: _musicMode,
               options: [
                 for (var i = 0; i < Elk7eCommands.micMusicModeCount; i++)
-                  (value: i, label: 'Pattern ${i + 1}'),
+                  (value: i, label: 'Style ${i + 1}'),
               ],
               onChanged: setMusicMode,
             ),
             DriverSliderSetting(
-              'Sensitivity',
-              description: 'How strongly the strip reacts to sound.',
+              'Sound sensitivity',
+              description: 'How strongly the lights react to sound.',
               value: _sensitivity,
               min: 0,
               max: 100,

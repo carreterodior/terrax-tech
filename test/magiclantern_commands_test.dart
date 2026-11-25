@@ -96,12 +96,12 @@ void main() {
       expect(ids.reduce((a, b) => a < b ? a : b), 0);
       expect(ids.reduce((a, b) => a > b ? a : b), 212);
       expect(magicLanternModes.map((m) => m.group).toSet(),
-          {'Basic', 'Curtain', 'Trans', 'Water', 'Flow', 'Tail', 'Run', 'Run Back'});
+          {'Basic', 'Curtain', 'Colour transition', 'Water ripple', 'Flowing', 'Comet tail', 'Running lights', 'Running lights (reverse)'});
       final byId = {for (final m in magicLanternModes) m.id: m};
-      expect(byId[89]!.label, 'Run · Red Running');
-      expect(byId[90]!.label, 'Run Back · Red Run Back');
-      expect(byId[193]!.name, '7-Color Jump');
-      expect(byId[212]!.name, '7-Color Energy');
+      expect(byId[89]!.label, 'Running lights · Red');
+      expect(byId[90]!.label, 'Running lights (reverse) · Red');
+      expect(byId[193]!.name, 'Rainbow switching');
+      expect(byId[212]!.name, 'Rainbow burst');
       expect(magicLanternScenes.length, 28);
     });
   });

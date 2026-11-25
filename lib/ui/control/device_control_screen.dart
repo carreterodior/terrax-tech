@@ -101,7 +101,7 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
     });
 
     if (device == null) {
-      return Scaffold(appBar: AppBar(), body: const Center(child: Text('Device was removed.')));
+      return Scaffold(appBar: AppBar(), body: const Center(child: Text('This device has been removed.')));
     }
 
     final driver = controller.driver;
@@ -131,8 +131,8 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
     final (statusLabel, statusColor, pulsing) = switch (status) {
       ConnectionStatus.connected => ('Connected', TerraxBrand.success, false),
       ConnectionStatus.connecting => ('Connecting', Colors.amber, true),
-      ConnectionStatus.error => ('Connection error', TerraxBrand.danger, false),
-      ConnectionStatus.disconnected => ('Offline', TerraxBrand.textMuted, false),
+      ConnectionStatus.error => ("Couldn't connect", TerraxBrand.danger, false),
+      ConnectionStatus.disconnected => ('Not connected', TerraxBrand.textMuted, false),
     };
 
     return Scaffold(
@@ -150,7 +150,7 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
           if (connected && driver != null && driver.settings.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.tune),
-              tooltip: 'Device settings',
+              tooltip: 'Settings',
               onPressed: () => showDriverSettingsSheet(context, driver),
             ),
           PopupMenuButton<String>(
@@ -166,8 +166,9 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
               }
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(value: 'zone', child: Text('Change lighting zone')),
-              const PopupMenuItem(value: 'redetect', child: Text('Re-detect device')),
+              const PopupMenuItem(value: 'zone', child: Text("Change where it's fitted")),
+              const PopupMenuItem(
+                  value: 'redetect', child: Text('Find the right settings for this light')),
               if (connected) const PopupMenuItem(value: 'disconnect', child: Text('Disconnect')),
             ],
           ),
@@ -191,7 +192,7 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
                 _StateCard(
                   icon: Icons.bluetooth,
                   title: 'Not connected',
-                  message: 'Connect to control this zone.',
+                  message: 'Tap Connect to control this light.',
                   buttonLabel: 'Connect',
                   onPressed: controller.connect,
                 ),
@@ -202,17 +203,26 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
             ConnectionStatus.error => [
                 _StateCard(
                   icon: Icons.error_outline,
-                  title: 'Connection failed',
-                  message: controllerState.error ?? 'Could not reach the device.',
-                  buttonLabel: 'Retry',
+                  title: "Couldn't connect",
+                  message: controllerState.error ??
+                      "Couldn't reach the light. Make sure it is switched on and close by.",
+                  buttonLabel: 'Try again',
                   onPressed: controller.connect,
                   secondaryLabel:
-                      _looksLikeWrongDriver(controllerState.error) ? 'Re-detect device' : null,
+                      _looksLikeWrongDriver(controllerState.error)
+                          ? 'Find the right settings for this light'
+                          : null,
                   onSecondary: controller.redetect,
                 ),
               ],
             ConnectionStatus.connected => driver == null
-                ? [const _StateCard(icon: Icons.error_outline, title: 'Driver unavailable')]
+                ? [
+                    const _StateCard(
+                      icon: Icons.error_outline,
+                      title: "Can't show controls for this light",
+                      message: 'Try removing it from the home screen and adding it again.',
+                    )
+                  ]
                 : _connectedBody(context, driver, controller, controllerState, isPro, accent),
           },
         ],
@@ -277,7 +287,7 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
               const Icon(Icons.tune, color: TerraxBrand.textSecondary),
               const SizedBox(width: TxSpace.m),
               Expanded(
-                child: Text('Advanced setup (${driver.sections.map((s) => s.title).join(', ')}) is a Pro feature.',
+                child: Text('Extra settings (${driver.sections.map((s) => s.title).join(', ')}) come with TERRAX Pro.',
                     style: theme.textTheme.bodyMedium),
               ),
               TxButton('Unlock', onPressed: () => _openPaywall(context)),
@@ -285,20 +295,20 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
           ),
         )
       else if (driver.sections.isNotEmpty) ...[
-        TxSectionHeader(isAuxLamp ? 'Setup & pairing' : 'Advanced'),
+        TxSectionHeader(isAuxLamp ? 'Setup & remotes' : 'More settings'),
         TxCard(
           padding: const EdgeInsets.all(TxSpace.s),
           child: DriverSectionsView(sections: driver.sections, presets: driver.colorPresets),
         ),
       ] else if (driver.lightControls.isNotEmpty) ...[
-        const TxSectionHeader('Device lights'),
+        const TxSectionHeader('Lights on this device'),
         _DeviceLightsCard(controls: driver.lightControls),
       ],
       if (!caps.hasStateFeedback)
         Padding(
           padding: const EdgeInsets.only(top: TxSpace.l),
           child: Text(
-            'This device does not report its state; the vehicle shows the last command sent.',
+            "This light can't tell the app what it's doing, so the car picture shows the last thing you set.",
             style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textMuted),
             textAlign: TextAlign.center,
           ),
@@ -309,9 +319,9 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
   String _captionFor(ZoneVisualState v, DeviceDriver? driver) {
     if (v.type == LightingZoneType.runningBoard) {
       return switch (v.extended) {
-        true => 'Board deployed',
-        false => 'Board retracted',
-        null => 'Board position unknown',
+        true => 'Step is out',
+        false => 'Step is in',
+        null => 'Step position unknown',
       };
     }
     if (driver != null &&
@@ -326,10 +336,9 @@ class _DeviceControlScreenState extends ConsumerState<DeviceControlScreen>
       return '${name}On$colour$beam';
     }
     if (!v.power) return 'Off';
-    final c = v.color;
     final pct = (v.brightness * 100).round();
-    final eff = v.effect == EffectVisual.static ? 'Static' : effectVisualLabel(v.effect);
-    return '$eff · RGB ${c.r}, ${c.g}, ${c.b} · $pct%';
+    final eff = v.effect == EffectVisual.static ? 'Steady' : effectVisualLabel(v.effect);
+    return '$eff · $pct% bright';
   }
 
   void _openPaywall(BuildContext context) =>
@@ -394,7 +403,8 @@ Future<void> _run(BuildContext context, String label, Future<void> Function() fn
     await fn();
   } catch (e) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label failed: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(txFailedMessage(label, e))));
     }
   }
 }
@@ -473,12 +483,12 @@ class _DriverActionButton extends StatelessWidget {
                 await action.run();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text('${action.label} sent')));
+                      .showSnackBar(SnackBar(content: Text('Done: ${action.label}')));
                 }
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text('${action.label} failed: $e')));
+                      .showSnackBar(SnackBar(content: Text(txSendFailedMessage(action.label, e))));
                 }
               }
             },
@@ -497,8 +507,7 @@ class _DriverActionButton extends StatelessWidget {
 /// the wrong protocol family, rather than the device being absent or busy.
 bool _looksLikeWrongDriver(String? error) {
   if (error == null) return false;
-  final e = error.toLowerCase();
-  return e.contains('characteristic') && e.contains('not found');
+  return error == kWrongSettingsError || looksLikeWrongSettings(error);
 }
 
 class _ConnectingCard extends StatelessWidget {
@@ -512,7 +521,7 @@ class _ConnectingCard extends StatelessWidget {
                 width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)),
             const SizedBox(width: TxSpace.l),
             Expanded(
-              child: Text('Connecting to the controller…',
+              child: Text('Connecting to your light…',
                   style: Theme.of(context).textTheme.bodyLarge),
             ),
           ],
@@ -566,7 +575,7 @@ class _StateCard extends StatelessWidget {
             TxButton(secondaryLabel!, filled: false, onPressed: onSecondary),
             const SizedBox(height: TxSpace.s),
             Text(
-              'Re-detecting scans for this accessory and repoints it at the right protocol, keeping its name.',
+              'This looks for your light again and picks the right settings for it. Its name stays the same.',
               style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textMuted),
             ),
           ],

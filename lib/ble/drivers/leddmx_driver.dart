@@ -170,16 +170,17 @@ class LedDmxCommands {
       : _a(0x0F, [0x01, 0xFF, 0xFF, 0xFF, 0xFF]);
 
   /// Custom animation styles (`setCustomMode`, NCB:1929/1931), `s` 0–7 =
-  /// GD, FD, FW, FS, AC, PU, Breathe, HO.
+  /// vendor GD, FD, FW, FS, AC, PU, Breathe, HO, shown in plain words. "AC"
+  /// is undocumented; "Build up" is a best guess, unverified on hardware.
   static const customStyles = <({int value, String label})>[
-    (value: 0, label: 'GD (gradient)'),
-    (value: 1, label: 'FD (fade)'),
-    (value: 2, label: 'FW (flow)'),
-    (value: 3, label: 'FS (flash)'),
-    (value: 4, label: 'AC'),
-    (value: 5, label: 'PU (pulse)'),
+    (value: 0, label: 'Smooth change'),
+    (value: 1, label: 'Fade'),
+    (value: 2, label: 'Flowing'),
+    (value: 3, label: 'Flash'),
+    (value: 4, label: 'Build up'),
+    (value: 5, label: 'Pulse'),
     (value: 6, label: 'Breathe'),
-    (value: 7, label: 'HO (hold)'),
+    (value: 7, label: 'Hold colour'),
   ];
 
   Uint8List customStyle(int style) => _b
@@ -281,20 +282,21 @@ class LedDmxCommands {
   /// `7B FF 14 s FF FF FF FF BF`, s 0 centre, 1 left, 2 right.
   Uint8List subarea(int s) => _a(0x14, [s, 0xFF, 0xFF, 0xFF, 0xFF]);
 
-  /// RGB channel orders for [chipConfig] (`R.array/rgb_model`).
+  /// RGB channel orders for [chipConfig] (`R.array/rgb_model`: RGB, RBG, GRB,
+  /// GBR, BRG, BGR, then the same six + W), spelled out for the UI.
   static const rgbOrders = <({int value, String label})>[
-    (value: 1, label: 'RGB'),
-    (value: 2, label: 'RBG'),
-    (value: 3, label: 'GRB'),
-    (value: 4, label: 'GBR'),
-    (value: 5, label: 'BRG'),
-    (value: 6, label: 'BGR'),
-    (value: 7, label: 'RGBW'),
-    (value: 8, label: 'RBGW'),
-    (value: 9, label: 'GRBW'),
-    (value: 10, label: 'GBRW'),
-    (value: 11, label: 'BRGW'),
-    (value: 12, label: 'BGRW'),
+    (value: 1, label: 'Red-Green-Blue'),
+    (value: 2, label: 'Red-Blue-Green'),
+    (value: 3, label: 'Green-Red-Blue'),
+    (value: 4, label: 'Green-Blue-Red'),
+    (value: 5, label: 'Blue-Red-Green'),
+    (value: 6, label: 'Blue-Green-Red'),
+    (value: 7, label: 'Red-Green-Blue-White'),
+    (value: 8, label: 'Red-Blue-Green-White'),
+    (value: 9, label: 'Green-Red-Blue-White'),
+    (value: 10, label: 'Green-Blue-Red-White'),
+    (value: 11, label: 'Blue-Red-Green-White'),
+    (value: 12, label: 'Blue-Green-Red-White'),
   ];
 
   /// Chip settings (`setConfigSPI`, NCB:1517–1525). A:
@@ -392,18 +394,20 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
   List<DriverSection> get sections => [
         DriverSection('Pattern', [
           DriverInfoSetting(
-            variant.label,
-            value: 'Detected from the name. Modes 1–210 plus AUTO come from '
-                'the vendor app\'s list for this model.',
+            'About this light',
+            value: 'Model ${variant.label}. 210 moving patterns, plus Auto, '
+                'which cycles through them all.',
           ),
           DriverButtonSetting('Pause pattern',
-              description: 'Freeze the running animation.',
+              description: 'Freezes the moving pattern where it is.',
               run: () => _send(_cmd.playPause(false))),
           DriverButtonSetting('Resume pattern',
+              description: 'Starts the moving pattern again.',
               run: () => _send(_cmd.playPause(true))),
           if (_hasCustom)
             DriverOptionSetting<bool>(
-              'Direction',
+              'Pattern direction',
+              description: 'Which way moving patterns run along the strip.',
               value: _reverse,
               options: const [
                 (value: false, label: 'Forward'),
@@ -413,8 +417,8 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
             ),
           if (_hasDim)
             DriverSliderSetting(
-              'Dim',
-              description: 'Overall dim level (the vendor app\'s DIM wheel).',
+              'Dimmer',
+              description: 'Overall light level. Slide down to dim.',
               value: _dim,
               min: 1,
               max: 100,
@@ -422,8 +426,8 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
             ),
           if (_hasCt)
             DriverSliderSetting(
-              'Colour temperature',
-              description: '0 = warmest, 100 = coolest white.',
+              'White tone',
+              description: '0 = warm yellowish white, 100 = cool bluish white.',
               value: _coolPercent,
               min: 0,
               max: 100,
@@ -433,48 +437,53 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
         if (_hasCustom)
           DriverSection('Custom', [
             DriverInfoSetting(
-              'Custom pattern',
-              value: 'Paint up to 25 colour blocks, then pick how they '
-                  'animate. Blocks and style persist on the controller.',
+              'Make your own pattern',
+              value: 'Save up to 25 colours into slots, then choose how they '
+                  'move. The box remembers your colours and movement.',
             ),
             DriverOptionSetting<int>(
-              'Style',
+              'Movement',
+              description: 'How your saved colours change from one to the '
+                  'next.',
               value: _customStyle,
               options: LedDmxCommands.customStyles,
               onChanged: setCustomStyle,
             ),
-            DriverButtonSetting('Cycle styles',
-                description: 'Rotate through the custom styles automatically.',
+            DriverButtonSetting('Play all movements',
+                description: 'Goes through every movement automatically.',
                 run: () => _send(_cmd.customCycle())),
             DriverSliderSetting(
-              'Block',
-              description: 'Which of the 25 colour blocks to edit.',
+              'Colour slot',
+              description: 'Which of the 25 colour slots to change. Your '
+                  'pattern plays the slots in order.',
               value: _customBlock,
               min: 1,
               max: 25,
               onChanged: (v) async => _customBlock = v,
             ),
             DriverColorSetting(
-              'Block colour',
+              'Slot colour',
               value: _customColor,
               onChanged: (c) async => _customColor = c,
             ),
-            DriverButtonSetting('Set block',
-                description: 'Write the colour above into the chosen block.',
+            DriverButtonSetting('Save colour to slot',
+                description: 'Puts the colour above into the chosen slot.',
                 run: () => _send(_cmd.customBlockColor(_customColor.r,
                     _customColor.g, _customColor.b, _customBlock))),
-            DriverButtonSetting('Clear block',
+            DriverButtonSetting('Clear slot',
+                description: 'Empties the chosen slot.',
                 run: () => _send(_cmd.customBlockClear(_customBlock))),
           ]),
         DriverSection('Music', [
           DriverInfoSetting(
-            'Sound reactive',
-            value: 'The controller listens with its own microphone. Pick a '
-                'reactive mode and how sensitive it is.',
+            'Lights move to sound',
+            value: 'The box listens with its own built-in microphone. Pick a '
+                'sound pattern and how easily it reacts.',
           ),
           DriverSliderSetting(
-            'Voice-control mode',
-            description: 'MODE 1–254, or 255 to cycle.',
+            'Sound pattern',
+            description: 'Pick a pattern number, or the last one (255) to '
+                'cycle through all.',
             value: _voiceMode,
             min: 1,
             max: 255,
@@ -482,6 +491,7 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
           ),
           DriverSliderSetting(
             'Sensitivity',
+            description: 'Higher = the lights react to quieter sounds.',
             value: _sensitivity,
             min: 1,
             max: 100,
@@ -490,6 +500,7 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
           if (_isB)
             DriverOptionSetting<int>(
               'Music style',
+              description: 'How the lights move to music.',
               value: _musicStyle,
               options: const [
                 (value: 0, label: 'Style 1'),
@@ -503,12 +514,13 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
           else
             DriverOptionSetting<int>(
               'Music style',
+              description: 'How the lights move to music.',
               value: _musicStyle,
               options: const [
-                (value: 4, label: 'Gradual'),
-                (value: 0, label: 'Trailing'),
-                (value: 1, label: 'Jump'),
-                (value: 2, label: 'Strobe'),
+                (value: 4, label: 'Smooth change'),
+                (value: 0, label: 'Trail'),
+                (value: 1, label: 'Quick change'),
+                (value: 2, label: 'Fast flash'),
                 (value: 3, label: 'Off'),
               ],
               onChanged: setMusicStyle,
@@ -516,6 +528,7 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
           if (_isB)
             DriverSliderSetting(
               'Rhythm',
+              description: 'How closely the lights follow the beat.',
               value: _musicRhythm,
               min: 0,
               max: 100,
@@ -523,12 +536,12 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
             ),
         ]),
         if (_hasChannels)
-          DriverSection('Channels', [
+          DriverSection('Colour mix', [
             DriverInfoSetting(
-              'Per-channel levels',
+              'Colour levels',
               value: _isB
-                  ? 'Each colour channel 0–255 (the vendor app\'s Aisle sliders).'
-                  : 'Each colour channel 0–100 (the vendor app\'s Aisle sliders).',
+                  ? 'Turn each colour up or down to fine-tune the mix (0–255).'
+                  : 'Turn each colour up or down to fine-tune the mix (0–100).',
             ),
             DriverSliderSetting('Red',
                 value: _chR, min: 0, max: _isB ? 255 : 100,
@@ -543,15 +556,15 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
               DriverSliderSetting('White',
                   value: _chW, min: 0, max: 255,
                   onChanged: (v) => _setChannel(3, v)),
-            DriverSliderSetting(_isB ? 'Yellow' : 'Yellow / 4th channel',
+            DriverSliderSetting(_isB ? 'Yellow' : 'Yellow (or 4th colour)',
                 value: _chY, min: 0, max: _isB ? 255 : 100,
                 onChanged: (v) => _setChannel(4, v)),
           ]),
         DriverSection('Setup', [
           if (_hasSubarea)
             DriverOptionSetting<int>(
-              'Sub-area',
-              description: 'Which part of the strip the controls address.',
+              'Which part',
+              description: 'Which part of the strip your changes go to.',
               value: _subarea,
               options: const [
                 (value: 0, label: 'Centre'),
@@ -561,16 +574,18 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
               onChanged: setSubarea,
             ),
           for (var k = 0; k < 4; k++)
-            DriverButtonSetting('Key K${k + 1}',
+            DriverButtonSetting('Remote button ${k + 1}',
                 run: () => _send(_cmd.auxiliaryKey(k))),
           DriverInfoSetting(
-            'Chip settings',
-            value: 'Tell the controller how many LEDs are on the strip and '
-                'their colour order, then Apply. Wrong values scramble colours '
-                'and cut the strip short; the vendor default is 200 / GRB.',
+            'Strip setup',
+            value: 'Tell the box how many LEDs are on the strip and their '
+                'colour order, then tap Apply strip setup. Wrong values mix '
+                'up the colours or light only part of the strip. Factory '
+                'setting: 200 LEDs, Green-Red-Blue.',
           ),
           DriverSliderSetting(
-            'LED count',
+            'Number of LEDs',
+            description: 'How many tiny lights are on the strip.',
             value: _pixels,
             min: 1,
             max: 2048,
@@ -580,7 +595,9 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
             },
           ),
           DriverOptionSetting<int>(
-            'RGB order',
+            'Colour order',
+            description: 'Change only if the colours look wrong (e.g. red '
+                'shows as green).',
             value: _rgbOrder,
             options: LedDmxCommands.rgbOrders,
             onChanged: (v) async {
@@ -588,7 +605,9 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
               await _prefs.setInt(_key('order'), v);
             },
           ),
-          DriverButtonSetting('Apply chip settings',
+          DriverButtonSetting('Apply strip setup',
+              description: 'Sends the number of LEDs and colour order to the '
+                  'box.',
               run: () =>
                   _send(_cmd.chipConfig(pixels: _pixels, rgbOrder: _rgbOrder))),
         ], icon: DriverSectionIcon.info),
@@ -611,7 +630,10 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
     }
     write ??= _findChar(services, _writeChar);
     if (write == null) {
-      throw StateError('leddmx: no write characteristic (0xFFE1) found');
+      // Shown to the user; the technical cause is "no FFE1 write
+      // characteristic".
+      throw StateError('This light did not accept control. Turn it off and '
+          'on, then connect again.');
     }
     _write = write;
 
@@ -643,7 +665,9 @@ class LedDmxDriver extends DeviceDriver with DriverStateMixin {
   /// The vendor app writes with response (it never sets a write type).
   Future<void> _send(Uint8List bytes) {
     final write = _write;
-    if (write == null) throw StateError('leddmx: not connected');
+    if (write == null) {
+      throw StateError('The light is not connected. Connect it and try again.');
+    }
     return _ble.write(write, bytes, withoutResponse: false);
   }
 

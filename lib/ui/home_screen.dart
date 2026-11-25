@@ -45,10 +45,10 @@ class HomeScreen extends ConsumerWidget {
     final connecting = statuses.values.any((s) => s == ConnectionStatus.connecting);
 
     final (statusLabel, statusColor) = devices.isEmpty
-        ? ('No equipment', TerraxBrand.textMuted)
+        ? ('No lights added', TerraxBrand.textMuted)
         : connectedCount == 0
-            ? (connecting ? 'Connecting' : 'All offline', connecting ? Colors.amber : TerraxBrand.textMuted)
-            : ('$connectedCount of ${devices.length} online', TerraxBrand.success);
+            ? (connecting ? 'Connecting' : 'None connected', connecting ? Colors.amber : TerraxBrand.textMuted)
+            : ('$connectedCount of ${devices.length} connected', TerraxBrand.success);
 
     return Scaffold(
       appBar: AppBar(
@@ -80,7 +80,7 @@ class HomeScreen extends ConsumerWidget {
               statusColor: statusColor,
               statusPulsing: connecting,
               caption: devices.isEmpty
-                  ? 'Pair your first TERRAX product to see it on the vehicle.'
+                  ? 'Add your first TERRAX light to see it on the car.'
                   : null,
               height: 250,
               glowScale: 0.9,
@@ -89,7 +89,7 @@ class HomeScreen extends ConsumerWidget {
               const SizedBox(height: TxSpace.xl),
               const _EmptyState(),
             ] else ...[
-              const TxSectionHeader('Zones'),
+              const TxSectionHeader('On your car'),
               _ZoneStrip(zones: zones, visuals: visuals, statuses: statuses),
               if (lights.length >= 2) ...[
                 const SizedBox(height: TxSpace.m),
@@ -106,7 +106,7 @@ class HomeScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('Light groups', style: theme.textTheme.titleSmall),
-                            Text('Pick which lights to drive together · ${lights.length} lights',
+                            Text('Control several lights at once · ${lights.length} lights',
                                 style: theme.textTheme.bodySmall
                                     ?.copyWith(color: TerraxBrand.textMuted)),
                           ],
@@ -117,7 +117,7 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ),
               ],
-              const TxSectionHeader('Equipment'),
+              const TxSectionHeader('Your devices'),
               for (final entry in ref.watch(devicesByCategoryProvider).entries) ...[
                 Padding(
                   padding: const EdgeInsets.fromLTRB(TxSpace.xs, TxSpace.s, 0, TxSpace.s),
@@ -194,9 +194,9 @@ class _EmptyState extends StatelessWidget {
               Text('Your vehicle, live', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w500)),
               const SizedBox(height: TxSpace.s),
               Text(
-                'Pair a TERRAX controller and the vehicle above lights up exactly where '
-                'your product is installed — rock lights, DRL, devil eyes, step boards and more. '
-                'Change a colour and the car changes with you.',
+                'Add a TERRAX light and the car above lights up right where it is '
+                'fitted — rock lights, daytime running lights, devil eyes, side steps and more. '
+                'Change a colour and the car picture changes with you.',
                 style: theme.textTheme.bodyMedium?.copyWith(color: TerraxBrand.textSecondary),
               ),
               const SizedBox(height: TxSpace.l),
@@ -214,6 +214,11 @@ class _EmptyState extends StatelessWidget {
                             .push(MaterialPageRoute(builder: (_) => const ShowroomScreen()))),
                   ),
                 ],
+              ),
+              const SizedBox(height: TxSpace.m),
+              Text(
+                'No lights yet? Tap Showroom to try the app without any lights.',
+                style: theme.textTheme.bodySmall?.copyWith(color: TerraxBrand.textMuted),
               ),
             ],
           ),
@@ -240,8 +245,8 @@ class _DeviceTile extends ConsumerWidget {
     final (statusLabel, statusColor) = switch (controllerState.status) {
       ConnectionStatus.connected => ('Connected', TerraxBrand.success),
       ConnectionStatus.connecting => ('Connecting…', Colors.amber),
-      ConnectionStatus.error => ('Error', theme.colorScheme.error),
-      ConnectionStatus.disconnected => ('Offline', TerraxBrand.textMuted),
+      ConnectionStatus.error => ("Couldn't connect", theme.colorScheme.error),
+      ConnectionStatus.disconnected => ('Not connected', TerraxBrand.textMuted),
     };
     final s = controllerState.deviceState;
     final online = controllerState.status == ConnectionStatus.connected;
@@ -293,6 +298,7 @@ class _DeviceTile extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.more_horiz, color: TerraxBrand.textMuted),
+            tooltip: 'More options',
             onPressed: () => _showOptions(context, ref),
           ),
         ],
@@ -323,7 +329,7 @@ class _DeviceTile extends ConsumerWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.place_outlined),
-              title: const Text('Change lighting zone'),
+              title: const Text("Change where it's fitted"),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 Navigator.of(context).push(MaterialPageRoute<void>(
@@ -340,7 +346,7 @@ class _DeviceTile extends ConsumerWidget {
             ),
             ListTile(
               leading: const Icon(Icons.category_outlined),
-              title: const Text('Change category'),
+              title: const Text('Change type of light'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 _recategorize(context, ref);
@@ -393,7 +399,7 @@ class _DeviceTile extends ConsumerWidget {
     final category = await showDialog<DeviceCategory>(
       context: context,
       builder: (dialogContext) => SimpleDialog(
-        title: const Text('Category'),
+        title: const Text('Type of light'),
         children: [
           RadioGroup<DeviceCategory>(
             groupValue: device.category,

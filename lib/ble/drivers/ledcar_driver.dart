@@ -42,21 +42,21 @@ enum LedCarSource {
 /// The 23 `car_mode` / `ble_mode` patterns (LED+LAMP `R.array/car_mode`),
 /// ids 135–157, sent as-is in `7E FF 03 id 03 …`.
 const List<({int id, String name})> ledCarModes = [
-  (id: 135, name: 'Tricolor jump'),
-  (id: 136, name: 'Seven-color jump'),
-  (id: 137, name: 'Tricolor gradient'),
-  (id: 138, name: 'Seven-color gradient'),
-  (id: 139, name: 'Red gradient'),
-  (id: 140, name: 'Green gradient'),
-  (id: 141, name: 'Blue gradient'),
-  (id: 142, name: 'Yellow gradient'),
-  (id: 143, name: 'Cyan gradient'),
-  (id: 144, name: 'Purple gradient'),
-  (id: 145, name: 'White gradient'),
-  (id: 146, name: 'Red-Green gradient'),
-  (id: 147, name: 'Red-Blue gradient'),
-  (id: 148, name: 'Green-Blue gradient'),
-  (id: 149, name: 'Seven-color flash'),
+  (id: 135, name: 'Three colours switching'),
+  (id: 136, name: 'Seven colours switching'),
+  (id: 137, name: 'Three colours fading'),
+  (id: 138, name: 'Seven colours fading'),
+  (id: 139, name: 'Red fade'),
+  (id: 140, name: 'Green fade'),
+  (id: 141, name: 'Blue fade'),
+  (id: 142, name: 'Yellow fade'),
+  (id: 143, name: 'Cyan fade'),
+  (id: 144, name: 'Purple fade'),
+  (id: 145, name: 'White fade'),
+  (id: 146, name: 'Red-green fade'),
+  (id: 147, name: 'Red-blue fade'),
+  (id: 148, name: 'Green-blue fade'),
+  (id: 149, name: 'Seven colours flashing'),
   (id: 150, name: 'Red flash'),
   (id: 151, name: 'Green flash'),
   (id: 152, name: 'Blue flash'),
@@ -64,7 +64,7 @@ const List<({int id, String name})> ledCarModes = [
   (id: 154, name: 'Cyan flash'),
   (id: 155, name: 'Purple flash'),
   (id: 156, name: 'White flash'),
-  (id: 157, name: 'Seven-color breathe'),
+  (id: 157, name: 'Seven colours breathing'),
 ];
 
 /// Pure command builders for LEDCAR-00/01. **Do not "improve" these bytes** —
@@ -165,16 +165,18 @@ class LedCarCommands {
 
   // ---- custom tab ----------------------------------------------------------
 
-  /// Style ids shared by both dialects (Custom-tab buttons 0–7).
+  /// Style ids shared by both dialects (Custom-tab buttons 0–7; vendor labels
+  /// Jump, Breathe, Flash, Gradient, AC, PU, Breathe, HO — shown in plain
+  /// words. "AC" is undocumented; "Build up" is a best guess, unverified).
   static const customStyles = <({int value, String label})>[
-    (value: 0, label: 'Jump'),
+    (value: 0, label: 'Quick change'),
     (value: 1, label: 'Breathe'),
     (value: 2, label: 'Flash'),
-    (value: 3, label: 'Gradient'),
-    (value: 4, label: 'AC'),
-    (value: 5, label: 'PU (pulse)'),
+    (value: 3, label: 'Smooth change'),
+    (value: 4, label: 'Build up'),
+    (value: 5, label: 'Pulse'),
     (value: 6, label: 'Breathe 2'),
-    (value: 7, label: 'HO (hold)'),
+    (value: 7, label: 'Hold colour'),
   ];
 
   /// `setCar01CustomMode` @855 / `setCustomMode` @1478:
@@ -246,14 +248,15 @@ class LedCarCommands {
   static Uint8List auxiliaryKey(int k) =>
       _ble(0xFF, 0x12, [k, 0xFF, 0xFF, 0xFF, 0xFF]);
 
-  /// RGB channel orders (`R.array/rgb_sort_ble`).
+  /// RGB channel orders (`R.array/rgb_sort_ble`: RGB, RBG, GRB, GBR, BRG,
+  /// BGR), spelled out for the UI.
   static const rgbOrders = <({int value, String label})>[
-    (value: 1, label: 'RGB'),
-    (value: 2, label: 'RBG'),
-    (value: 3, label: 'GRB'),
-    (value: 4, label: 'GBR'),
-    (value: 5, label: 'BRG'),
-    (value: 6, label: 'BGR'),
+    (value: 1, label: 'Red-Green-Blue'),
+    (value: 2, label: 'Red-Blue-Green'),
+    (value: 3, label: 'Green-Red-Blue'),
+    (value: 4, label: 'Green-Blue-Red'),
+    (value: 5, label: 'Blue-Red-Green'),
+    (value: 6, label: 'Blue-Green-Red'),
   ];
 
   /// LEDCAR-01 chip config @1380: `7B FF 05 04 pixHi pixLo sort FF BF`
@@ -328,31 +331,39 @@ class LedCarDriver extends DeviceDriver with DriverStateMixin {
   List<DriverSection> get sections => [
         DriverSection('Pattern', [
           DriverInfoSetting(
-            variant.label,
+            'About this light',
             value: _is01
-                ? 'This light has three control sources, like the RGB / LED / '
-                    'DMX switch in the vendor app. RGB uses the 23 classic '
-                    'patterns; LED and DMX use the 211 DMX patterns.'
-                : 'Detected from the name. 23 classic patterns.',
+                ? 'Model ${variant.label}. This box can drive three kinds of '
+                    'lights. Pick yours under Light type: single-colour '
+                    'lights get 23 simple patterns, the other two get 211 '
+                    'moving patterns.'
+                : 'Model ${variant.label}. 23 built-in patterns.',
           ),
           if (_is01)
             DriverOptionSetting<LedCarSource>(
-              'Source',
+              'Light type',
+              description: 'Which lights your changes go to. Matches the '
+                  'three-way switch in the original app.',
               value: _source,
               options: const [
-                (value: LedCarSource.rgb, label: 'RGB'),
-                (value: LedCarSource.sync, label: 'LED'),
-                (value: LedCarSource.dmx, label: 'DMX'),
+                (value: LedCarSource.rgb, label: 'Single-colour lights'),
+                (value: LedCarSource.sync, label: 'Both together'),
+                (value: LedCarSource.dmx, label: 'Moving-effect lights'),
               ],
               onChanged: setSource,
             ),
           if (_is01) ...[
-            DriverButtonSetting('Pause pattern (DMX)',
+            DriverButtonSetting('Pause pattern',
+                description: 'Freezes the moving pattern where it is '
+                    '(moving-effect lights).',
                 run: () => _send(LedCarCommands.playPauseDmx(false))),
-            DriverButtonSetting('Resume pattern (DMX)',
+            DriverButtonSetting('Resume pattern',
+                description: 'Starts the moving pattern again.',
                 run: () => _send(LedCarCommands.playPauseDmx(true))),
             DriverOptionSetting<bool>(
-              'Direction (DMX)',
+              'Pattern direction',
+              description: 'Which way moving patterns run '
+                  '(moving-effect lights).',
               value: _reverse,
               options: const [
                 (value: false, label: 'Forward'),
@@ -363,8 +374,8 @@ class LedCarDriver extends DeviceDriver with DriverStateMixin {
           ],
           if (!_is01)
             DriverSliderSetting(
-              'Dim',
-              description: 'The vendor app\'s DIM wheel.',
+              'Dimmer',
+              description: 'Slide down to make the lights dimmer.',
               value: _dim,
               min: 1,
               max: 100,
@@ -373,62 +384,74 @@ class LedCarDriver extends DeviceDriver with DriverStateMixin {
         ], icon: DriverSectionIcon.lights),
         DriverSection('Custom', [
           DriverInfoSetting(
-            'Custom pattern',
-            value: 'Paint up to 25 colour blocks, then choose how they '
-                'animate.${_is01 ? ' Uses the selected source (RGB or DMX).' : ''}',
+            'Make your own pattern',
+            value: 'Save up to 25 colours into slots, then choose how they '
+                'move.${_is01 ? ' Goes to the light type picked above.' : ''}',
           ),
           DriverOptionSetting<int>(
-            'Style',
+            'Movement',
+            description: 'How your saved colours change from one to the next.',
             value: _customStyle,
             options: LedCarCommands.customStyles,
             onChanged: setCustomStyle,
           ),
-          DriverButtonSetting('Cycle styles', run: () => _send(_useBle
-              ? LedCarCommands.customCycleBle()
-              : LedCarCommands.customCycleDmx())),
+          DriverButtonSetting('Play all movements',
+              description: 'Goes through every movement automatically.',
+              run: () => _send(_useBle
+                  ? LedCarCommands.customCycleBle()
+                  : LedCarCommands.customCycleDmx())),
           DriverSliderSetting(
-            'Block',
+            'Colour slot',
+            description: 'Which of the 25 colour slots to change. Your '
+                'pattern plays the slots in order.',
             value: _customBlock,
             min: 1,
             max: 25,
             onChanged: (v) async => _customBlock = v,
           ),
           DriverColorSetting(
-            'Block colour',
+            'Slot colour',
             value: _customColor,
             onChanged: (c) async => _customColor = c,
           ),
-          DriverButtonSetting('Set block', run: () => _send(_useBle
-              ? LedCarCommands.customBlockBle(_customColor.r, _customColor.g,
-                  _customColor.b, _customBlock)
-              : LedCarCommands.customBlockDmx(_customColor.r, _customColor.g,
-                  _customColor.b, _customBlock))),
-          DriverButtonSetting('Clear block', run: () => _send(_useBle
-              ? LedCarCommands.customBlockBle(0, 0, 0, _customBlock, clear: true)
-              : LedCarCommands.customBlockDmx(0, 0, 0, _customBlock,
-                  clear: true))),
+          DriverButtonSetting('Save colour to slot',
+              description: 'Puts the colour above into the chosen slot.',
+              run: () => _send(_useBle
+                  ? LedCarCommands.customBlockBle(_customColor.r,
+                      _customColor.g, _customColor.b, _customBlock)
+                  : LedCarCommands.customBlockDmx(_customColor.r,
+                      _customColor.g, _customColor.b, _customBlock))),
+          DriverButtonSetting('Clear slot',
+              description: 'Empties the chosen slot.',
+              run: () => _send(_useBle
+                  ? LedCarCommands.customBlockBle(0, 0, 0, _customBlock,
+                      clear: true)
+                  : LedCarCommands.customBlockDmx(0, 0, 0, _customBlock,
+                      clear: true))),
         ]),
         DriverSection('Music', [
           DriverInfoSetting(
-            'Sound reactive',
-            value: 'The controller listens with its own microphone.',
+            'Lights move to sound',
+            value: 'The box listens with its own built-in microphone.',
           ),
           if (_useBle)
             DriverOptionSetting<int>(
-              'Voice style',
+              'Sound style',
+              description: 'How the lights move to sounds around the car.',
               value: _voiceStyle,
               options: const [
-                (value: 0, label: 'Jump'),
+                (value: 0, label: 'Quick change'),
                 (value: 1, label: 'Breathe'),
                 (value: 2, label: 'Flash'),
-                (value: 3, label: 'Gradient'),
+                (value: 3, label: 'Smooth change'),
               ],
               onChanged: setVoiceStyle,
             )
           else
             DriverSliderSetting(
-              'Voice-control mode (DMX)',
-              description: 'MODE 1–254, or 255 to cycle.',
+              'Sound pattern',
+              description: 'Pick a pattern number, or the last one (255) to '
+                  'cycle through all.',
               value: _voiceMode,
               min: 1,
               max: 255,
@@ -436,6 +459,7 @@ class LedCarDriver extends DeviceDriver with DriverStateMixin {
             ),
           DriverSliderSetting(
             'Sensitivity',
+            description: 'Higher = the lights react to quieter sounds.',
             value: _sensitivity,
             min: 1,
             max: 100,
@@ -443,31 +467,35 @@ class LedCarDriver extends DeviceDriver with DriverStateMixin {
           ),
           DriverOptionSetting<int>(
             'Music style',
+            description: 'How the lights move to music.',
             value: _musicStyle,
             options: const [
-              (value: 0, label: 'Jump'),
+              (value: 0, label: 'Quick change'),
               (value: 1, label: 'Breathe'),
               (value: 2, label: 'Flash'),
-              (value: 3, label: 'Gradient'),
+              (value: 3, label: 'Smooth change'),
             ],
             onChanged: setMusicStyle,
           ),
         ]),
         DriverSection('Setup', [
           for (var k = 0; k < (_is01 ? 2 : 4); k++)
-            DriverButtonSetting('Key K${k + 1}',
+            DriverButtonSetting('Remote button ${k + 1}',
                 run: () => _send(LedCarCommands.auxiliaryKey(k))),
           if (_is01) ...[
             for (var d = 0; d < 4; d++)
-              DriverButtonSetting('Direction key ${d + 1}',
+              DriverButtonSetting('Arrow button ${d + 1}',
                   run: () => _send(LedCarCommands.auxiliaryKey(7 + d))),
             DriverInfoSetting(
-              'Chip settings',
-              value: 'LED count and colour order for the DMX/LED sources. '
-                  'Vendor default 60 LEDs, GRB. Wrong values scramble colours.',
+              'Strip setup',
+              value: 'Tell the box how many LEDs are on your moving-effect '
+                  'strip and their colour order, then tap Apply strip setup. '
+                  'Wrong values mix up the colours. Factory setting: 60 LEDs, '
+                  'Green-Red-Blue.',
             ),
             DriverSliderSetting(
-              'LED count',
+              'Number of LEDs',
+              description: 'How many tiny lights are on the strip.',
               value: _pixels,
               min: 1,
               max: 1024,
@@ -477,7 +505,9 @@ class LedCarDriver extends DeviceDriver with DriverStateMixin {
               },
             ),
             DriverOptionSetting<int>(
-              'RGB order',
+              'Colour order',
+              description: 'Change only if the colours look wrong (e.g. red '
+                  'shows as green).',
               value: _rgbOrder,
               options: LedCarCommands.rgbOrders,
               onChanged: (v) async {
@@ -485,7 +515,9 @@ class LedCarDriver extends DeviceDriver with DriverStateMixin {
                 await _prefs.setInt(_key('order'), v);
               },
             ),
-            DriverButtonSetting('Apply chip settings',
+            DriverButtonSetting('Apply strip setup',
+                description: 'Sends the number of LEDs and colour order to '
+                    'the box.',
                 run: () => _send(LedCarCommands.chipConfig(
                     pixels: _pixels, rgbOrder: _rgbOrder))),
           ],
@@ -514,7 +546,10 @@ class LedCarDriver extends DeviceDriver with DriverStateMixin {
     }
     write ??= _findChar(services, _writeChar);
     if (write == null) {
-      throw StateError('ledcar: no write characteristic (0xFFE1) found');
+      // Shown to the user; the technical cause is "no FFE1 write
+      // characteristic".
+      throw StateError('This light did not accept control. Turn it off and '
+          'on, then connect again.');
     }
     _write = write;
 
@@ -545,7 +580,9 @@ class LedCarDriver extends DeviceDriver with DriverStateMixin {
 
   Future<void> _send(Uint8List bytes) {
     final write = _write;
-    if (write == null) throw StateError('ledcar: not connected');
+    if (write == null) {
+      throw StateError('The light is not connected. Connect it and try again.');
+    }
     return _ble.write(write, bytes, withoutResponse: false);
   }
 

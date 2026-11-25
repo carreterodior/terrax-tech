@@ -286,14 +286,14 @@ class IntelligoDeviceStatus {
   /// Fault names in the vendor app's own array order, MSB first (bit 7 is the
   /// first entry). Taken verbatim from `readDeviceStatus`.
   static const List<String> faultNames = [
-    'Undervoltage',
-    'Overvoltage',
-    'Left Hall sensor error',
-    'Right Hall sensor error',
-    'Left motor short circuit',
-    'Right motor short circuit',
-    'CAN bus data error',
-    'Light strip short circuit',
+    'Car voltage too low',
+    'Car voltage too high',
+    "Problem with the left step's position sensor",
+    "Problem with the right step's position sensor",
+    "Problem with the left step's motor wiring",
+    "Problem with the right step's motor wiring",
+    "Can't read signals from the car",
+    'Problem with the step light wiring',
   ];
 
   /// Human-readable list of the faults currently set.
@@ -717,7 +717,7 @@ class IntelligoCommands {
   /// (`common.info.openDoor` … `common.info.carMove`).
   static const List<String> lampEffectNames = [
     'Door open',
-    'Door close',
+    'Door closed',
     'Unlock',
     'Lock',
     'Turn signal',
@@ -729,16 +729,16 @@ class IntelligoCommands {
 
   /// `lightEffectList` — animation modes. Note 15, not 10, is "Colour pure".
   static const Map<int, String> lightModeNames = {
-    1: 'Gradient',
+    1: 'Fade',
     2: 'Trailing',
     3: 'Flowing',
-    4: 'Follow spot',
+    4: 'Chasing light',
     5: 'Pile up',
     6: 'Pull',
-    7: 'Strobe',
+    7: 'Flashing',
     8: 'Flow',
     9: 'Running',
-    15: 'Colour pure',
+    15: 'Solid colour',
   };
 
   /// `lightModeList` — animation direction.
@@ -751,7 +751,12 @@ class IntelligoCommands {
 
   /// `lightStripList` — the strip's LED channel order, **not** a colour.
   static const List<String> colourOrderNames = [
-    'RGB', 'RBG', 'BRG', 'BGR', 'GRB', 'GBR',
+    'Red-Green-Blue (standard)',
+    'Red-Blue-Green',
+    'Blue-Red-Green',
+    'Blue-Green-Red',
+    'Green-Red-Blue',
+    'Green-Blue-Red',
   ];
 
   /// `colorSystem` — the 16 swatches shown beside the vendor colour wheel.
@@ -765,7 +770,13 @@ class IntelligoCommands {
   /// Anti-pinch: 0 disables it, 1–6 are the app's L1–L6 (lower = more
   /// sensitive).
   static const List<String> antiPinchNames = [
-    'Disabled', 'L1', 'L2', 'L3', 'L4', 'L5', 'L6',
+    'Off',
+    'Level 1 (most sensitive)',
+    'Level 2',
+    'Level 3',
+    'Level 4',
+    'Level 5',
+    'Level 6 (least sensitive)',
   ];
 
   static int lampEffectOpcode(int slot) => opcodeLampEffectBase + slot;
@@ -953,7 +964,8 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
   }) async {
     final cur = lightStrip;
     if (cur == null) {
-      throw StateError('intelligo: light strip not read yet');
+      throw StateError(
+          "The step lights haven't loaded yet. Wait a moment and try again.");
     }
     await _send(IntelligoCommands.bLightStrip(
       leftRgb: leftRgb ?? cur.leftRgb,
@@ -968,7 +980,8 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
       IntelligoFunctionSet Function(IntelligoFunctionSet) change) async {
     final cur = functionSet;
     if (cur == null) {
-      throw StateError('intelligo: function settings not read yet');
+      throw StateError(
+          "The step settings haven't loaded yet. Wait a moment and try again.");
     }
     await _send(IntelligoCommands.bFunctionSet(change(cur)));
   }
@@ -999,7 +1012,8 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
   ) async {
     final cur = lampEffects[slot];
     if (cur == null) {
-      throw StateError('intelligo: lamp effect $slot not read yet');
+      throw StateError(
+          "These light settings haven't loaded yet. Wait a moment and try again.");
     }
     final next = change(cur);
     lampEffects[slot] = next; // optimistic; the board echoes the write
@@ -1057,7 +1071,8 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
         DriverAction(
           'Manual mode',
           description:
-              'Engage manual mode — the board ignores Extend/Retract until it is active.',
+              'Tap this first. The steps only move from the app after manual '
+              'mode is on.',
           run: () => _send(isModuleB
               ? IntelligoCommands.bManualMode()
               : IntelligoCommands.clutch(opcode: _opcode)),
@@ -1065,11 +1080,13 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
         if (isModuleB) ...[
           // One button per side, like the vendor app: the hardware only offers
           // "actuate this pedal", so these flip whichever way it is now.
-          DriverAction('Left pedal',
-              description: 'Moves the left board in or out.',
+          DriverAction('Left step',
+              description: 'Moves the left step out, or back in if it is '
+                  'already out.',
               run: () => togglePedal(leftSide: true)),
-          DriverAction('Right pedal',
-              description: 'Moves the right board in or out.',
+          DriverAction('Right step',
+              description: 'Moves the right step out, or back in if it is '
+                  'already out.',
               run: () => togglePedal(leftSide: false)),
         ],
       ];
@@ -1096,43 +1113,51 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
     final s = deviceStatus;
     if (s == null) {
       return const [
-        DriverInfoSetting('Status', value: 'Waiting for the board…'),
+        DriverInfoSetting('Status', value: 'Waiting for the steps to reply…'),
       ];
     }
     final faults = s.activeFaults;
     final m = carModel;
     return [
-      DriverInfoSetting('Working voltage',
+      DriverInfoSetting('Power from the car',
+          description: 'The voltage reaching the steps from the car.',
           value: '${s.voltage.toStringAsFixed(1)} V'),
-      DriverInfoSetting('Light working voltage',
+      DriverInfoSetting('Power to the step lights',
+          description: 'The voltage going to the step lights.',
           value: '${s.lightVoltage.toStringAsFixed(1)} V'),
-      DriverInfoSetting('Left lamp current', value: '${s.leftLampCurrent} A'),
-      DriverInfoSetting('Right lamp current', value: '${s.rightLampCurrent} A'),
-      DriverInfoSetting('Faults',
+      DriverInfoSetting('Left light power use',
+          description: 'How much power the left step light is using, in amps.',
+          value: '${s.leftLampCurrent} A'),
+      DriverInfoSetting('Right light power use',
+          description:
+              'How much power the right step light is using, in amps.',
+          value: '${s.rightLampCurrent} A'),
+      DriverInfoSetting('Problems found',
           value: faults.isEmpty ? 'None' : faults.join('; '),
           isAlert: faults.isNotEmpty),
       // Brake/reverse/turn are vehicle events delivered over CAN, so call this
       // out explicitly rather than leaving the user to guess why they are dead.
       if (s.canBusFault)
         const DriverInfoSetting(
-          'Why brake / reverse do nothing',
-          value: 'The board reports a CAN bus data error, so it never receives '
-              'brake, reverse or turn signals from the vehicle. These events '
-              'come from the car, not from this app — check the CAN wiring and '
-              'that the vehicle profile below matches the vehicle.',
+          "Why the brake and reverse lights don't work",
+          value: "The steps can't read signals from the car, so they never "
+              'know when you brake, reverse or signal a turn. These signals '
+              'come from the car, not from this app. Ask your installer to '
+              'check the wiring to the car and that the car model code below '
+              'matches your car.',
           isAlert: true,
         ),
       if (m != null) ...[
-        DriverInfoSetting('Vehicle profile (model code)',
+        DriverInfoSetting('Car model code (for installers)',
             value: m.modelCodeText,
             description: 'Brand ${m.brandCode}, model ${m.modelCode}, '
                 'year ${m.yearCode}'),
-        DriverInfoSetting('Door swap',
-            value: 'Front ${m.frontDoorSwap ? "on" : "off"}, '
-                'rear ${m.rearDoorSwap ? "on" : "off"}'),
-        DriverInfoSetting('Mainboard / protocol',
-            value: 'type ${m.mainboardTypeCode}.${m.mainboardBranchCode}, '
-                'protocol v${m.protocolVersion}'),
+        DriverInfoSetting('Door sides swapped (for installers)',
+            value: 'Front doors: ${m.frontDoorSwap ? "yes" : "no"}, '
+                'back doors: ${m.rearDoorSwap ? "yes" : "no"}'),
+        DriverInfoSetting('Control box version (for support)',
+            value: 'Type ${m.mainboardTypeCode}.${m.mainboardBranchCode}, '
+                'version ${m.protocolVersion}'),
       ],
     ];
   }
@@ -1142,34 +1167,44 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
     final fs = functionSet;
     if (fs == null) {
       return const [
-        DriverInfoSetting('Functions', value: 'Waiting for the board…'),
+        DriverInfoSetting('Functions',
+            value: 'Waiting for the steps to reply…'),
       ];
     }
     return [
-      DriverToggleSetting('Colorful light',
+      DriverToggleSetting('Colour-changing lights',
+          description: 'Lets the step lights show colours and colour effects.',
           value: fs.xuanCai,
           onChanged: (v) => updateFunctionSet((f) => f.copyWith(xuanCai: v))),
       DriverToggleSetting('Panel light',
+          description: 'Turns the panel light on the steps on or off.',
           value: fs.mianBan,
           onChanged: (v) => updateFunctionSet((f) => f.copyWith(mianBan: v))),
-      DriverToggleSetting('Speed protection',
-          description: 'Retracts based on vehicle speed.',
+      DriverToggleSetting('Pull in when driving',
+          description:
+              'Pulls the steps in automatically once the car picks up speed.',
           value: fs.cheSu,
           onChanged: (v) => updateFunctionSet((f) => f.copyWith(cheSu: v))),
-      DriverToggleSetting('Abuse protection',
+      DriverToggleSetting('Overuse protection',
+          description:
+              'Protects the motors from being moved in and out too often.',
           value: fs.lanYong,
           onChanged: (v) => updateFunctionSet((f) => f.copyWith(lanYong: v))),
-      DriverToggleSetting('Left motor reverse',
+      DriverToggleSetting('Flip left step direction',
+          description: 'For installers. Turn on only if the left step goes in '
+              'when it should come out.',
           value: fs.leftDianJi,
           onChanged: (v) =>
               updateFunctionSet((f) => f.copyWith(leftDianJi: v))),
-      DriverToggleSetting('Right motor reverse',
+      DriverToggleSetting('Flip right step direction',
+          description: 'For installers. Turn on only if the right step goes '
+              'in when it should come out.',
           value: fs.rightDianJi,
           onChanged: (v) =>
               updateFunctionSet((f) => f.copyWith(rightDianJi: v))),
-      DriverOptionSetting<int>('Left anti-pinch',
-          description: 'Lower is more sensitive; Disabled stops it reversing '
-              'when it meets an obstacle.',
+      DriverOptionSetting<int>('Left step pinch guard',
+          description: 'Makes the left step stop and back off if it hits '
+              'something, like a leg. Level 1 reacts to the lightest touch.',
           value: fs.leftFangJia,
           options: [
             for (var i = 0; i < IntelligoCommands.antiPinchNames.length; i++)
@@ -1177,7 +1212,9 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
           ],
           onChanged: (v) =>
               updateFunctionSet((f) => f.copyWith(leftFangJia: v))),
-      DriverOptionSetting<int>('Right anti-pinch',
+      DriverOptionSetting<int>('Right step pinch guard',
+          description: 'Makes the right step stop and back off if it hits '
+              'something, like a leg. Level 1 reacts to the lightest touch.',
           value: fs.rightFangJia,
           options: [
             for (var i = 0; i < IntelligoCommands.antiPinchNames.length; i++)
@@ -1185,38 +1222,51 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
           ],
           onChanged: (v) =>
               updateFunctionSet((f) => f.copyWith(rightFangJia: v))),
-      DriverToggleSetting('Control welcome',
+      DriverToggleSetting('Welcome light',
+          description: 'Lights up the steps to greet you when you unlock or '
+              'open the car.',
           value: fs.yingBin,
           onChanged: (v) => updateFunctionSet((f) => f.copyWith(yingBin: v))),
-      DriverToggleSetting('Moving gear protection',
+      DriverToggleSetting('In-gear protection',
+          description: 'Keeps the steps safely in while the car is in gear.',
           value: fs.moveProtection,
           onChanged: (v) =>
               updateFunctionSet((f) => f.copyWith(moveProtection: v))),
       DriverToggleSetting('Left front door',
+          description: 'Opening this door brings the step out.',
           value: fs.frontLeft,
           onChanged: (v) => updateFunctionSet((f) => f.copyWith(frontLeft: v))),
       DriverToggleSetting('Right front door',
+          description: 'Opening this door brings the step out.',
           value: fs.frontRight,
           onChanged: (v) =>
               updateFunctionSet((f) => f.copyWith(frontRight: v))),
       DriverToggleSetting('Left back door',
+          description: 'Opening this door brings the step out.',
           value: fs.afterLeft,
           onChanged: (v) => updateFunctionSet((f) => f.copyWith(afterLeft: v))),
       DriverToggleSetting('Right back door',
+          description: 'Opening this door brings the step out.',
           value: fs.afterRight,
           onChanged: (v) =>
               updateFunctionSet((f) => f.copyWith(afterRight: v))),
-      DriverToggleSetting('Buzzer',
+      DriverToggleSetting('Beep sound',
+          description: 'Turns the steps\' beep sound on or off.',
           value: fs.buzzer,
           onChanged: (v) => updateFunctionSet((f) => f.copyWith(buzzer: v))),
-      DriverToggleSetting('Lamp strip exchange',
-          description: 'Swaps the left and right strips.',
+      DriverToggleSetting('Swap left and right lights',
+          description: 'Turn on if the left lights follow the right side\'s '
+              'settings, and the other way round.',
           value: fs.switchLight,
           onChanged: (v) =>
               updateFunctionSet((f) => f.copyWith(switchLight: v))),
-      DriverOptionSetting<int>('Pedal retraction delay',
+      DriverOptionSetting<int>('Wait before pulling in',
+          description: 'How long the steps stay out before they go back in.',
           value: fs.pedalDelayTime,
-          options: [for (var i = 0; i < 8; i++) (value: i, label: '$i s')],
+          options: [
+            for (var i = 0; i < 8; i++)
+              (value: i, label: i == 1 ? '1 second' : '$i seconds'),
+          ],
           onChanged: (v) =>
               updateFunctionSet((f) => f.copyWith(pedalDelayTime: v))),
     ];
@@ -1231,7 +1281,9 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
     return [
       // Which of the board's nine lighting events is being edited.
       DriverOptionSetting<int>(
-        'Light event',
+        'Lights for',
+        description: 'Pick a moment, like Door open or Brake, then set its '
+            'colour and effect below.',
         value: selectedLampSlot,
         options: [
           for (var i = 0; i < IntelligoCommands.lampEffectSlots; i++)
@@ -1241,7 +1293,9 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
       ),
       if (fs != null)
         DriverToggleSetting(
-          '${IntelligoCommands.lampEffectNames[selectedLampSlot]} enabled',
+          'Use lights for: '
+          '${IntelligoCommands.lampEffectNames[selectedLampSlot]}',
+          description: 'Turn off to skip the step lights at this moment.',
           value: fs.effectEnabled[selectedLampSlot],
           onChanged: (v) => setEffectEnabled(selectedLampSlot, v),
         ),
@@ -1257,15 +1311,18 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
             onChanged: (v) => updateLampEffect(
                 selectedLampSlot, (e) => e.copyWith(brightness: v))),
         DriverSliderSetting('Speed',
+            description: 'How fast the light effect moves.',
             value: lamp.speed,
             onChanged: (v) => updateLampEffect(
                 selectedLampSlot, (e) => e.copyWith(speed: v))),
-        DriverToggleSetting('Colorful',
-            description: 'Cycles through colours instead of the fixed colour.',
+        DriverToggleSetting('Rainbow colours',
+            description:
+                'Cycles through all colours instead of the one colour above.',
             value: lamp.xuanCai,
             onChanged: (v) => updateLampEffect(
                 selectedLampSlot, (e) => e.copyWith(xuanCai: v))),
-        DriverOptionSetting<int>('Mode',
+        DriverOptionSetting<int>('Effect',
+            description: 'How the lights move.',
             value: IntelligoCommands.lightModeNames.containsKey(lamp.lightMode)
                 ? lamp.lightMode
                 : null,
@@ -1276,6 +1333,7 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
             onChanged: (v) => updateLampEffect(
                 selectedLampSlot, (e) => e.copyWith(lightMode: v))),
         DriverOptionSetting<int>('Direction',
+            description: 'Which way the light effect runs along the step.',
             value: lamp.lightDirection,
             options: [
               for (var i = 0;
@@ -1288,9 +1346,9 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
       ],
       if (strip != null) ...[
         DriverOptionSetting<int>(
-          'Left strip channel order',
-          description: 'Match this to the strip\'s wiring, or colours come out '
-              'swapped.',
+          'Left light colour order',
+          description: 'Change this only if the colours look wrong, e.g. red '
+              'shows as green.',
           value: strip.leftRgb < IntelligoCommands.colourOrderNames.length
               ? strip.leftRgb
               : null,
@@ -1303,7 +1361,9 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
           onChanged: (v) => setLightStrip(leftRgb: v),
         ),
         DriverOptionSetting<int>(
-          'Right strip channel order',
+          'Right light colour order',
+          description: 'Change this only if the colours look wrong, e.g. red '
+              'shows as green.',
           value: strip.rightRgb < IntelligoCommands.colourOrderNames.length
               ? strip.rightRgb
               : null,
@@ -1315,11 +1375,15 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
           ],
           onChanged: (v) => setLightStrip(rightRgb: v),
         ),
-        DriverSliderSetting('Left pixels',
+        DriverSliderSetting('Number of lights on the left strip',
+            description: 'Set this to how many lights the strip has, so '
+                'effects run its full length.',
             value: strip.leftPoint,
             max: 255,
             onChanged: (v) => setLightStrip(leftPoint: v)),
-        DriverSliderSetting('Right pixels',
+        DriverSliderSetting('Number of lights on the right strip',
+            description: 'Set this to how many lights the strip has, so '
+                'effects run its full length.',
             value: strip.rightPoint,
             max: 255,
             onChanged: (v) => setLightStrip(rightPoint: v)),
@@ -1330,33 +1394,32 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
   @override
   List<DriverSetting> get settings => [
         DriverToggleSetting(
-          'Legacy board (module 0)',
-          description:
-              'For older boards that use FE 10 frames instead of FE 1B.',
+          'Older control box',
+          description: 'For installers. Turn on only for older steps that '
+              "don't respond to this app. Leave off otherwise.",
           value: isLegacyBoard,
           onChanged: setLegacyBoard,
         ),
         DriverToggleSetting(
-          'Alt firmware mode',
-          description:
-              'Legacy boards only: uses opcode 0xA0 instead of 0xA1.',
+          'Older control box: other version',
+          description: 'For installers. Only used with "Older control box". '
+              "Try it if the steps still don't respond. Leave off otherwise.",
           value: usesAltOpcode,
           onChanged: setUseAltOpcode,
         ),
         DriverTextSetting(
-          'Auth token override (hex)',
+          'Unlock code (for support only)',
           description:
-              'Normally leave blank — the unlock token is computed from the '
-              'board automatically, so any board works. Set 4 bytes here only '
-              'to force a specific token.'
-              '${lastChallengeHex != null ? ' Board challenge: $lastChallengeHex' : ''}',
+              'Leave blank. The app unlocks your steps automatically. Only '
+              'fill this in if TERRAX support gives you a code.'
+              '${lastChallengeHex != null ? ' Code from your steps: $lastChallengeHex' : ''}',
           value: authTokenHex,
           onChanged: setAuthTokenHex,
         ),
         DriverTextSetting(
-          'BLE password (legacy boards)',
+          'Bluetooth password (older control boxes)',
           description:
-              'Only for older module-0 boards that use the B0 password frame.',
+              'Only needed for older control boxes that ask for a password.',
           value: storedPassword ?? '',
           obscure: true,
           onChanged: setPassword,
@@ -1399,7 +1462,8 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
       }
     }
     if (write == null) {
-      throw StateError('intelligo: no writable characteristic found');
+      throw StateError(
+          "Couldn't take control of the steps over Bluetooth. Try connecting again.");
     }
     _write = write;
 
@@ -1599,7 +1663,7 @@ class IntelligoDriver extends DeviceDriver with DriverStateMixin {
   Future<void> _send(Uint8List bytes) {
     final write = _write;
     if (write == null) {
-      throw StateError('intelligo: not connected');
+      throw StateError('Not connected to the steps. Connect and try again.');
     }
     return _ble.write(write, bytes,
         withoutResponse: write.properties.writeWithoutResponse);

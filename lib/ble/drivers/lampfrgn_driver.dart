@@ -102,7 +102,8 @@ class LampFrgnCommands {
   /// (`ClimateSettingCmd.unpack` bit order).
   static const List<String> climateZonesLow = [
     'Front left door', 'Front right door', 'Rear left door',
-    'Rear right door', 'Centre console', 'Short bar', 'Box 5', 'Box 6',
+    'Rear right door', 'Centre console', 'Short light bar',
+    'Extra light box 5', 'Extra light box 6',
   ];
 
   /// Steering-wheel learning actions (`SteeringWheelLearningCmd.pack`; the
@@ -381,14 +382,14 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   /// `modeParamRhythm` list). 0 makes the lights cycle every colour to the
   /// beat — the "rainbow" the customer did not want; 1–7 pin one colour.
   static const List<({int value, String label})> rhythmColorOptions = [
-    (value: 0, label: 'Colourful Groove (rainbow)'),
-    (value: 1, label: 'Red Groove'),
-    (value: 2, label: 'Yellow Groove'),
-    (value: 3, label: 'Green Groove'),
-    (value: 4, label: 'Cyan Groove'),
-    (value: 5, label: 'Blue Groove'),
-    (value: 6, label: 'Purple Groove'),
-    (value: 7, label: 'White Groove'),
+    (value: 0, label: 'All colours (rainbow)'),
+    (value: 1, label: 'Red'),
+    (value: 2, label: 'Yellow'),
+    (value: 3, label: 'Green'),
+    (value: 4, label: 'Cyan'),
+    (value: 5, label: 'Blue'),
+    (value: 6, label: 'Purple'),
+    (value: 7, label: 'White'),
   ];
 
   /// Chosen rhythm colour (`modeParam`), cached per device. Defaults to a
@@ -413,10 +414,10 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
 
   /// Equalizer modes to try the single-colour trick on (the "level meter" ones).
   static const List<({int value, String label})> terraxGrooveBaseOptions = [
-    (value: 20, label: 'Spectrum Groove'),
-    (value: 21, label: 'Rainbow Groove'),
-    (value: 19, label: 'Bouncing Music'),
-    (value: 50, label: 'Bouncing Disco'),
+    (value: 20, label: 'Music bars'),
+    (value: 21, label: 'Rainbow music bars'),
+    (value: 19, label: 'Bouncing music bars'),
+    (value: 50, label: 'Disco music bars'),
   ];
 
   Rgb _grooveColor = const Rgb(255, 0, 0);
@@ -494,32 +495,32 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   /// so those four modes never selected correctly.
   @override
   List<EffectPreset> get effects => const [
-        EffectPreset(0, 'Single Color (static)'),
-        EffectPreset(1, 'Auto'),
-        EffectPreset(2, 'Breathing'),
-        EffectPreset(3, 'Burst Flash'),
-        EffectPreset(4, 'Cheerful Groove (single-colour music)'),
-        EffectPreset(5, 'Smooth Groove (single-colour music)'),
+        EffectPreset(0, 'Solid colour'),
+        EffectPreset(1, 'Auto (changes by itself)'),
+        EffectPreset(2, 'Breathing (soft glow in and out)'),
+        EffectPreset(3, 'Burst flash'),
+        EffectPreset(4, 'Music, lively (one colour)'),
+        EffectPreset(5, 'Music, smooth (one colour)'),
         EffectPreset(6, 'Sport'),
-        EffectPreset(7, 'Magic Dazzle'),
-        EffectPreset(8, 'Bouncing Music (basic)'),
-        EffectPreset(9, 'Magical Color'),
-        EffectPreset(10, 'Full Color Wave'),
-        EffectPreset(11, 'Opening Scroll'),
-        EffectPreset(12, 'Full Color Scroll'),
-        EffectPreset(13, 'Comet Tail'),
-        EffectPreset(14, 'Neon Lights'),
-        EffectPreset(15, 'Spring Flowers'),
-        EffectPreset(16, 'Summer Ocean'),
-        EffectPreset(17, 'Autumn Fairy Tale'),
-        EffectPreset(18, 'Winter Sonata'),
-        EffectPreset(19, 'Bouncing Music (equalizer)'),
-        EffectPreset(20, 'Spectrum Groove (equalizer)'),
-        EffectPreset(21, 'Rainbow Groove (equalizer)'),
-        EffectPreset(50, 'Bouncing Disco (equalizer)'),
-        EffectPreset(51, 'Dynamic Light & Shadow'),
-        EffectPreset(52, 'Cloud Flow'),
-        EffectPreset(53, 'Classic Tetris'),
+        EffectPreset(7, 'Magic dazzle'),
+        EffectPreset(8, 'Bouncing to music (basic)'),
+        EffectPreset(9, 'Magical colour'),
+        EffectPreset(10, 'All-colour wave'),
+        EffectPreset(11, 'Opening scroll'),
+        EffectPreset(12, 'All-colour scroll'),
+        EffectPreset(13, 'Comet tail'),
+        EffectPreset(14, 'Neon lights'),
+        EffectPreset(15, 'Spring flowers'),
+        EffectPreset(16, 'Summer ocean'),
+        EffectPreset(17, 'Autumn fairy tale'),
+        EffectPreset(18, 'Winter sonata'),
+        EffectPreset(19, 'Bouncing music bars'),
+        EffectPreset(20, 'Music bars'),
+        EffectPreset(21, 'Rainbow music bars'),
+        EffectPreset(50, 'Disco music bars'),
+        EffectPreset(51, 'Dynamic light and shadow'),
+        EffectPreset(52, 'Cloud flow'),
+        EffectPreset(53, 'Falling blocks (Tetris)'),
       ];
 
   @override
@@ -692,7 +693,7 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   /// per zone, and the frame layout, where mode1 is a nibble and mode2 a full
   /// byte): mode1 = zone 1's mode, mode2 = zone 2's mode. To confirm from the
   /// car: set different zone modes in the vendor app, reconnect ours, and
-  /// read Calibration > "Current mode (raw)".
+  /// read Support > "Current effect code (for TERRAX support)".
   int _zone1Mode = 0;
   int _zone2Mode = 0;
 
@@ -785,10 +786,12 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
 
   /// Labels for [_beads], in frame/reply order.
   static const List<String> _beadZones = [
-    'Central control', 'Left front door', 'Right front door',
-    'Left rear door', 'Right rear door', 'Odometer',
-    'Box 5', 'Box 6', 'Box 7', 'Box 8', 'Box 9',
-    'Box 10', 'Box 11', 'Box 12', 'Box 13', 'Box 14',
+    'Main control box', 'Left front door', 'Right front door',
+    'Left rear door', 'Right rear door', 'Dashboard',
+    'Extra light box 5', 'Extra light box 6', 'Extra light box 7',
+    'Extra light box 8', 'Extra light box 9', 'Extra light box 10',
+    'Extra light box 11', 'Extra light box 12', 'Extra light box 13',
+    'Extra light box 14',
   ];
 
   Future<void> _sendClimate(int style, int d1, int d2) async {
@@ -847,8 +850,8 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   /// The three per-zone modes the vendor app offers, using the mode-grid ids
   /// (0 = Single colour, 1 = Auto, 3 = Burst flash).
   static const List<({int value, String label})> _zoneModeOptions = [
-    (value: 0, label: 'Static'),
-    (value: 1, label: 'Automatic'),
+    (value: 0, label: 'Solid colour'),
+    (value: 1, label: 'Auto colour change'),
     (value: 3, label: 'Burst flash'),
   ];
 
@@ -860,7 +863,7 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
         reverseIndex ?? _welcomeReverseIndex, 2);
     if (pos == rev) {
       // Same rule as the vendor app: forward and reverse flow must differ.
-      throw ArgumentError('forward and reverse colours must differ');
+      throw ArgumentError('Pick two different welcome colours.');
     }
     await _send(LampFrgnCommands.welcomeCustomColor(
       positiveIndex: pos,
@@ -898,60 +901,64 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
   List<DriverSection> get sections => [
         DriverSection('Music', [
           DriverInfoSetting(
-            'Single-colour Groove',
-            value: 'For a groove that reacts to music in ONE colour, pick the '
-                '"Cheerful Groove" or "Smooth Groove" effect, then choose a '
-                'colour below (e.g. Red Groove). "Spectrum Groove" and '
-                '"Rainbow Groove" are always multicolour — the light itself '
-                'has no single-colour version of those two.',
+            'Music in one colour',
+            value: 'To make the lights dance to music in ONE colour, pick the '
+                '"Music, lively (one colour)" or "Music, smooth (one colour)" '
+                'effect, then choose the colour below. "Music bars" and '
+                '"Rainbow music bars" always use many colours. The lights '
+                'themselves cannot do those two in one colour.',
           ),
           DriverOptionSetting<int>(
-            'Groove colour',
+            'Music colour',
+            description: 'The colour the lights use when dancing to music.',
             value: _rhythmColor,
             options: rhythmColorOptions,
             onChanged: setRhythmColor,
           ),
           DriverSliderSetting(
-            'Sensitivity',
-            description: 'How strongly the lights react to sound (0–7).',
+            'Sound sensitivity',
+            description: 'How easily the lights react to sound (0–7). '
+                'Higher reacts to quieter sound.',
             value: _rhythmSensitivity,
             min: 0,
             max: 7,
             onChanged: setRhythmSensitivity,
           ),
         ], icon: DriverSectionIcon.functions),
-        DriverSection('TERRAX Groove', [
+        DriverSection('Music bars', [
           DriverInfoSetting(
-            'Single-colour equalizer (experimental)',
-            value: 'Tries the equalizer look in ONE colour: it sets your colour, '
-                'then starts the equalizer. If the light still shows many '
-                'colours, this board generates the equalizer colours itself and '
-                'cannot be forced to one — that is a hardware limit, not a bug.',
+            'Music bars in one colour (test feature)',
+            value: 'Tries to show the music bars in ONE colour: it sets your '
+                'colour first, then starts the music bars. If the lights '
+                'still show many colours, these lights choose their own bar '
+                'colours and cannot be changed. That is a limit of the '
+                'lights, not a fault.',
           ),
           DriverOptionSetting<int>(
-            'Equalizer style',
+            'Music style',
             value: _grooveBase,
             options: terraxGrooveBaseOptions,
             onChanged: setGrooveBase,
           ),
           DriverColorSetting(
-            'Groove colour',
-            description: 'Pick a colour to (try to) tint the equalizer.',
+            'Bar colour',
+            description: 'The colour to try for the music bars.',
             value: _grooveColor,
             onChanged: setGrooveColor,
           ),
           DriverButtonSetting(
-            'Apply single-colour equalizer',
-            description: 'Re-sends colour + equalizer in sequence.',
+            'Try it now',
+            description: 'Sets your colour, then starts the music bars.',
             run: applyTerraxGroove,
           ),
         ], icon: DriverSectionIcon.functions),
         DriverSection('Zones', [
           DriverInfoSetting(
-            'Two output groups',
-            value: 'The main colour wheel drives both zones together. Here '
-                'each zone (e.g. door/dash strips vs footwell glow) gets its '
-                'own colour, brightness and mode.',
+            'Two light zones',
+            value: 'Your lights are wired as two zones, for example door and '
+                'dash strips in one, footwell glow in the other. The main '
+                'colour wheel changes both at once. Here you can give each '
+                'zone its own colour, brightness and effect.',
           ),
           DriverColorSetting(
             'Zone 1 colour',
@@ -966,7 +973,7 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
             onChanged: (v) => _setZoneBrightness(zone1: true, percent: v),
           ),
           DriverOptionSetting<int>(
-            'Zone 1 mode',
+            'Zone 1 effect',
             value: _zoneModeOptions.any((o) => o.value == _zone1Mode)
                 ? _zone1Mode
                 : null,
@@ -986,7 +993,7 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
             onChanged: (v) => _setZoneBrightness(zone1: false, percent: v),
           ),
           DriverOptionSetting<int>(
-            'Zone 2 mode',
+            'Zone 2 effect',
             value: _zoneModeOptions.any((o) => o.value == _zone2Mode)
                 ? _zone2Mode
                 : null,
@@ -996,38 +1003,40 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
         ], icon: DriverSectionIcon.lights),
         DriverSection('Welcome', [
           DriverOptionSetting<int>(
-            'Forward colour',
-            description: 'Welcome flow colour (custom welcome mode).',
+            'Welcome colour, flowing forward',
+            description: 'Colour of the greeting light as it flows forward.',
             value: _welcomePositiveIndex,
             options: _paletteOptions,
             onChanged: (i) => _setWelcome(positiveIndex: i),
           ),
           DriverOptionSetting<int>(
-            'Reverse colour',
-            description: 'Reverse flow colour — must differ from forward.',
+            'Welcome colour, flowing back',
+            description: 'Colour as it flows back. Must be different from '
+                'the forward colour.',
             value: _welcomeReverseIndex,
             options: _paletteOptions,
             onChanged: (i) => _setWelcome(reverseIndex: i),
           ),
         ], icon: DriverSectionIcon.lights),
-        DriverSection('Climate', [
+        DriverSection('Air-con', [
           DriverOptionSetting<int>(
-            'Reminder style',
-            description: 'How the lighting reacts to temperature changes.',
+            'Lights follow the air-con',
+            description: 'When you change the air-con temperature, the '
+                'lights show it with a short animation.',
             value: _climateStyle,
             options: const [
               (value: LampFrgnCommands.climateOff, label: 'Off'),
               (
                 value: LampFrgnCommands.climateMasterVariation,
-                label: 'Master control variation'
+                label: 'Main lights only'
               ),
               (
                 value: LampFrgnCommands.climateMasterSlaveSync,
-                label: 'Master/slave sync'
+                label: 'All lights together'
               ),
               (
                 value: LampFrgnCommands.climateMasterSlaveSeamless,
-                label: 'Master/slave seamless'
+                label: 'Door lights follow the main lights smoothly'
               ),
             ],
             onChanged: (v) =>
@@ -1035,7 +1044,9 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
           ),
           for (var bit = 0; bit < 8; bit++)
             DriverToggleSetting(
-              '${LampFrgnCommands.climateZonesLow[bit]} direction',
+              '${LampFrgnCommands.climateZonesLow[bit]}: reverse direction',
+              description:
+                  'Makes the air-con animation run the other way here.',
               value: (_climateDirections1 >> bit) & 1 == 1,
               onChanged: (v) => _sendClimate(
                 _climateStyle,
@@ -1047,7 +1058,9 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
             ),
           for (var bit = 0; bit < 8; bit++)
             DriverToggleSetting(
-              'Box ${bit + 7} direction',
+              'Extra light box ${bit + 7}: reverse direction',
+              description:
+                  'Makes the air-con animation run the other way here.',
               value: (_climateDirections2 >> bit) & 1 == 1,
               onChanged: (v) => _sendClimate(
                 _climateStyle,
@@ -1058,11 +1071,11 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
               ),
             ),
         ], icon: DriverSectionIcon.functions),
-        DriverSection('LEDs', [
+        DriverSection('Number of lights', [
           const DriverInfoSetting(
-            'LED count per zone',
-            value: 'Set how many LEDs each zone\'s strip has. Wrong counts '
-                'make effects stop short or overflow onto the next zone.',
+            'How many lights in each strip',
+            value: 'Set how many tiny lights each strip has. If a number is '
+                'wrong, effects stop early or spill onto the next strip.',
           ),
           for (var i = 0; i < _beadZones.length; i++)
             DriverSliderSetting(
@@ -1075,89 +1088,91 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
         ], icon: DriverSectionIcon.info),
         DriverSection('Setup', [
           DriverButtonSetting(
-            'Pair sub-boxes',
-            description: 'Puts every sub-control box into pairing mode.',
+            'Connect door light boxes',
+            description: 'Lets all the small light boxes (doors and extras) '
+                'link up to the main box.',
             run: () => _send(LampFrgnCommands.pairing(autoPairAll: true)),
           ),
           DriverButtonSetting(
-            'Stop pairing',
+            'Stop connecting',
+            description: 'Stops looking for light boxes to link up.',
             run: () => _send(LampFrgnCommands.pairing(autoPairAll: false)),
           ),
           DriverButtonSetting(
-            'Start button learning',
-            description: 'Steering-wheel key learning: start, pick a key '
-                'below, then hold the wheel button 4-6 seconds. End when done.',
+            'Steering wheel buttons: start setup',
+            description: 'To control the lights from your steering wheel: tap '
+                'this, pick a button below, then hold that button on the '
+                'wheel for 4 to 6 seconds. Tap "finish" when done.',
             run: () => _send(LampFrgnCommands.steeringWheelLearning(
                 LampFrgnCommands.swlStartLearning)),
           ),
           DriverButtonSetting(
-            'Learn brightness key',
+            'Set brightness button',
             run: () => _send(LampFrgnCommands.steeringWheelLearning(
                 LampFrgnCommands.swlBrightnessKey)),
           ),
           DriverButtonSetting(
-            'Learn mode key',
+            'Set effect button',
             run: () => _send(LampFrgnCommands.steeringWheelLearning(
                 LampFrgnCommands.swlModeKey)),
           ),
           DriverButtonSetting(
-            'Learn power key',
+            'Set on/off button',
             run: () => _send(LampFrgnCommands.steeringWheelLearning(
                 LampFrgnCommands.swlPowerKey)),
           ),
           DriverButtonSetting(
-            'End learning',
+            'Steering wheel buttons: finish',
             run: () => _send(LampFrgnCommands.steeringWheelLearning(
                 LampFrgnCommands.swlEndLearning)),
           ),
           DriverButtonSetting(
-            'Reset button learning',
-            description: 'Restores the steering-wheel keys to factory.',
+            'Reset steering wheel buttons',
+            description: 'Forgets all the steering wheel buttons you set.',
             run: () => _send(LampFrgnCommands.steeringWheelLearning(
                 LampFrgnCommands.swlRestoreFactory)),
           ),
           DriverButtonSetting(
-            'Reset door assignment',
-            description:
-                'Clears which sub-box lights with which door (all doors).',
+            'Reset door light boxes',
+            description: 'Forgets which light box goes with which door (all '
+                'doors).',
             run: () => _send(
                 LampFrgnCommands.doorConfig(LampFrgnCommands.doorConfigResetAll)),
           ),
         ], icon: DriverSectionIcon.functions),
-        DriverSection('Calibration', [
+        DriverSection('Support', [
           DriverInfoSetting(
-            'Current mode (raw)',
+            'Current effect code (for TERRAX support)',
             value: _colorModeRaw == null
-                ? 'no reply yet'
+                ? 'No reply yet'
                 : _colorModeRaw!
                     .map((b) => b.toRadixString(16).padLeft(2, '0'))
                     .join(' '),
-            description: 'What the device says it is playing right now. Set a '
-                'scene in the vendor app, close that app, reconnect here, and '
-                'this line reveals the scene\'s real bytes.',
+            description: 'The code the lights report for the effect playing '
+                'now. TERRAX support may ask you to read it out.',
           ),
           DriverButtonSetting(
-            'Refresh from device',
-            description: 'Re-reads the current mode and parameter table.',
+            'Reload settings from the lights',
+            description: 'Asks the lights again for their current effect and '
+                'settings.',
             run: () async {
               await _send(LampFrgnCommands.queryColorMode());
               await _send(LampFrgnCommands.querySubModes());
             },
           ),
           DriverInfoSetting(
-            'Sub-mode ranges',
+            'Technical details (for TERRAX support)',
             value: _subModesRaw == null
-                ? 'no reply yet'
+                ? 'No reply yet'
                 : _subModesRaw!
                     .map((b) => b.toRadixString(16).padLeft(2, '0'))
                     .join(' '),
-            description:
-                'Raw per-mode parameter table reported by the device (0x0C).',
+            description: 'Effect settings list reported by the lights.',
           ),
           DriverSliderSetting(
-            'Scene group (mode1)',
-            description: 'Re-sends the current effect with this group value. '
-                'Used to find the encoding of the scene animations.',
+            'Scene test: group',
+            description: 'For TERRAX support. Replays the current effect with '
+                'this group number to help fix the scene effects.',
             value: _calibMode1,
             min: 0,
             max: 3,
@@ -1167,9 +1182,9 @@ class LampFrgnDriver extends DeviceDriver with DriverStateMixin {
             },
           ),
           DriverSliderSetting(
-            'Scene variant (param)',
-            description:
-                'Re-sends the current effect with this variant value.',
+            'Scene test: variant',
+            description: 'For TERRAX support. Replays the current effect with '
+                'this variant number.',
             value: _calibParam,
             min: 0,
             max: 7,

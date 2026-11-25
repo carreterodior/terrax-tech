@@ -354,10 +354,10 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
   int _pixels = 60;
   MagicLanternTimer _timerOn = const MagicLanternTimer(which: MagicLanternCommands.timerOn);
   MagicLanternTimer _timerOff = const MagicLanternTimer(which: MagicLanternCommands.timerOff);
-  String _timerStatus = 'Not read yet';
-  String _firmware = 'unknown';
+  String _timerStatus = 'Not loaded yet';
+  String _firmware = 'Unknown';
   List<String> _gattRows = const [];
-  String _writeTarget = 'not connected';
+  String _writeTarget = 'Not connected';
 
   final MagicLanternBeatDetector _beats = MagicLanternBeatDetector();
   BandSource? _bandSource;
@@ -393,7 +393,7 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
         hasStateFeedback: false,
       );
 
-  /// All 213 modes, tab-qualified ("Run · Red Running").
+  /// All 213 modes, tab-qualified ("Running lights · Red").
   @override
   List<EffectPreset> get effects => [
         for (final m in magicLanternModes) EffectPreset(m.id, m.label),
@@ -421,7 +421,7 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
         DriverSection('Pattern', [
           DriverSliderSetting(
             'Effect speed',
-            description: 'Speed of the selected pattern, as on the app\'s Mode tab.',
+            description: 'How fast the moving effect plays.',
             value: _speed,
             min: 0,
             max: 100,
@@ -430,7 +430,7 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
           if (variant.hasScenes)
             DriverOptionSetting<int>(
               'Scene',
-              description: 'Built-in scenes (the app\'s Scenes tab).',
+              description: 'Ready-made light moods, like Sunset or Party.',
               value: _sceneId,
               options: [
                 for (final (sid, name) in magicLanternScenes) (value: sid, label: name),
@@ -439,7 +439,8 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
             ),
           if (variant.hasWhiteChannel)
             DriverSliderSetting(
-              'White level',
+              'White brightness',
+              description: 'How bright the separate white lights are.',
               value: _white,
               min: 0,
               max: 100,
@@ -447,8 +448,8 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
             ),
           if (variant.hasColorTemperature)
             DriverSliderSetting(
-              'Colour temperature',
-              description: 'Warm (0) to cool (100).',
+              'Warm or cool white',
+              description: 'Warm (yellowish) to cool (bluish).',
               value: _cold,
               min: 0,
               max: 100,
@@ -457,26 +458,28 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
         ], icon: DriverSectionIcon.lights),
         DriverSection('Music', [
           DriverInfoSetting(
-            'Sound reactive',
+            'Lights to music',
             value: _soundError ??
-                'Phone microphone: beats cycle the colours, silence goes dark '
-                    '(the app\'s Mic tab).',
+                'Turn on the phone microphone and the lights change colour on '
+                    'every beat. They go dark when it is quiet.',
             isAlert: _soundError != null,
           ),
           DriverToggleSetting(
             'Phone microphone',
+            description: 'Your phone listens to the music and sends the beat to the lights.',
             value: _phoneMicOn,
             onChanged: setPhoneMic,
           ),
           if (variant.hasExternalMic) ...[
             DriverToggleSetting(
-              'Controller microphone',
-              description: 'The controller listens on its own mic ("External MIC").',
+              'Control box microphone',
+              description: 'Use the microphone built into the light\'s control box instead of your phone.',
               value: _externalMic,
               onChanged: setExternalMic,
             ),
             DriverOptionSetting<int>(
-              'EQ style',
+              'Music style',
+              description: 'How the lights move to the music.',
               value: _eq,
               options: [
                 for (var i = 0; i < magicLanternEqStyles.length; i++)
@@ -485,7 +488,8 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
               onChanged: setEq,
             ),
             DriverSliderSetting(
-              'Sensitivity',
+              'Microphone sensitivity',
+              description: 'Higher reacts to quieter sounds.',
               value: _micSensitivity,
               min: 0,
               max: 100,
@@ -500,12 +504,12 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
               value: _timerStatus,
             ),
             DriverButtonSetting(
-              'Read timers from controller',
+              'Load timers from the light',
               run: readTimers,
             ),
             DriverButtonSetting(
-              'Sync phone time to controller',
-              description: 'The controller keeps its own clock for the schedule.',
+              'Set the light\'s clock to phone time',
+              description: 'The light keeps its own clock to run the timers.',
               run: sendSystemTime,
             ),
             ..._timerSettings('Turn on', _timerOn, (t) => _timerOn = t),
@@ -513,8 +517,8 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
           ]),
         DriverSection('Setup', [
           DriverOptionSetting<int>(
-            'Wire order',
-            description: 'R/G/B pin sequence, if colours come out swapped.',
+            'Colour order',
+            description: 'Change only if the colours look wrong (e.g. red shows as green).',
             value: _pinOrder,
             options: [
               for (var i = 0; i < magicLanternPinOrders.length; i++)
@@ -523,31 +527,37 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
             onChanged: setPinOrder,
           ),
           DriverSliderSetting(
-            'Total pixels',
-            description: 'Number of LEDs on the strip (10–1000).',
+            'Number of lights on the strip',
+            description: 'How many light dots your strip has (10–1000), so effects fill the whole strip.',
             value: _pixels,
             min: 10,
             max: 1000,
             onChanged: setPixelCount,
           ),
-          DriverToggleSetting('RGB output', value: _rgbOn, onChanged: (v) => setChannelEnabled(MagicLanternCommands.channelRgb, v)),
+          DriverToggleSetting('Colour lights',
+              description: 'Turn the colour part of the strip on or off.',
+              value: _rgbOn, onChanged: (v) => setChannelEnabled(MagicLanternCommands.channelRgb, v)),
           if (variant.hasWhiteChannel)
-            DriverToggleSetting('White output', value: _whiteOn, onChanged: (v) => setChannelEnabled(MagicLanternCommands.channelWhite, v)),
+            DriverToggleSetting('White lights',
+                description: 'Turn the separate white lights on or off.',
+                value: _whiteOn, onChanged: (v) => setChannelEnabled(MagicLanternCommands.channelWhite, v)),
           if (variant.hasColorTemperature)
-            DriverToggleSetting('CCT output', value: _cctOn, onChanged: (v) => setChannelEnabled(MagicLanternCommands.channelCct, v)),
+            DriverToggleSetting('Warm/cool white lights',
+                description: 'Turn the warm-to-cool white lights on or off.',
+                value: _cctOn, onChanged: (v) => setChannelEnabled(MagicLanternCommands.channelCct, v)),
         ]),
-        DriverSection('Connection', [
-          DriverInfoSetting('Write target', value: _writeTarget),
-          DriverInfoSetting('Firmware', value: _firmware),
-          DriverInfoSetting('Variant', value: variant.describe()),
+        DriverSection('About this light', [
+          DriverInfoSetting('Connection details (for TERRAX support)', value: _writeTarget),
+          DriverInfoSetting('Software version', value: _firmware),
+          DriverInfoSetting('Features', value: variant.describe()),
           DriverInfoSetting(
-            'Services found',
-            value: _gattRows.isEmpty ? 'none yet' : _gattRows.join('\n'),
+            'Bluetooth details (for TERRAX support)',
+            value: _gattRows.isEmpty ? 'None yet' : _gattRows.join('\n'),
           ),
         ], icon: DriverSectionIcon.info),
       ];
 
-  static const _dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  static const _dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   List<DriverSetting> _timerSettings(
       String title, MagicLanternTimer t, void Function(MagicLanternTimer) store) {
@@ -565,12 +575,17 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
     }
 
     return [
-      DriverToggleSetting('$title timer', value: t.enabled, onChanged: (v) => apply(t.copyWith(enabled: v))),
-      DriverSliderSetting('$title hour', value: t.hour, min: 0, max: 23, onChanged: (v) => apply(t.copyWith(hour: v))),
-      DriverSliderSetting('$title minute', value: t.minute, min: 0, max: 59, onChanged: (v) => apply(t.copyWith(minute: v))),
+      DriverToggleSetting('$title timer',
+          description: '${title == 'Turn on' ? 'Turns the lights on' : 'Turns the lights off'} '
+              'automatically at the time and on the days below.',
+          value: t.enabled, onChanged: (v) => apply(t.copyWith(enabled: v))),
+      DriverSliderSetting('$title time: hour',
+          description: '24-hour clock: 0 = midnight, 13 = 1 PM.',
+          value: t.hour, min: 0, max: 23, onChanged: (v) => apply(t.copyWith(hour: v))),
+      DriverSliderSetting('$title time: minute', value: t.minute, min: 0, max: 59, onChanged: (v) => apply(t.copyWith(minute: v))),
       for (var d = 0; d < 7; d++)
         DriverToggleSetting(
-          '$title · ${_dayNames[d]}',
+          '$title every ${_dayNames[d]}',
           value: t.day(d),
           onChanged: (v) => apply(t.copyWith(
               weekdays: v ? (t.weekdays | (1 << d)) : (t.weekdays & ~(1 << d)))),
@@ -615,9 +630,10 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
     _gattRows = CarLightsDriver.describeGatt(services);
     final write = pickCharacteristic(services);
     if (write == null) {
-      _writeTarget = 'none (no FFF3 / writable characteristic)';
-      throw StateError('magiclantern: no writable characteristic found '
-          '(services: ${_gattRows.join('; ')})');
+      _writeTarget = 'None found (no FFF3 / writable characteristic)';
+      throw StateError('This doesn\'t look like a Magic Lantern light, so the app can\'t control it. '
+          'If it is a different product, remove it and use "This is a…" to pick its type. '
+          '(For TERRAX support: no writable characteristic; services: ${_gattRows.join('; ')})');
     }
     _write = write;
     _writeTarget = '${write.serviceUuid.str.toUpperCase()} / '
@@ -673,7 +689,7 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
       buf.writeCharCode(b);
     }
     final s = buf.toString().trim();
-    return s.isEmpty ? 'unknown' : s;
+    return s.isEmpty ? 'Unknown' : s;
   }
 
   @override
@@ -681,14 +697,14 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
     _connected = false;
     await _stopPhoneMic();
     _write = null;
-    _writeTarget = 'not connected';
+    _writeTarget = 'Not connected';
   }
 
   /// Android's default write type for the vendor: WRITE with response when the
   /// characteristic supports it, else without.
   Future<void> _send(Uint8List bytes) {
     final write = _write;
-    if (write == null) throw StateError('magiclantern: not connected');
+    if (write == null) throw StateError('The light is not connected.');
     return _ble.write(write, bytes, withoutResponse: !write.properties.write);
   }
 
@@ -829,13 +845,13 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
       final stream = await source.start();
       _bandSource = source;
       _bandSub = stream.listen(onBands, onError: (Object e) {
-        _soundError = 'Microphone stopped: $e';
+        _soundError = 'The phone microphone stopped. Turn it on again to retry. ($e)';
         unawaited(_stopPhoneMic());
         emitState(currentState);
       });
       _phoneMicOn = true;
     } catch (e) {
-      _soundError = 'Microphone unavailable: $e';
+      _soundError = 'Can\'t use the phone microphone. Check that TERRAX TECH is allowed to use it. ($e)';
       await source.stop();
       rethrow;
     }
@@ -888,7 +904,7 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
   Future<void> readTimers() async {
     final write = _write;
     if (write == null || !write.properties.read) {
-      _timerStatus = 'This unit does not allow reading its timers.';
+      _timerStatus = 'This light can\'t show its saved timers.';
       emitState(currentState);
       return;
     }
@@ -899,7 +915,7 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
       if (!_connected) return;
       final reply = MagicLanternCommands.parseTimer(await _ble.read(write));
       if (reply == null || reply.which != which) {
-        found.add('${which == MagicLanternCommands.timerOn ? 'On' : 'Off'}: no reply');
+        found.add('${which == MagicLanternCommands.timerOn ? 'Turn on' : 'Turn off'}: no answer from the light');
         continue;
       }
       if (which == MagicLanternCommands.timerOn) {
@@ -907,9 +923,9 @@ class MagicLanternDriver extends DeviceDriver with DriverStateMixin {
       } else {
         _timerOff = reply;
       }
-      found.add('${which == MagicLanternCommands.timerOn ? 'On' : 'Off'}: '
-          '${reply.hour.toString().padLeft(2, '0')}:${reply.minute.toString().padLeft(2, '0')} '
-          '${reply.enabled ? 'enabled' : 'disabled'}');
+      found.add('${which == MagicLanternCommands.timerOn ? 'Turn on' : 'Turn off'} at '
+          '${reply.hour.toString().padLeft(2, '0')}:${reply.minute.toString().padLeft(2, '0')} · '
+          '${reply.enabled ? 'on' : 'off'}');
     }
     await _persistTimers();
     _timerStatus = found.join('\n');
@@ -959,9 +975,9 @@ class MagicLanternVariant {
 
   String describe() => [
         if (hasScenes) 'scenes',
-        if (hasExternalMic) 'controller mic',
-        if (hasSchedule) 'schedule',
-        if (hasColorTemperature) 'CCT',
-        if (hasWhiteChannel) 'white channel',
+        if (hasExternalMic) 'control box microphone',
+        if (hasSchedule) 'timers',
+        if (hasColorTemperature) 'warm/cool white',
+        if (hasWhiteChannel) 'white lights',
       ].join(', ');
 }

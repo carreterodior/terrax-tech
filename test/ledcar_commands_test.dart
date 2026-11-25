@@ -160,7 +160,7 @@ void main() {
   group('mode table', () {
     test('23 car patterns, ids 135..157, ASCII names', () {
       expect(ledCarModes.length, 23);
-      expect(ledCarModes.first, (id: 135, name: 'Tricolor jump'));
+      expect(ledCarModes.first, (id: 135, name: 'Three colours switching'));
       expect(ledCarModes.last.id, 157);
       for (var i = 0; i < 23; i++) {
         expect(ledCarModes[i].id, 135 + i);

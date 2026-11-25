@@ -369,8 +369,8 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
   List<DriverSection> get sections => [
         DriverSection('Sides', [
           DriverOptionSetting<int>('Colour, brightness and patterns apply to',
-              description: 'The kit has two light groups. Pick both, or one side at a time. '
-                  'Picking a colour or Static also stops any moving effect.',
+              description: 'The kit has two sides of lights. Pick both, or one side at a time. '
+                  'Picking a colour or "Steady colour" also stops any moving effect.',
               value: _side,
               options: const [(value: 0, label: 'Both sides'), (value: 1, label: 'Side 1'), (value: 2, label: 'Side 2')],
               onChanged: setSide),
@@ -383,7 +383,7 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
                 description: 'For Fade, Breathing, Flash and Auto colour cycle.',
                 value: _basicSpeed, min: 1, max: 5, onChanged: setBasicSpeed),
         ], icon: DriverSectionIcon.lights),
-        DriverSection('Effects', [
+        DriverSection('Moving effects', [
           DriverSliderSetting('Flowing speed', value: _flowSpeed, min: 1, max: 5, onChanged: setFlowSpeed),
           DriverOptionSetting<int>('Flowing direction',
               value: _flowDir,
@@ -435,10 +435,10 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
           DriverInfoSetting('Door light boxes',
               value: 'Door lights with their own small wireless box: tap Find, wait for them to light up, then Finish.'),
           DriverButtonSetting('Find door light boxes', run: () => _boxAction(0x01)),
-          DriverButtonSetting('Finish pairing door boxes', run: () => _boxAction(0x22)),
+          DriverButtonSetting('Finish connecting door boxes', run: () => _boxAction(0x22)),
           DriverButtonSetting('Fix interference with another kit',
               description: 'Use if a nearby car\'s kit makes these lights change.', run: () => _boxAction(0x03)),
-          DriverButtonSetting('Reset door box pairing', run: () => _boxAction(0x11)),
+          DriverButtonSetting('Reset door box connections', run: () => _boxAction(0x11)),
         ]),
         DriverSection('About', [
           if (_notice != null) DriverInfoSetting('Last change', value: _notice!),
