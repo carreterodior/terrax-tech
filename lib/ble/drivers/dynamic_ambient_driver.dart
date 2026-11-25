@@ -55,6 +55,11 @@ class DynamicAmbientCommands {
   /// 3 flash, 4 auto colour cycle, 6 music (built-in microphone).
   static Uint8List basicMode(int mode) => frame(0x03, [mode, mode]);
 
+  /// Basic mode per part (byte 1 = part 1, byte 2 = part 2), as reported back
+  /// in the state reply. Mode 0 (single colour) is also how the vendor app
+  /// leaves a pattern ("Monochrome" on its colour page).
+  static Uint8List basicModes(int part1, int part2) => frame(0x03, [part1, part2]);
+
   /// Speed of the basic modes, 1–5.
   static Uint8List basicSpeed(int speed) => frame(0x07, [speed.clamp(1, 5)]);
 
@@ -237,6 +242,14 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
   int _bright1 = 100;
   int _bright2 = 100;
   int _basicSpeed = 3;
+  // Basic mode per side as last sent or reported (0 = solid colour).
+  int _mode1 = 0;
+  int _mode2 = 0;
+  // True while a pattern may be running (and right after connecting, when
+  // we cannot tell yet): the next colour first puts the box back to solid
+  // colour. Field test 2026-11-25: after a pattern, the colour wheel and
+  // "Static" no longer changed side 1, because only a colour was sent.
+  bool _patternMaybeOn = true;
   bool _hasBasicSpeed = false;
   int _mic = 100;
 
@@ -307,6 +320,26 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
         Rgb(255, 255, 255),
       ];
 
+  String _modeLabel(int m) {
+    if (m == 0) return 'Solid colour';
+    for (final (v, name) in dynamicAmbientBasicModes) {
+      if (v == m) return name;
+    }
+    return 'Pattern $m';
+  }
+
+  /// Basic mode [m] for the chosen side(s); the other side keeps its own.
+  (int, int) _modesFor(int m) => (_side != 2 ? m : _mode1, _side != 1 ? m : _mode2);
+
+  void _refreshSoon() {
+    unawaited(Future<void>.delayed(const Duration(milliseconds: 400), () async {
+      if (!_connected) return;
+      try {
+        await _send(DynamicAmbientCommands.queryState());
+      } catch (_) {}
+    }));
+  }
+
   bool _event(int id) => (_eventBits >> (id - 1)) & 1 == 1;
 
   String _key(String k) => 'dynamicambient.$k.${_device.remoteId.str}';
@@ -314,11 +347,14 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
   @override
   List<DriverSection> get sections => [
         DriverSection('Sides', [
-          DriverOptionSetting<int>('Colour and brightness apply to',
-              description: 'The kit has two light groups. Pick both, or one side at a time.',
+          DriverOptionSetting<int>('Colour, brightness and patterns apply to',
+              description: 'The kit has two light groups. Pick both, or one side at a time. '
+                  'Moving effects have no side setting; the control box decides where they run.',
               value: _side,
               options: const [(value: 0, label: 'Both sides'), (value: 1, label: 'Side 1'), (value: 2, label: 'Side 2')],
               onChanged: setSide),
+          DriverInfoSetting('Side 1 is showing', value: _modeLabel(_mode1)),
+          DriverInfoSetting('Side 2 is showing', value: _modeLabel(_mode2)),
           DriverSliderSetting('Side 1 brightness', value: _bright1, min: 0, max: 100, onChanged: (v) => setSideBrightness(1, v)),
           DriverSliderSetting('Side 2 brightness', value: _bright2, min: 0, max: 100, onChanged: (v) => setSideBrightness(2, v)),
           if (_hasBasicSpeed || !_typeKnown)
@@ -400,6 +436,7 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
   @override
   Future<void> connect() async {
     _side = _prefs.getInt(_key('side')) ?? 0;
+    _patternMaybeOn = true;
     final services = await _ble.discoverServices(_device);
     BluetoothCharacteristic? write;
     BluetoothCharacteristic? notify;
@@ -510,7 +547,18 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
   Future<void> setColor(Rgb color) async {
     if (_side != 2) _part1 = color;
     if (_side != 1) _part2 = color;
+    // Picking a colour means "solid colour" on the chosen side(s): leave any
+    // pattern first, like the vendor's "Monochrome" button.
+    final (m1, m2) = _modesFor(0);
+    final leavePattern = _patternMaybeOn || m1 != _mode1 || m2 != _mode2;
+    if (leavePattern) {
+      _mode1 = m1;
+      _mode2 = m2;
+      _patternMaybeOn = false;
+      await _send(DynamicAmbientCommands.basicModes(m1, m2));
+    }
     await _send(DynamicAmbientCommands.color(_part1, _part2));
+    if (leavePattern) _refreshSoon();
     _power = true;
     updateState((s) => s.copyWith(color: color, power: true));
   }
@@ -533,14 +581,20 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
       final v = effectId & 0xFF;
       _flowMode = v & 0x0F;
       _flowStyle = v >> 4;
+      _patternMaybeOn = true;
       await _send(DynamicAmbientCommands.flowEffect(_flowMode!, _flowStyle));
       _flowSpeed = s5;
       await _send(DynamicAmbientCommands.flowSpeed(_flowSpeed));
     } else {
-      await _send(DynamicAmbientCommands.basicMode(effectId & 0xFF));
+      final (m1, m2) = _modesFor(effectId & 0xFF);
+      _mode1 = m1;
+      _mode2 = m2;
+      _patternMaybeOn = true;
+      await _send(DynamicAmbientCommands.basicModes(m1, m2));
       _basicSpeed = s5;
       await _send(DynamicAmbientCommands.basicSpeed(_basicSpeed));
     }
+    _refreshSoon();
     _power = true;
     updateState((st) => st.copyWith(effectId: effectId, effectSpeed: speed, power: true));
   }
@@ -668,6 +722,8 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
     switch (cmd) {
       case 0x00 when len == 0x0E || len == 0x10:
         _bright1 = at(3).clamp(0, 100);
+        _mode1 = at(4);
+        _mode2 = at(9);
         _part1 = Rgb(at(5), at(6), at(7));
         _bright2 = at(8).clamp(0, 100);
         _part2 = Rgb(at(10), at(11), at(12));

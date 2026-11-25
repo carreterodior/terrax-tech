@@ -25,6 +25,14 @@ effect frame and the speed frame back to back. Assumed cause: the box keeps only
 arrive together. Fix (build 19): every frame waits ≥120 ms after the previous one; queued colour and
 brightness frames drop older ones. About → "For TERRAX support" shows the last 4 raw replies.
 
+Build 19 test: patterns now work. New bugs: after a pattern, the colour wheel and "Static" no
+longer changed side 1 (we only sent a colour; the vendor leaves a pattern with basic mode 0,
+"Monochrome"), and patterns only showed on side 1. Fix (build 20): a colour first sends
+`FC 03 03 m1 m2` with 0 for the chosen side(s), once after a pattern or after connecting. Basic
+modes follow the Sides choice (byte 1 = side 1, byte 2 = side 2, the other side keeps its mode).
+State is re-queried 400 ms after a change, and Sides shows what each side is running (b4/b9).
+Flowing effects (`22`) have no side byte; whether side 2 can run them is still unknown.
+
 ## Frame
 `FC LEN CMD P… CS FA`; LEN = CMD + params; CS = `~(LEN + CMD + ΣP) & 0xFF`.
 

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:terrax/ble/ble_service.dart';
 import 'package:terrax/ble/detection.dart';
+import 'package:terrax/ble/device_driver.dart';
 import 'package:terrax/ble/drivers/dynamic_ambient_driver.dart';
 import 'package:terrax/models/rgb.dart';
 
@@ -75,6 +76,27 @@ void main() {
       d.onNotify([0xFC, 0x07, 0x01, 0x0B, 0x13, 120, 0x00, 0, 0, 0x00, 0xFA]);
       expect(d.effects.any((e) => e.name.startsWith('Shooting stars')), isFalse);
       expect(d.effects.where((e) => e.name.startsWith('Music (built-in mic) ·')).length, 3);
+    });
+  });
+
+  group('patterns per side', () {
+    test('basicModes frame: byte 1 = side 1, byte 2 = side 2', () {
+      expect(DynamicAmbientCommands.basicModes(0, 0), DynamicAmbientCommands.basicMode(0));
+      expect(DynamicAmbientCommands.basicModes(1, 0), [0xFC, 0x03, 0x03, 0x01, 0x00, 0xF8, 0xFA]);
+    });
+
+    test('state reply shows what each side is running', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final d = DynamicAmbientDriver(BleService.instance, BluetoothDevice.fromId('AB'), prefs);
+      d.onNotify([0xFC, 0x10, 0x00, 80, 1, 255, 0, 0, 40, 0, 0, 0, 255, 1, 70, 4, 0, 0, 0x00, 0xFA]);
+      String showing(String label) => d.sections
+          .expand((s) => s.settings)
+          .whereType<DriverInfoSetting>()
+          .firstWhere((s) => s.label == label)
+          .value;
+      expect(showing('Side 1 is showing'), 'Fade between colours');
+      expect(showing('Side 2 is showing'), 'Solid colour');
     });
   });
 
