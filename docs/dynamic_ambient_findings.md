@@ -33,6 +33,13 @@ modes follow the Sides choice (byte 1 = side 1, byte 2 = side 2, the other side 
 State is re-queried 400 ms after a change, and Sides shows what each side is running (b4/b9).
 Flowing effects (`22`) have no side byte; whether side 2 can run them is still unknown.
 
+Build 20 test: side 1 could not be controlled at all; side 2 could. Cause: a moving effect
+(`22`) was still running, and basic mode 0 does not stop it. Flowing mode 10 is the vendor's
+"Sync part1" (style 0) / "Sync part2" (style 1), its default, where the strip copies side 1
+(or side 2). Fix (build 21): before any colour, Static or basic pattern, send `22 0A` (or
+`22 1A` if the box was syncing to side 2) unless the dynamic reply already shows mode 10. Mode 10
+is listed as "No moving effect (copy side 1/2)".
+
 ## Frame
 `FC LEN CMD P… CS FA`; LEN = CMD + params; CS = `~(LEN + CMD + ΣP) & 0xFF`.
 

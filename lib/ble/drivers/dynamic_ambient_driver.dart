@@ -144,8 +144,10 @@ class DynamicAmbientEffect {
 }
 
 const List<DynamicAmbientEffect> dynamicAmbientEffects = [
-  DynamicAmbientEffect(10, 0, 'Same on both sides A', 1, 1),
-  DynamicAmbientEffect(10, 1, 'Same on both sides B', 1, 1),
+  // Vendor "Sync part1" / "Sync part2" (its default): the strip copies side
+  // 1's (or side 2's) colour and basic pattern, i.e. no moving effect.
+  DynamicAmbientEffect(10, 0, 'No moving effect (copy side 1)', 1, 1),
+  DynamicAmbientEffect(10, 1, 'No moving effect (copy side 2)', 1, 1),
   DynamicAmbientEffect(11, null, 'Colourful', 5, 6),
   DynamicAmbientEffect(12, null, 'Music (built-in mic)', 3, 6),
   DynamicAmbientEffect(13, null, 'Seven colours', 5, 6),
@@ -258,6 +260,9 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
   bool _typeKnown = false;
   int? _flowMode;
   int _flowStyle = 0;
+  // Which side the strip copies when no moving effect runs (vendor "Sync
+  // part1" = 0, "Sync part2" = 1).
+  int _syncStyle = 0;
   int _flowSpeed = 5;
   int _flowDir = 1;
   int _singleCount = 150;
@@ -336,8 +341,24 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
       if (!_connected) return;
       try {
         await _send(DynamicAmbientCommands.queryState());
+        await _send(DynamicAmbientCommands.queryDynamic());
       } catch (_) {}
     }));
+  }
+
+  /// Field test 2026-11-25 (build 20): after a moving effect, side 1 no
+  /// longer followed colour or basic patterns at all — basic mode 0 does not
+  /// stop a moving effect. The vendor's default moving mode is "Sync part1"
+  /// (mode 10), where the strip copies the colour page, so we go back to it
+  /// before any colour or basic pattern. Unknown state (just connected)
+  /// counts as "moving effect may be on".
+  bool get _movingEffectOn => _flowMode != 10;
+
+  Future<void> _stopMovingEffect() async {
+    if (!_movingEffectOn) return;
+    _flowMode = 10;
+    _flowStyle = _syncStyle;
+    await _send(DynamicAmbientCommands.flowEffect(10, _syncStyle));
   }
 
   bool _event(int id) => (_eventBits >> (id - 1)) & 1 == 1;
@@ -349,7 +370,7 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
         DriverSection('Sides', [
           DriverOptionSetting<int>('Colour, brightness and patterns apply to',
               description: 'The kit has two light groups. Pick both, or one side at a time. '
-                  'Moving effects have no side setting; the control box decides where they run.',
+                  'Picking a colour or Static also stops any moving effect.',
               value: _side,
               options: const [(value: 0, label: 'Both sides'), (value: 1, label: 'Side 1'), (value: 2, label: 'Side 2')],
               onChanged: setSide),
@@ -437,6 +458,7 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
   Future<void> connect() async {
     _side = _prefs.getInt(_key('side')) ?? 0;
     _patternMaybeOn = true;
+    _flowMode = null;
     final services = await _ble.discoverServices(_device);
     BluetoothCharacteristic? write;
     BluetoothCharacteristic? notify;
@@ -549,8 +571,10 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
     if (_side != 1) _part2 = color;
     // Picking a colour means "solid colour" on the chosen side(s): leave any
     // pattern first, like the vendor's "Monochrome" button.
+    final stopMoving = _movingEffectOn;
+    await _stopMovingEffect();
     final (m1, m2) = _modesFor(0);
-    final leavePattern = _patternMaybeOn || m1 != _mode1 || m2 != _mode2;
+    final leavePattern = stopMoving || _patternMaybeOn || m1 != _mode1 || m2 != _mode2;
     if (leavePattern) {
       _mode1 = m1;
       _mode2 = m2;
@@ -581,11 +605,13 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
       final v = effectId & 0xFF;
       _flowMode = v & 0x0F;
       _flowStyle = v >> 4;
+      if (_flowMode == 10) _syncStyle = _flowStyle;
       _patternMaybeOn = true;
       await _send(DynamicAmbientCommands.flowEffect(_flowMode!, _flowStyle));
       _flowSpeed = s5;
       await _send(DynamicAmbientCommands.flowSpeed(_flowSpeed));
     } else {
+      await _stopMovingEffect();
       final (m1, m2) = _modesFor(effectId & 0xFF);
       _mode1 = m1;
       _mode2 = m2;
@@ -738,6 +764,7 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
         _typeKnown = true;
         _flowStyle = at(3) >> 4;
         _flowMode = at(3) & 0x0F;
+        if (_flowMode == 10) _syncStyle = _flowStyle.clamp(0, 1);
         _flowDir = (at(4) >> 4).clamp(0, 1);
         _flowSpeed = (at(4) & 0x0F).clamp(1, 5);
         _singleCount = at(5).clamp(0, 150);

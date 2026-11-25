@@ -98,6 +98,15 @@ void main() {
       expect(showing('Side 1 is showing'), 'Fade between colours');
       expect(showing('Side 2 is showing'), 'Solid colour');
     });
+
+    test('vendor "Sync part1/part2" is offered as "no moving effect"', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final d = DynamicAmbientDriver(BleService.instance, BluetoothDevice.fromId('AC'), prefs);
+      final sync1 = d.effects.firstWhere((e) => e.name.contains('No moving effect (copy side 1)'));
+      expect(sync1.id, dynamicFlowBase | 10);
+      expect(DynamicAmbientCommands.flowEffect(10, 0), [0xFC, 0x02, 0x22, 0x0A, 0xD1, 0xFA]);
+    });
   });
 
   group('detection', () {
