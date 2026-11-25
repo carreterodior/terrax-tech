@@ -23,9 +23,10 @@
     channel 2 = relay 3 = light set 2 power, channel 3 = relay 4 = set 2 high beam
     ... up to channel 7 = relay 8 (4 light sets).
 
-  Relay boards come in two kinds: most cheap blue boards switch ON when the
-  input is pulled LOW ("low level trigger"); others switch ON with HIGH.
-  Command 09 picks the kind (saved). Default: LOW trigger.
+  Relay boards come in two kinds: single SRD-05VDC modules with a transistor
+  (what TERRAX uses) switch ON with HIGH; many multi-channel optocoupler
+  boards switch ON when the input is pulled LOW. Command 09 picks the kind
+  (saved). Default since 2.0.1: HIGH trigger.
   At power-up every output starts OFF (safe: no lights come on by
   themselves when the car starts).
 
@@ -45,7 +46,7 @@
   State (read/notify) 54580003-...   16 bytes, one per channel:
      0 = OFF, 1 = ON, 0xFF = no relay on this channel
   Info (read)         54580004-...
-     "TERRAX Wireless Switch 2.0.0; relay; trigger LOW; outputs 8; mac ..."
+     "TERRAX Wireless Switch 2.0.1; relay; trigger HIGH; outputs 8; mac ..."
 
   Safety: any phone that connects can send commands. Bluetooth pairing /
   bonding is a planned next step before this ships to customers.
@@ -56,7 +57,7 @@
 #include <Preferences.h>
 
 // ---------------- configuration ----------------
-static const char *FW_VERSION = "2.0.0";
+static const char *FW_VERSION = "2.0.1";
 static const char *BLE_NAME = "TERRAX WIRELESS SWITCH";
 static const int LED_PIN = 2;
 static const int CHANNELS = 16;                  // protocol size (state bytes)
@@ -71,7 +72,7 @@ static const BLEUUID INFO_UUID("54580004-7e2a-4f3c-9b1a-5445525241ff");
 
 // ---------------- settings / state ----------------
 Preferences prefs;
-bool activeHigh = false;            // false: relay ON when input LOW
+bool activeHigh = true;             // true: relay ON when input HIGH (SRD-05VDC modules)
 uint8_t chanState[CHANNELS];
 
 BLECharacteristic stateChar;
@@ -196,7 +197,7 @@ void onCommandWrite(BLECharacteristic chr, const BLEConnInfo &) {
 // ---------------- setup / loop ----------------
 void setup() {
   prefs.begin("txrelay", false);
-  activeHigh = prefs.getBool("high", false);
+  activeHigh = prefs.getBool("high", true);
 
   // Set the OFF level *before* switching each pin to output, so no relay
   // clicks on during boot.

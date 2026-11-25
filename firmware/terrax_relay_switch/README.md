@@ -13,9 +13,10 @@ Windows Smart App Control), not yet run on hardware.
 
 - ESP32 dev board (ESP-32S / WROOM-32) — the one already flashed with 1.0.0.
 - Mini-360 (or similar) buck converter, 12 V → 5 V.
-- Relay board: 2, 4 or 8 channels, 5 V coils, with optocouplers. Two relays per light
-  set (on/off + high beam). Most cheap blue boards are "low level trigger" — the
-  default here. If yours switches on with HIGH, change **Relay board type** in the app.
+- 5 V relay modules: single **SRD-05VDC-SL-C** modules (pins S/IN, VCC, GND), one per
+  output — two per light set (on/off + high beam). They switch on with HIGH, the default
+  since firmware 2.0.1. A multi-channel optocoupler board that switches on with LOW also
+  works: change **Relay board type** in the app.
 - For lights over ~10 A per set: a 12 V 40 A automotive relay per output, driven by the
   relay board's contact (relay board = switch for the big relay's coil).
 - Inline fuses: 1 A for the ESP32/relay-board supply, and one sized to each light set
@@ -69,7 +70,7 @@ the board (USB data cable), **Connect** → pick the COM port, Flash Address `0x
 board **ESP32 Dev Module** with the **esp32 by Espressif Systems 4.x** package, Upload.
 
 Serial Monitor at 115200 baud prints
-`TERRAX WIRELESS SWITCH ready, firmware 2.0.0 (relay, trigger LOW)`.
+`TERRAX WIRELESS SWITCH ready, firmware 2.0.1 (relay, trigger HIGH)`.
 
 ## Command reference (characteristic 54580002-…)
 
@@ -78,12 +79,12 @@ Serial Monitor at 115200 baud prints
 | `01 ch st` | Output `ch` (00–07) ON (`st`=01) or OFF (00) |
 | `04 ch n gap` | `n` quick OFF→ON cycles, `gap` × 10 ms (tri-colour stepping) |
 | `08 ch` | Output `ch` OFF |
-| `09 lvl` | Relay board kind: `00` on with LOW (default), `01` on with HIGH (saved; all outputs go OFF) |
+| `09 lvl` | Relay board kind: `00` on with LOW, `01` on with HIGH (default since 2.0.1; saved; all outputs go OFF) |
 | `0A` | All outputs OFF |
 | `02`, `03`, `05`, `06`, `07` | Radio-only (1.x); ignored |
 
 State `54580003-…`: 16 bytes (00 off, 01 on, FF = no relay on that channel).
-Info `54580004-…`: `TERRAX Wireless Switch 2.0.0; relay; trigger LOW; outputs 8; mac …`.
+Info `54580004-…`: `TERRAX Wireless Switch 2.0.1; relay; trigger HIGH; outputs 8; mac …`.
 
 ## Test without the app
 
