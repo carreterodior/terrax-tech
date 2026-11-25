@@ -265,6 +265,7 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
   String _carMake = '';
   String _carModel = '';
   String? _notice;
+  final List<String> _rxLog = [];
 
   DynamicAmbientDriver(this._ble, this._device, this._prefs);
 
@@ -389,6 +390,8 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
           if (_carMake.isNotEmpty || _carModel.isNotEmpty)
             DriverInfoSetting('Set up for', value: '$_carMake $_carModel'.trim()),
           DriverInfoSetting('Control box type', value: !_typeKnown ? 'Checking…' : (_newBox ? 'Newer' : 'Older')),
+          DriverInfoSetting('For TERRAX support',
+              value: _rxLog.isEmpty ? 'No reply from the control box yet' : _rxLog.reversed.join('\n')),
         ], icon: DriverSectionIcon.info),
       ];
 
@@ -444,10 +447,48 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
     _carry.clear();
   }
 
+  /// Minimum time between two frames. Field test 2026-11-25: colour (one
+  /// frame) worked but patterns (effect frame + speed frame back to back)
+  /// did not — the box keeps only the last frame when two arrive together.
+  /// The vendor app only ever sends one frame per tap.
+  static const _frameGap = Duration(milliseconds: 120);
+  Future<void> _chain = Future<void>.value();
+  DateTime _lastSend = DateTime.fromMillisecondsSinceEpoch(0);
+  final Map<int, int> _latestOfCmd = {};
+  int _sendSeq = 0;
+
+  /// Paced, ordered writes. Colour and brightness frames carry full state,
+  /// so an older queued one is dropped when a newer one of the same kind is
+  /// waiting (keeps the colour wheel responsive with the gap).
   Future<void> _send(Uint8List bytes) {
-    final w = _write;
-    if (w == null) throw StateError('dynamic_ambient: not connected');
-    return _ble.write(w, bytes, withoutResponse: true);
+    if (_write == null) throw StateError('dynamic_ambient: not connected');
+    final cmd = bytes.length > 2 ? bytes[2] : -1;
+    final coalesce = cmd == 0x04 || cmd == 0x02;
+    final seq = ++_sendSeq;
+    if (coalesce) _latestOfCmd[cmd] = seq;
+    final done = Completer<void>();
+    _chain = _chain.then((_) async {
+      if (coalesce && _latestOfCmd[cmd] != seq) {
+        done.complete();
+        return;
+      }
+      final wait = _frameGap - DateTime.now().difference(_lastSend);
+      if (wait > Duration.zero) await Future<void>.delayed(wait);
+      final w = _write;
+      if (w == null) {
+        done.completeError(StateError('dynamic_ambient: not connected'));
+        return;
+      }
+      try {
+        await _ble.write(w, bytes, withoutResponse: true);
+        done.complete();
+      } catch (e, st) {
+        done.completeError(e, st);
+      } finally {
+        _lastSend = DateTime.now();
+      }
+    });
+    return done.future;
   }
 
   void _emit() {
@@ -604,6 +645,8 @@ class DynamicAmbientDriver extends DeviceDriver with DriverStateMixin {
 
   /// Feeds raw notification bytes; public so tests can drive it.
   void onNotify(List<int> chunk) {
+    _rxLog.add(chunk.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ').toUpperCase());
+    if (_rxLog.length > 4) _rxLog.removeAt(0);
     for (final body in DynamicAmbientCommands.parse(chunk, _carry)) {
       _handle(body);
     }

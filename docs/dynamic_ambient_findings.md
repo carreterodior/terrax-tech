@@ -19,6 +19,12 @@ bytes, replies ≤ 20). No handshake, pairing, encryption or keepalive; the app'
 password only unlocks its own Settings page. Vendor reconnects forever on drop and sends every
 command to all connected boxes.
 
+## Field test 2026-11-25 (build 18)
+Colour worked; patterns did not. Frames were byte-identical to the vendor's, but we sent the
+effect frame and the speed frame back to back. Assumed cause: the box keeps only the last frame when two
+arrive together. Fix (build 19): every frame waits ≥120 ms after the previous one; queued colour and
+brightness frames drop older ones. About → "For TERRAX support" shows the last 4 raw replies.
+
 ## Frame
 `FC LEN CMD P… CS FA`; LEN = CMD + params; CS = `~(LEN + CMD + ΣP) & 0xFF`.
 

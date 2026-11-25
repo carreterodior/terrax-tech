@@ -3,7 +3,7 @@
 # The password never leaves this machine.
 $ErrorActionPreference = 'Stop'
 
-$keytool = 'C:\Program Files\Microsoft\jdk-21.0.11.10-hotspot\bin\keytool.exe'
+$keytool = 'C:\dev\jdk-21.0.5+11\bin\keytool.exe'
 $keystore = Join-Path $env:USERPROFILE 'terrax-upload-key.jks'
 $repo = Split-Path -Parent $PSScriptRoot
 $props = Join-Path $repo 'android\key.properties'
@@ -20,14 +20,12 @@ Write-Host "This creates the Google Play upload key. The password you invent now
 Write-Host "must be BACKED UP - Google verifies every future app update with it." -ForegroundColor Cyan
 Write-Host ""
 
-# Password entry happens in Windows pop-up dialogs (the embedded terminal has
-# no keyboard input). The username field is ignored - only type the password.
-$c1 = Get-Credential -UserName 'upload' -Message 'INVENT your keystore password (ignore the username field)'
-if ($null -eq $c1) { Write-Host 'Cancelled.' -ForegroundColor Red; exit 1 }
-$c2 = Get-Credential -UserName 'upload' -Message 'Type the SAME password again to confirm'
-if ($null -eq $c2) { Write-Host 'Cancelled.' -ForegroundColor Red; exit 1 }
-$plain1 = $c1.GetNetworkCredential().Password
-$plain2 = $c2.GetNetworkCredential().Password
+# Password entry happens right here in the terminal (typing is hidden). It
+# never leaves this machine.
+$s1 = Read-Host -AsSecureString 'INVENT a keystore password, then press Enter (typing is hidden)'
+$s2 = Read-Host -AsSecureString 'Type the SAME password again to confirm'
+$plain1 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($s1))
+$plain2 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($s2))
 if ($plain1 -ne $plain2) { Write-Host 'Passwords do not match - run this again.' -ForegroundColor Red; exit 1 }
 if ($plain1.Length -lt 6) { Write-Host 'Password must be at least 6 characters - run this again.' -ForegroundColor Red; exit 1 }
 
