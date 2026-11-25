@@ -119,8 +119,7 @@ void logOutput(uint8_t ch) {
   if (ch >= OUTPUTS) return;
   const bool on = chanState[ch] == 1;
   const char *sig = activeHigh ? (on ? "HIGH 3.3V" : "LOW 0V") : (on ? "LOW 0V" : "released");
-  Serial.printf("  relay %d (GPIO %d): %s, signal %s
-", ch + 1, RELAY_PINS[ch], on ? "ON" : "OFF", sig);
+  Serial.printf("  relay %d (GPIO %d): %s, signal %s\n", ch + 1, RELAY_PINS[ch], on ? "ON" : "OFF", sig);
 }
 
 void allOff() {
@@ -203,8 +202,7 @@ void handle(const Command &c) {
           prefs.putBool("high", activeHigh);
         }
         allOff();                    // re-drive every pin at the new level
-        Serial.printf("  relay board now switches on with %s
-", activeHigh ? "HIGH" : "LOW");
+        Serial.printf("  relay board now switches on with %s\n", activeHigh ? "HIGH" : "LOW");
         publishInfo();
         publishState();
       }
@@ -287,8 +285,7 @@ void serialConsole() {
     const int k = Serial.read();
     if (k >= '1' && k <= '0' + OUTPUTS) {
       const uint8_t ch = k - '1';
-      Serial.printf("console: toggle relay %d
-", ch + 1);
+      Serial.printf("console: toggle relay %d\n", ch + 1);
       writeOutput(ch, chanState[ch] != 1);
       logOutput(ch);
       blink();
@@ -298,8 +295,7 @@ void serialConsole() {
       allOff();
       publishState();
     } else if (k == '?') {
-      Serial.printf("firmware %s, relay board switches on with %s, phone %s
-", FW_VERSION,
+      Serial.printf("firmware %s, relay board switches on with %s, phone %s\n", FW_VERSION,
                     activeHigh ? "HIGH" : "LOW", clientConnected ? "connected" : "not connected");
       for (int ch = 0; ch < OUTPUTS; ch++) logOutput(ch);
     }
