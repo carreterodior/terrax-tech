@@ -6,6 +6,7 @@ import '../ble/detection.dart';
 import '../ble/device_driver.dart';
 import '../ble/drivers/ambientlight_driver.dart';
 import '../ble/drivers/carlights_driver.dart';
+import '../ble/drivers/dynamic_ambient_driver.dart';
 import '../ble/drivers/elk_7e_driver.dart';
 import '../ble/drivers/intelligo_driver.dart';
 import '../ble/drivers/lampfrgn_driver.dart';
@@ -38,6 +39,7 @@ LightingZoneType defaultZoneTypeFor(String driverId) {
   }
   if (driverId == LampFrgnDriver.id ||
       driverId == AmbientLightDriver.id ||
+      driverId == DynamicAmbientDriver.id ||
       driverId == LedCar02Driver.id ||
       driverId == LedCarDriver.id) {
     return LightingZoneType.interiorAmbient;

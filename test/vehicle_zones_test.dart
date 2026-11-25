@@ -25,6 +25,7 @@ void main() {
       expect(defaultZoneTypeFor('magiclantern'), LightingZoneType.underglow);
       expect(defaultZoneTypeFor('ambientlight'), LightingZoneType.interiorAmbient);
       expect(defaultZoneTypeFor('terrax_rf'), LightingZoneType.auxiliary);
+      expect(defaultZoneTypeFor('dynamic_ambient'), LightingZoneType.interiorAmbient);
       expect(defaultZoneTypeFor('nope'), LightingZoneType.lightStrip);
     });
 

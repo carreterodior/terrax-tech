@@ -5,6 +5,7 @@ import 'ble_service.dart';
 import 'device_driver.dart';
 import 'drivers/ambientlight_driver.dart';
 import 'drivers/carlights_driver.dart';
+import 'drivers/dynamic_ambient_driver.dart';
 import 'drivers/elk_7e_driver.dart';
 import 'drivers/intelligo_driver.dart';
 import 'drivers/lampfrgn_driver.dart';
@@ -46,6 +47,14 @@ class DetectionRule {
   /// rather than a prefix (CAR-LIGHTS: `CL-` / `CL_`). Keep these distinctive.
   final List<String> nameContains;
 
+  /// Like [nameContains] but case-sensitive and without whitespace removal,
+  /// for vendors whose app checks `name.contains("CMM")` exactly.
+  final List<String> nameContainsCaseSensitive;
+
+  /// Names containing any of these (case-sensitive) are never claimed by this
+  /// rule, e.g. a vendor's fragrance unit that shares the name tag.
+  final List<String> nameExcludes;
+
   /// Advertised service UUIDs, when the family reliably advertises any.
   /// Several families ship under more than one (e.g. Telink fallback), so a
   /// match on any one of them claims the device.
@@ -65,6 +74,8 @@ class DetectionRule {
     required this.defaultProductHint,
     this.productHints = const {},
     this.nameContains = const [],
+    this.nameContainsCaseSensitive = const [],
+    this.nameExcludes = const [],
     this.serviceUuids = const [],
     this.isLighting = false,
   });
@@ -84,6 +95,8 @@ class DetectionRule {
   /// True when the advertised name alone identifies this family (prefix or
   /// [nameContains]).
   bool matchesName(String advName) {
+    if (nameExcludes.any(advName.contains)) return false;
+    if (nameContainsCaseSensitive.any(advName.contains)) return true;
     final name = advName.toLowerCase();
     if (namePrefixes.any((p) => name.startsWith(p.toLowerCase()))) return true;
     final compact = name.replaceAll(RegExp(r'\s+'), '');
@@ -193,6 +206,21 @@ final List<DetectionRule> detectionRules = [
     isLighting: true,
     createDriver: (ble, device, prefs, advName) =>
         MagicLanternDriver(ble, device, prefs, advertisedName: advName),
+  ),
+  DetectionRule(
+    driverId: DynamicAmbientDriver.id,
+    label: 'Car ambient lighting (Dynamic ambient lighting app)',
+    // Dynamic ambient lighting (com.lenzetech.htxlight 1.0.9) shows a device
+    // only if its name contains "CMM" (case-sensitive) — no scan filter, no
+    // service or manufacturer-data check. "CMM…XF" is the vendor's fragrance
+    // diffuser (different protocol), so it is excluded. Name only: the FFC0
+    // service is never claimed on its own. docs/dynamic_ambient_findings.md.
+    namePrefixes: const [],
+    nameContainsCaseSensitive: const ['CMM'],
+    nameExcludes: const ['XF'],
+    defaultProductHint: 'Car ambient lighting',
+    isLighting: true,
+    createDriver: (ble, device, prefs, _) => DynamicAmbientDriver(ble, device, prefs),
   ),
   DetectionRule(
     driverId: LampFrgnDriver.id,

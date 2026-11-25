@@ -74,6 +74,15 @@ const List<(TerraxDevice, LightingZoneType?)> demoDevices = [
   ),
   (
     TerraxDevice(
+        id: 'DEMO-CMM',
+        advertisedName: 'CMM-LED',
+        name: 'Dynamic ambient',
+        driverId: 'dynamic_ambient',
+        category: DeviceCategory.lightStrips),
+    null,
+  ),
+  (
+    TerraxDevice(
         id: 'DEMO-RF',
         advertisedName: 'TERRAX WIRELESS SWITCH',
         name: 'Aux lights',

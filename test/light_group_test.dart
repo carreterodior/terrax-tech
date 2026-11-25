@@ -206,6 +206,7 @@ void main() {
         'magiclantern': true,
         'ambientlight': true,
         'terrax_rf': true,
+        'dynamic_ambient': true,
         'intelligo': false,
       });
     });

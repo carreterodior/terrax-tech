@@ -38,7 +38,7 @@ Dart null-safety. Material 3, dark-mode friendly.
 lib/ble/ble_service.dart          scan/connect/discover/write/notify wrapper
 lib/ble/device_driver.dart        DeviceDriver + DeviceCapabilities (the contract)
 lib/ble/detection.dart            scanned device -> driver
-lib/ble/drivers/                  elk_7e / triones / lampfrgn / ledcar02 / ledcar / leddmx / carlights / magiclantern / ambientlight / terrax_rf / intelligo
+lib/ble/drivers/                  elk_7e / triones / lampfrgn / ledcar02 / ledcar / leddmx / carlights / magiclantern / ambientlight / dynamic_ambient / terrax_rf / intelligo
 lib/audio/mic_bands.dart          phone-mic band sampler for sound-reactive drivers (no BLE, no UI)
 lib/models/                       terrax_device, device_category, rgb, lighting_zone
 lib/state/                        scan / devices / device controllers (riverpod)
@@ -211,6 +211,25 @@ use them) — other units via "Add as…", verified at connect (needs FFE0/FFE2)
   `4C`/`4D0055xx`/`40`/`43`/`41`/`22`. OTA (vendor cloud) not implemented.
 - Replies: status (power, zone colours, brightness, mic, speed, direction, …), `0x13`
   version, `0x26` settings, `0x27` custom tables, `0x56` mirror, `0x2E`/`0x19` alerts.
+
+### dynamic_ambient — "Dynamic ambient lighting" interior kits (name contains `CMM`)
+
+From **Dynamic ambient lighting 1.0.9** (`com.lenzetech.htxlight`, Lenzetech); full trace in
+`docs/dynamic_ambient_findings.md`. Detection: name **contains `CMM` (case-sensitive)**,
+excluding names with `XF` (the vendor's fragrance unit); FFC0 is never claimed alone.
+Service `FFC0`, **write `FFC1` without response, notify `FFC2`**, default MTU. Frame
+`FC LEN CMD P… CS FA`, LEN = CMD+params, **CS = ~(LEN+CMD+ΣP) & 0xFF**.
+
+- Queries `FC 01 00` state, `FC 01 01` dynamic state, `FC 01 A0` strips, `FC 02 kk 00` info
+  (10 hw, 13 car make, 14 model, 15 sw). Power `05 on` · brightness `02 b1 b2` (two sides)
+  · colour `04 R1G1B1 R2G2B2` (always both) · basic mode `03 m m` (0 single, 1 fade,
+  2 breathe, 3 flash, 4 auto, **6** music) · basic speed `07 1–5` · mic `06 0–100` ·
+  flowing effect `22 (style<<4|mode)` (modes 10 sync, 11–14, 4–9 new boxes; styles 1–6)
+  · flow speed `23 1–5` · direction `24 0/1` · old-box LED count `26` · welcome pattern
+  `17 11 p 00 00 00`, colour `17 12 R G B 00` · car events `18 id on` (1 welcome … 8 other)
+  · section LED counts `1A 11–15 n`, directions `1A 16 bits` · box actions `16 v`.
+- Replies: `00` state (both sides' brightness/mode/RGB, power, mic, speed), `01` dynamic
+  (LEN 07 old / 10 new box), `A0` strips, `10/13/14/15` ASCII info, `16/17/18/1A` acks.
 
 ### terrax_rf — TERRAX Wireless Switch (our ESP32 RF-bridge firmware, auxiliary lights)
 
