@@ -54,6 +54,17 @@ rock light for power, modes and colour (after the `C8` tail fix below). Key clas
   WRITE-NO-RESPONSE; the driver uses the same rule.
 - State: nothing is read back; optimistic.
 
+## Wheel lights (field report 2026-11-25)
+
+Dior's rock lights work; wheel lights with the same CAR-LIGHTS app do not respond. The vendor
+has one protocol for both, so the suspect is the transport: the vendor picks the **last**
+writable characteristic in Android's discovery order, and on iOS a box with several writable
+characteristics may list them in another order. 1.5.1 (23) keeps the vendor rule as
+"Automatic" and adds a per-device override under Connection → "Lights not responding? Try
+another connection" (shown only when there is more than one candidate; pref
+`carlights.channel.<id>`). Not yet confirmed on the wheel-light box; the Connection tab's support
+rows show its GATT layout.
+
 ## Frame format
 
 `<body…> <sum>` with **no fixed head/tail**: `getSumCheck(int…)` emits each

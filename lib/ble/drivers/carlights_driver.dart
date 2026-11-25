@@ -172,6 +172,10 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
   /// quickest way to learn a unit's GATT layout from a customer's phone
   /// without a sniffer.
   List<String> _gattRows = const [];
+  // Every channel the vendor rule would accept, in discovery order, and the
+  // customer's override (index into it; -1 = automatic = vendor rule).
+  List<BluetoothCharacteristic> _writeCandidates = const [];
+  int _channel = -1;
   String _writeTarget = 'Not connected';
 
   BandSource? _bandSource;
@@ -289,6 +293,21 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
             'Technical details (for TERRAX support)',
             value: _gattRows.isEmpty ? 'Nothing yet' : _gattRows.join('\n'),
           ),
+          if (_writeCandidates.length > 1)
+            DriverOptionSetting<int>(
+              'Lights not responding? Try another connection',
+              description: 'Some light boxes (for example wheel lights) have '
+                  'more than one way to receive commands. Leave this on '
+                  'Automatic if your lights already work. If they do not, '
+                  'try each number and test the lights after each change.',
+              value: _channel,
+              options: [
+                (value: -1, label: 'Automatic (recommended)'),
+                for (var i = 0; i < _writeCandidates.length; i++)
+                  (value: i, label: 'Connection ${i + 1}'),
+              ],
+              onChanged: setChannel,
+            ),
           DriverButtonSetting(
             'Wake up the lights',
             description: 'Sends the start-up signal again. Try this if the '
@@ -334,16 +353,18 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
 
     final services = await _ble.discoverServices(_device);
     _gattRows = describeGatt(services);
-    final write = pickWriteCharacteristic(services);
+    _writeCandidates = writeCandidates(services);
+    _channel = _prefs.getInt(_key('channel')) ?? -1;
+    if (_channel >= _writeCandidates.length) _channel = -1;
+    final write = _channel >= 0
+        ? _writeCandidates[_channel]
+        : pickWriteCharacteristic(services);
     if (write == null) {
       _writeTarget = 'Not found: the lights did not accept commands';
       throw StateError('carlights: no writable characteristic found '
           '(services: ${_gattRows.join('; ')})');
     }
-    _write = write;
-    _writeTarget = '${write.serviceUuid.str.toUpperCase()} / '
-        '${write.uuid.str.toUpperCase()} '
-        '(${write.properties.write ? 'write' : 'write-no-response'})';
+    _useWrite(write);
     _connected = true;
 
     final notify = pickNotifyCharacteristic(services);
@@ -361,6 +382,48 @@ class CarLightsDriver extends DeviceDriver with DriverStateMixin {
     unawaited(_helloBurst());
     emitState(currentState.copyWith(
         color: _color, brightness: _brightness, effectId: _modeId));
+  }
+
+  void _useWrite(BluetoothCharacteristic write) {
+    _write = write;
+    _writeTarget = '${write.serviceUuid.str.toUpperCase()} / '
+        '${write.uuid.str.toUpperCase()} '
+        '(${write.properties.write ? 'write' : 'write-no-response'})'
+        '${_channel >= 0 ? ' · picked by hand: ${_channel + 1}' : ''}';
+  }
+
+  /// Field report 2026-11-25: rock lights work, wheel lights (same CAR-LIGHTS
+  /// app, same command set) do not respond. The vendor sends to the *last*
+  /// writable characteristic in Android's discovery order; a box with more
+  /// than one writable characteristic can end up on the wrong one when iOS
+  /// lists them in another order. Automatic (the vendor rule) stays the
+  /// default; the customer can pin another channel per device.
+  Future<void> setChannel(int channel) async {
+    _channel = channel < 0 || channel >= _writeCandidates.length ? -1 : channel;
+    if (_channel < 0) {
+      await _prefs.remove(_key('channel'));
+    } else {
+      await _prefs.setInt(_key('channel'), _channel);
+    }
+    final w = _channel >= 0
+        ? _writeCandidates[_channel]
+        : (_writeCandidates.isEmpty ? null : _writeCandidates.last);
+    if (w != null) _useWrite(w);
+    emitState(currentState);
+    unawaited(_helloBurst());
+  }
+
+  /// Every characteristic the vendor rule accepts, in discovery order (the
+  /// vendor uses the last of these).
+  static List<BluetoothCharacteristic> writeCandidates(
+      List<BluetoothService> services) {
+    return [
+      for (final s in services)
+        for (final c in s.characteristics)
+          if ((c.properties.write && c.uuid != _skipWrite) ||
+              (c.properties.writeWithoutResponse && !_skipNoResp.contains(c.uuid)))
+            c,
+    ];
   }
 
   Future<void> _helloBurst() async {
