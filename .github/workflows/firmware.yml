@@ -1,0 +1,35 @@
+name: ESP32 firmware
+
+# Compiles the TERRAX Wireless Switch firmware (both versions) in the cloud,
+# because Windows Smart App Control blocks the local Arduino compiler. The
+# .merged.bin files can be flashed from Chrome with the Espressif web flasher.
+on:
+  push:
+    paths:
+      - 'firmware/**'
+      - '.github/workflows/firmware.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sketch: [terrax_relay_switch, terrax_rf_bridge]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Install esp32 core 4.0.0
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32@4.0.0
+      - name: Compile
+        run: |
+          arduino-cli compile --fqbn esp32:esp32:esp32 --output-dir out/${{ matrix.sketch }} firmware/${{ matrix.sketch }}
+          ls -la out/${{ matrix.sketch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.sketch }}
+          path: out/${{ matrix.sketch }}/*.bin

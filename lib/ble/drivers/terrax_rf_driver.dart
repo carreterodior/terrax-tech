@@ -43,14 +43,35 @@ class TerraxRfCommands {
   static Uint8List keys(int ch, int onKey, int offKey) =>
       Uint8List.fromList([0x07, ch & 0x0F, onKey & 0x0F, offKey & 0x0F]);
 
-  /// `08 ch` — mark a channel's state unknown.
+  /// `08 ch` — mark a channel's state unknown (relay firmware: switch it off).
   static Uint8List forget(int ch) => Uint8List.fromList([0x08, ch & 0x0F]);
+
+  /// `09 lvl` — relay firmware (2.x) only: which signal switches the relay
+  /// board on (0 = LOW, most cheap boards; 1 = HIGH).
+  static Uint8List relayTrigger(bool activeHigh) => Uint8List.fromList([0x09, activeHigh ? 1 : 0]);
+
+  /// `0A` — relay firmware (2.x) only: every output off.
+  static Uint8List allOff() => Uint8List.fromList([0x0A]);
 
   /// State characteristic: one byte per channel, 0 off, 1 on, 0xFF unknown.
   static List<bool?> parseState(List<int> bytes) => [
         for (var i = 0; i < channels; i++)
           i < bytes.length ? (bytes[i] == 1 ? true : (bytes[i] == 0 ? false : null)) : null,
       ];
+
+  /// What the firmware's Info text says about its outputs: the 2.x relay
+  /// firmware reports "…; relay; trigger LOW; outputs 8; …", the 1.x radio
+  /// firmware has no "relay" part.
+  static ({bool relay, bool activeHigh, int outputs}) parseInfo(String info) {
+    final relay = RegExp(r';\s*relay\b').hasMatch(info);
+    final high = RegExp(r'trigger\s+HIGH').hasMatch(info);
+    final m = RegExp(r'outputs\s+(\d+)').firstMatch(info);
+    return (
+      relay: relay,
+      activeHigh: high,
+      outputs: m == null ? channels : int.parse(m.group(1)!).clamp(1, channels),
+    );
+  }
 
   /// Lamp group g uses channel 2g for power and 2g+1 for high beam.
   static int powerChannel(int group) => group * 2;
@@ -71,6 +92,15 @@ class TerraxRfUuids {
 }
 
 /// Driver for the TERRAX Wireless Switch.
+///
+/// Two firmware versions share one Bluetooth protocol: 1.x sends 433 MHz
+/// codes to learning-code relay modules (`firmware/terrax_rf_bridge/`), 2.x
+/// switches relays wired straight to the ESP32 (`firmware/terrax_relay_switch/`).
+/// The Info text tells them apart; the radio-only settings (learning, signal
+/// timing) are hidden for the relay version, which adds "relay board type",
+/// a wiring guide and "all off" instead. Every light-set feature (on/off,
+/// high beam interlock, 3-colour stepping, several sets, reversed on/off,
+/// colour correction) works on both.
 ///
 /// The customer sets up 1–8 **lamp groups** (e.g. "Fog lamps", "Grille
 /// lights"). Each group has a power channel, an optional high-beam channel
@@ -111,6 +141,31 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
   int _pulseUs = 350;
   int _flickMs = 300;
   String _info = 'Not connected';
+  bool _relay = false;
+  bool _relayHigh = false;
+  int _outputs = TerraxRfCommands.channels;
+
+  /// Light sets this box can drive (two outputs each: power + high beam).
+  int get _maxGroups => _relay ? (_outputs ~/ 2).clamp(1, maxGroups) : maxGroups;
+
+  /// Reads the firmware Info text (public so tests can drive it).
+  void applyInfo(String info) {
+    _info = info;
+    final i = TerraxRfCommands.parseInfo(info);
+    _relay = i.relay;
+    _relayHigh = i.activeHigh;
+    _outputs = i.outputs;
+    if (_groupCount > _maxGroups) _groupCount = _maxGroups;
+    if (_active >= _groupCount) _active = _groupCount - 1;
+  }
+
+  bool get isRelayVersion => _relay;
+
+  String get _versionText {
+    final m = RegExp(r'Switch\s+(\S+?);').firstMatch(_info);
+    if (m == null) return _info;
+    return '${m.group(1)} (${_relay ? 'wired relays' : 'remote switch boxes'})';
+  }
 
   TerraxRfDriver(this._ble, this._device, this._prefs);
 
@@ -146,7 +201,28 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
 
   @override
   List<DriverSection> get sections => [
-        DriverSection('Connect remote lights', [
+        if (_relay)
+          DriverSection('Wiring', [
+            DriverInfoSetting('Which relay is which',
+                value: [
+                  for (var g = 0; g < _groupCount; g++)
+                    '${_names[g]}: on/off = relay ${TerraxRfCommands.powerChannel(g) + 1}'
+                        '${_hasHighBeam[g] ? ', high beam = relay ${TerraxRfCommands.highBeamChannel(g) + 1}' : ''}',
+                ].join('\n')),
+            DriverOptionSetting<bool>('Relay board type',
+                description: 'Most relay boards switch on with a LOW signal. If the lights '
+                    'come on when the app says off (and the other way round), change this.',
+                value: _relayHigh,
+                options: const [
+                  (value: false, label: 'Switches on with LOW (most boards)'),
+                  (value: true, label: 'Switches on with HIGH'),
+                ],
+                onChanged: setRelayTrigger),
+            DriverButtonSetting('Turn all extra lights off',
+                description: 'Switches every relay off at once.', run: turnEverythingOff),
+          ])
+        else
+          DriverSection('Connect remote lights', [
           DriverInfoSetting(
             'How to connect',
             value: "Put the light's switch box into learning mode (hold its learn button until "
@@ -169,13 +245,19 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
         ]),
         DriverSection('Setup', [
           DriverSliderSetting('Number of light sets',
-              description: 'One for each set of lights you want to switch separately, '
-                  'e.g. fog lights and grille lights.',
-              value: _groupCount, min: 1, max: maxGroups, onChanged: setGroupCount),
+              description: _relay
+                  ? 'One for each set of lights you want to switch separately, e.g. fog '
+                      'lights and grille lights. This box has $_outputs relays: up to '
+                      '$_maxGroups sets (each uses one relay for on/off and one for high beam).'
+                  : 'One for each set of lights you want to switch separately, '
+                      'e.g. fog lights and grille lights.',
+              value: _groupCount, min: 1, max: _maxGroups, onChanged: setGroupCount),
           for (var g = 0; g < _groupCount; g++) ...[
             DriverTextSetting('Light set ${g + 1} name', value: _names[g], onChanged: (v) => rename(g, v)),
             DriverToggleSetting('${_names[g]}: has high beam',
-                description: 'Turn on if this light set has a second switch box for the high beam.',
+                description: _relay
+                    ? 'Turn on if this light set has a high beam wire on its own relay.'
+                    : 'Turn on if this light set has a second switch box for the high beam.',
                 value: _hasHighBeam[g], onChanged: (v) => setHasHighBeam(g, v)),
             DriverToggleSetting('${_names[g]}: 3 colours',
                 description: 'For lights that change White → Yellow → All-Weather when '
@@ -197,11 +279,12 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
               description: 'How long the light blinks off each time it changes colour, in '
                   'thousandths of a second. Normal is 300. Raise it if colours get skipped.',
               value: _flickMs, min: 100, max: 1000, onChanged: setFlickMs),
-          DriverSliderSetting('Signal timing (for installers)',
-              description: 'Only change this if a switch box will not learn the signal. '
-                  'Normal is 350.',
-              value: _pulseUs, min: 150, max: 1000, onChanged: setPulseLength),
-          DriverInfoSetting('Software version', value: _info),
+          if (!_relay)
+            DriverSliderSetting('Signal timing (for installers)',
+                description: 'Only change this if a switch box will not learn the signal. '
+                    'Normal is 350.',
+                value: _pulseUs, min: 150, max: 1000, onChanged: setPulseLength),
+          DriverInfoSetting('Software version', value: _versionText),
         ]),
       ];
 
@@ -229,7 +312,7 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
         if (c.uuid == TerraxRfUuids.state) _stateChar = c;
         if (c.uuid == TerraxRfUuids.info) {
           try {
-            _info = utf8.decode(await _ble.read(c), allowMalformed: true);
+            applyInfo(utf8.decode(await _ble.read(c), allowMalformed: true));
           } catch (_) {}
         }
       }
@@ -277,6 +360,8 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
     _cmd = null;
     _stateChar = null;
     _info = 'Not connected';
+    _relay = false;
+    _outputs = TerraxRfCommands.channels;
   }
 
   Future<void> _send(Uint8List bytes) {
@@ -344,7 +429,7 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
   // ---- Setup ----
 
   Future<void> setGroupCount(int n) async {
-    _groupCount = n.clamp(1, maxGroups);
+    _groupCount = n.clamp(1, _maxGroups);
     if (_active >= _groupCount) _active = _groupCount - 1;
     await _prefs.setInt(_key('groups'), _groupCount);
     _emit();
@@ -386,6 +471,27 @@ class TerraxRfDriver extends DeviceDriver with DriverStateMixin {
   Future<void> setFlickMs(int ms) async {
     _flickMs = ms.clamp(100, 1000);
     await _prefs.setInt(_key('flick'), _flickMs);
+    _emit();
+  }
+
+  List<bool?> get _allOutputsOff => [
+        for (var ch = 0; ch < TerraxRfCommands.channels; ch++) ch < _outputs ? false : null,
+      ];
+
+  /// Relay firmware: which signal switches the relay board on. The board
+  /// switches every relay off while changing it (safe default).
+  Future<void> setRelayTrigger(bool activeHigh) async {
+    await _send(TerraxRfCommands.relayTrigger(activeHigh));
+    _relayHigh = activeHigh;
+    _info = _info.replaceAll(RegExp(r'trigger\s+\w+'), 'trigger ${activeHigh ? 'HIGH' : 'LOW'}');
+    _channels = _allOutputsOff;
+    _emit();
+  }
+
+  /// Relay firmware: every output off at once.
+  Future<void> turnEverythingOff() async {
+    await _send(TerraxRfCommands.allOff());
+    _channels = _allOutputsOff;
     _emit();
   }
 

@@ -241,6 +241,16 @@ Commands: `01 ch st` set · `02 ch` pair ON (3 s) · `03 ch` pair OFF · `04 ch 
 pulse · `05 a2 a1 a0 k` raw code · `06 hi lo` pulse µs · `07 ch on off` keys · `08 ch`
 forget. Change firmware and driver together. Zone default: Auxiliary.
 
+**2.x wired-relay firmware** (`firmware/terrax_relay_switch/`, 2026-11-25): same service and
+opcodes, but channels 0–7 are relay outputs on GPIO 16,17,18,19,21,22,23,25 (no radio);
+adds `09 lvl` relay trigger (0 LOW default / 1 HIGH, saved, all off) and `0A` all off;
+`02/03/05/06/07` ignored; every output OFF at boot. Info text
+`TERRAX Wireless Switch 2.0.0; relay; trigger LOW; outputs 8; …` — the driver
+(`TerraxRfCommands.parseInfo`) uses it to hide the radio-only settings (learning section,
+signal timing), cap light sets at outputs/2, and show a Wiring tab (relay map, relay board
+type, all off). Firmware is compiled by `.github/workflows/firmware.yml` (local Arduino
+compiler is blocked by Smart App Control).
+
 ### intelligo — electric running board / step board
 - Advertises as `DianDongTaBan` (电动踏板; verified on real hardware 2026-08-03, services
   `0xFFE0`+`0xFEE7` in the advertisement). Also match `IntelliGo*` prefixes.

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../ble/ble_service.dart';
 import '../ble/detection.dart';
 import '../ble/device_driver.dart';
+import '../ble/drivers/terrax_rf_driver.dart';
 import '../models/device_category.dart';
 import '../models/lighting_zone.dart';
 import '../models/rgb.dart';
@@ -132,6 +133,10 @@ class DemoDeviceController extends DeviceController {
       if (device != null && rule != null) {
         final inner = rule.createDriver(BleService.instance, BluetoothDevice.fromId(device.id),
             ref.read(sharedPreferencesProvider), device.advertisedName);
+        // The demo wireless switch shows the wired-relay firmware (2.x).
+        if (inner is TerraxRfDriver) {
+          inner.applyInfo('TERRAX Wireless Switch 2.0.0; relay; trigger LOW; outputs 8; mac DEMO');
+        }
         _demo = DemoDriver(inner, onChanged: _bump);
       }
     }

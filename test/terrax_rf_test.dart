@@ -1,10 +1,14 @@
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:terrax/ble/ble_service.dart';
 import 'package:terrax/ble/detection.dart';
+import 'package:terrax/ble/device_driver.dart';
 import 'package:terrax/ble/drivers/terrax_rf_driver.dart';
 
 /// Must match the command table in firmware/terrax_rf_bridge/terrax_rf_bridge.ino.
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('TERRAX RF Bridge commands', () {
     test('set / pair / pulse / pulse length / keys / forget', () {
       expect(TerraxRfCommands.set(0, true), [0x01, 0x00, 0x01]);
@@ -41,6 +45,55 @@ void main() {
       expect(TerraxRfCommands.colourSteps(2, 0), 1);
       expect(TerraxRfCommands.colourSteps(1, 0), 2);
       expect(TerraxRfDriver.colourNames, ['White', 'Yellow', 'All-Weather']);
+    });
+  });
+
+  group('wired relay firmware (2.x)', () {
+    test('relay-only commands', () {
+      expect(TerraxRfCommands.relayTrigger(false), [0x09, 0x00]);
+      expect(TerraxRfCommands.relayTrigger(true), [0x09, 0x01]);
+      expect(TerraxRfCommands.allOff(), [0x0A]);
+    });
+
+    test('Info text tells relay and radio firmware apart', () {
+      final r = TerraxRfCommands.parseInfo(
+          'TERRAX Wireless Switch 2.0.0; relay; trigger LOW; outputs 8; mac 1234ABCD5678');
+      expect(r.relay, isTrue);
+      expect(r.activeHigh, isFalse);
+      expect(r.outputs, 8);
+      final h = TerraxRfCommands.parseInfo('TERRAX Wireless Switch 2.0.0; relay; trigger HIGH; outputs 8');
+      expect(h.activeHigh, isTrue);
+      final rf = TerraxRfCommands.parseInfo('TERRAX Wireless Switch 1.0.0; pulse 350 us; mac 1234ABCD5678');
+      expect(rf.relay, isFalse);
+      expect(rf.outputs, 16);
+    });
+
+    test('relay version: wiring tab instead of radio learning, all light-set features kept',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final d = TerraxRfDriver(BleService.instance, BluetoothDevice.fromId('RF'), prefs);
+      // Radio firmware (or not yet known): learning section, signal timing.
+      expect(d.sections.map((s) => s.title), contains('Connect remote lights'));
+      d.applyInfo('TERRAX Wireless Switch 2.0.0; relay; trigger LOW; outputs 8; mac X');
+      expect(d.isRelayVersion, isTrue);
+      final titles = d.sections.map((s) => s.title).toList();
+      expect(titles, isNot(contains('Connect remote lights')));
+      expect(titles, contains('Wiring'));
+      final labels = d.sections.expand((s) => s.settings).map((s) => s.label).toList();
+      expect(labels, isNot(contains('Signal timing (for installers)')));
+      expect(labels, containsAll(['Relay board type', 'Turn all extra lights off', 'Number of light sets',
+          'Colour switch speed']));
+      // Same light-set features as before.
+      expect(d.caps.hasHighBeam, isTrue);
+      expect(d.lampModes, TerraxRfDriver.colourNames);
+      final wiring = d.sections.expand((s) => s.settings).whereType<DriverInfoSetting>()
+          .firstWhere((s) => s.label == 'Which relay is which');
+      expect(wiring.value, 'Extra lights: on/off = relay 1, high beam = relay 2');
+      // 8 relays = at most 4 light sets.
+      final sets = d.sections.expand((s) => s.settings).whereType<DriverSliderSetting>()
+          .firstWhere((s) => s.label == 'Number of light sets');
+      expect(sets.max, 4);
     });
   });
 
