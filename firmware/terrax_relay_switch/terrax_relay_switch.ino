@@ -27,6 +27,13 @@
   (what TERRAX uses) switch ON with HIGH; many multi-channel optocoupler
   boards switch ON when the input is pulled LOW. Command 09 picks the kind
   (saved). Default since 2.0.1: HIGH trigger.
+  LOW-trigger boards are driven "open drain" (since 2.0.2): ON pulls the
+  input to GND, OFF lets go of the wire (pin floats). A 3.3 V "OFF" is not
+  enough to switch off a 5 V low-trigger module (PNP transistor or
+  optocoupler), which then stays on whatever the app says.
+
+  USB serial console (115200 baud), for testing on the bench:
+    1..8  toggle that relay      0  all off      ?  show every output
   At power-up every output starts OFF (safe: no lights come on by
   themselves when the car starts).
 
@@ -46,7 +53,7 @@
   State (read/notify) 54580003-...   16 bytes, one per channel:
      0 = OFF, 1 = ON, 0xFF = no relay on this channel
   Info (read)         54580004-...
-     "TERRAX Wireless Switch 2.0.1; relay; trigger HIGH; outputs 8; mac ..."
+     "TERRAX Wireless Switch 2.0.2; relay; trigger HIGH; outputs 8; mac ..."
 
   Safety: any phone that connects can send commands. Bluetooth pairing /
   bonding is a planned next step before this ships to customers.
@@ -57,7 +64,7 @@
 #include <Preferences.h>
 
 // ---------------- configuration ----------------
-static const char *FW_VERSION = "2.0.1";
+static const char *FW_VERSION = "2.0.2";
 static const char *BLE_NAME = "TERRAX WIRELESS SWITCH";
 static const int LED_PIN = 2;
 static const int CHANNELS = 16;                  // protocol size (state bytes)
@@ -86,12 +93,34 @@ struct Command {
 QueueHandle_t commandQueue;
 
 // ---------------- outputs ----------------
-inline int levelFor(bool on) { return (on == activeHigh) ? HIGH : LOW; }
+// HIGH-trigger modules: push-pull, HIGH = on, LOW = off.
+// LOW-trigger modules: open drain, LOW = on, pin floating (input) = off.
+void drivePin(int pin, bool on) {
+  if (activeHigh) {
+    digitalWrite(pin, on ? HIGH : LOW);
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, on ? HIGH : LOW);
+  } else if (on) {
+    digitalWrite(pin, LOW);
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, LOW);
+  } else {
+    pinMode(pin, INPUT);
+  }
+}
 
 void writeOutput(uint8_t ch, bool on) {
   if (ch >= OUTPUTS) return;
-  digitalWrite(RELAY_PINS[ch], levelFor(on));
+  drivePin(RELAY_PINS[ch], on);
   chanState[ch] = on ? 1 : 0;
+}
+
+void logOutput(uint8_t ch) {
+  if (ch >= OUTPUTS) return;
+  const bool on = chanState[ch] == 1;
+  const char *sig = activeHigh ? (on ? "HIGH 3.3V" : "LOW 0V") : (on ? "LOW 0V" : "released");
+  Serial.printf("  relay %d (GPIO %d): %s, signal %s
+", ch + 1, RELAY_PINS[ch], on ? "ON" : "OFF", sig);
 }
 
 void allOff() {
@@ -128,11 +157,15 @@ void handle(const Command &c) {
   const uint8_t op = c.data[0];
   const uint8_t ch = c.len > 1 ? c.data[1] : 0xFF;
   const bool chOk = ch < OUTPUTS;
+  Serial.printf("cmd");
+  for (uint8_t i = 0; i < c.len; i++) Serial.printf(" %02X", c.data[i]);
+  Serial.println();
 
   switch (op) {
     case 0x01:  // ON / OFF
       if (c.len >= 3 && chOk) {
         writeOutput(ch, c.data[2] != 0);
+        logOutput(ch);
         blink();
         publishState();
       }
@@ -149,6 +182,7 @@ void handle(const Command &c) {
           writeOutput(ch, true);
           delay(gap);
         }
+        logOutput(ch);
         blink();
         publishState();
       }
@@ -169,6 +203,8 @@ void handle(const Command &c) {
           prefs.putBool("high", activeHigh);
         }
         allOff();                    // re-drive every pin at the new level
+        Serial.printf("  relay board now switches on with %s
+", activeHigh ? "HIGH" : "LOW");
         publishInfo();
         publishState();
       }
@@ -199,15 +235,10 @@ void setup() {
   prefs.begin("txrelay", false);
   activeHigh = prefs.getBool("high", true);
 
-  // Set the OFF level *before* switching each pin to output, so no relay
-  // clicks on during boot.
+  // Drive every output OFF straight away (OFF level before OUTPUT mode, or
+  // released for LOW-trigger boards), so no relay clicks on during boot.
   for (int i = 0; i < CHANNELS; i++) chanState[i] = 0xFF;
-  for (int ch = 0; ch < OUTPUTS; ch++) {
-    digitalWrite(RELAY_PINS[ch], levelFor(false));
-    pinMode(RELAY_PINS[ch], OUTPUT);
-    digitalWrite(RELAY_PINS[ch], levelFor(false));
-    chanState[ch] = 0;
-  }
+  for (int ch = 0; ch < OUTPUTS; ch++) writeOutput(ch, false);
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
   Serial.begin(115200);
@@ -219,9 +250,13 @@ void setup() {
     while (true) delay(1000);
   }
   BLEServer server = BLE.createServer();
-  server.onConnect([](BLEServer, const BLEConnInfo &) { clientConnected = true; });
+  server.onConnect([](BLEServer, const BLEConnInfo &) {
+    clientConnected = true;
+    Serial.println("phone connected");
+  });
   server.onDisconnect([](BLEServer s, const BLEConnInfo &, uint8_t) {
     clientConnected = false;
+    Serial.println("phone disconnected");
     s.startAdvertising();
   });
 
@@ -247,9 +282,34 @@ void setup() {
                 activeHigh ? "HIGH" : "LOW");
 }
 
+void serialConsole() {
+  while (Serial.available()) {
+    const int k = Serial.read();
+    if (k >= '1' && k <= '0' + OUTPUTS) {
+      const uint8_t ch = k - '1';
+      Serial.printf("console: toggle relay %d
+", ch + 1);
+      writeOutput(ch, chanState[ch] != 1);
+      logOutput(ch);
+      blink();
+      publishState();
+    } else if (k == '0') {
+      Serial.println("console: all off");
+      allOff();
+      publishState();
+    } else if (k == '?') {
+      Serial.printf("firmware %s, relay board switches on with %s, phone %s
+", FW_VERSION,
+                    activeHigh ? "HIGH" : "LOW", clientConnected ? "connected" : "not connected");
+      for (int ch = 0; ch < OUTPUTS; ch++) logOutput(ch);
+    }
+  }
+}
+
 void loop() {
   Command c;
   if (xQueueReceive(commandQueue, &c, pdMS_TO_TICKS(50)) == pdTRUE) {
     handle(c);
   }
+  serialConsole();
 }

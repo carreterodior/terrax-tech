@@ -70,7 +70,13 @@ the board (USB data cable), **Connect** → pick the COM port, Flash Address `0x
 board **ESP32 Dev Module** with the **esp32 by Espressif Systems 4.x** package, Upload.
 
 Serial Monitor at 115200 baud prints
-`TERRAX WIRELESS SWITCH ready, firmware 2.0.1 (relay, trigger HIGH)`.
+`TERRAX WIRELESS SWITCH ready, firmware 2.0.2 (relay, trigger HIGH)`.
+
+## Bench test over USB (2.0.2+)
+
+Serial Monitor at 115200 baud shows every command from the app (`cmd 01 00 01`
+→ `relay 1 (GPIO 16): ON, signal HIGH 3.3V`). Type `1`–`8` to toggle a relay,
+`0` for all off, `?` for the state of every output.
 
 ## Command reference (characteristic 54580002-…)
 
@@ -84,7 +90,7 @@ Serial Monitor at 115200 baud prints
 | `02`, `03`, `05`, `06`, `07` | Radio-only (1.x); ignored |
 
 State `54580003-…`: 16 bytes (00 off, 01 on, FF = no relay on that channel).
-Info `54580004-…`: `TERRAX Wireless Switch 2.0.1; relay; trigger HIGH; outputs 8; mac …`.
+Info `54580004-…`: `TERRAX Wireless Switch 2.0.2; relay; trigger HIGH; outputs 8; mac …`.
 
 ## Test without the app
 
@@ -94,6 +100,10 @@ nRF Connect → `TERRAX WIRELESS SWITCH` → service `54580001-…` → write `0
 ## Troubleshooting
 
 - **Lights on when the app says off**: change *Relay board type* in the app's Wiring tab.
+- **Relay stays on whatever the app says** (module LED always lit): it is a module that
+  switches on with LOW. Set *Relay board type* to LOW. Since 2.0.2 the ESP32 then lets go
+  of the wire for OFF (open drain), because a 3.3 V "off" can't switch a 5 V low-trigger
+  module off.
 - **A relay stays clicked on whatever you do**: some low-trigger boards need their
   optocoupler side at 3.3 V — remove the board's JD-VCC jumper, feed JD-VCC from 5 V and
   VCC from the ESP32's 3V3 pin.
